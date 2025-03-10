@@ -27,20 +27,20 @@
 | 3 ETH | diva.degen | 🎰 Thinks sleep is a bear market strategy|
 | 4 ETH | diva.wtf | 🤯 Bought LUNA and FTX "just in case" |
 | 5 ETH | diva.yolo | 🎲 Sold house for ETH (wife doesn't know) |
-| 6 ETH | diva.bro | 🤝 "Ser, this is financial advice" |
-| 7 ETH | diva.chad | 💪 Never touched grass |
+| 6 ETH | diva.bro | 🤝 Gives crypto tips at divorce hearings |
+| 7 ETH | diva.chad | 💪 Measures gains in lambos per minute |
 | 8 ETH | diva.og | 🎖 Has more failed ICO tokens than friends |
 | 9 ETH | diva.hodl | 💎 Married to their bags (literally, had a ceremony) |
-| 10 ETH | diva.maxi | 🔥 "Solana is a MySQL database" |
+| 10 ETH | diva.maxi | 🔥 "Solana is a SQL database" |
 | 15 ETH | diva.bull | 📈 Red candles are just discounts |
-| 20 ETH | diva.whale | 🐋 Crashes CEX servers for fun |
-| 25 ETH | diva.pump | 🚀 Gravity is optional |
+| 20 ETH | diva.whale | 🐋 Causes bear markets by taking profits |
+| 25 ETH | diva.pump | 🚀 Thinks sell walls are conspiracy theories |
 | 30 ETH | diva.100x | 💰 Uses leverage to leverage leverage |
 | 35 ETH | diva.defi | 💸 Buidling YOLO contracts |
 | 40 ETH | diva.ape | 🦍 Gets liquidated just to feel something |
-| 45 ETH | diva.moon | 🌕 Has limit sells at $1M |
+| 45 ETH | diva.moon | 🌕 Earth's gravity can't hold these gains |
 | 50 ETH | diva.X | ✖️ CZ's financial advisor |
-| 100 ETH | diva | 👑 Gets liquidated just to feel something |
+| 100 ETH | diva | 👑 Makes "vitalik.eth" look verbose |
 | 1,000 ETH | X  | 🔥 Vitalik asks you for ETH back |
 
 Note that the 1,000 ETH name "X" is unlocked after 100M registered names.
