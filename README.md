@@ -17,7 +17,9 @@
 XNS is a decentralized name registry where users burn ETH to acquire permanent ownership of names for their Externally Owned Accounts (EOA) accounts. 
 The suffix attached to a name is determined by the amount of ETH burned during registration. As users burn more ETH, they unlock
 increasingly prestigious suffixes. At the highest tier of 100 ETH, users can register suffix-free names (e.g., "Vitalik", "Trump").
-The crown jewel of XNS is the legendary single-character name "X" which requires 1,000,000 ETH to be burned before it can be claimed for 1000 ETH.
+The crown jewel of XNS is the legendary single-character name "X" which requires 1,000,000 ETH to be burned before it can be claimed for 1000 ETH. 
+Communities can also create their own custom suffixes (like .uni or .aave) for 200 ETH.
+
 Below is a breakdown of all available suffixes and their ETH burn requirements:
 
 ## 🔥 XNS Name Tiers
@@ -51,22 +53,21 @@ Below is a breakdown of all available suffixes and their ETH burn requirements:
 <!-- Calls Saylor "paper hands" -->
 <!-- Makes Warren Buffett look like a savings account -->
 
-### 🌿 Community Domains
-Communities can permissionlessly register custom suffixes (e.g., .uni, .aave) in exchange for 200 ETH and allow their members to purchase names under their domain - strengthening community identity on-chain.
-
 ## 🚀 Core Features
+
+Here's what makes XNS different:
 
 ### 🔹 Permanent Ownership
 In ENS, you don't own your name - you rent it. If you forget to renew, someone else can take it. That's like renting the account number for your bank account - if you forget to renew, someone else can claim it, and anyone who previously sent funds to your ENS name might unknowingly send assets to the new owner. Absurd? We agree.
 
-✅ XNS names are permanent:
+✅ **XNS names are permanent:**
 - No expiration, no renewals
 - Once purchased, the name is yours forever
 
 ### 🔹 Transferable, But Not Resellable 
 Typically, the ability to transfer names enables resale, which leads to speculation and name sniping. However, users who purchase valuable names should still be able to move them between their own accounts.
 
-✅ XNS names are fully transferrable while preventing resale:
+✅ **XNS names are fully transferrable while preventing resale:**
 - Names can be migrated between accounts controlled by the original owner
 - Original owner retains transfer rights, making ownership by external parties worthless
 - Eliminates speculative purchases, creating a fair and utility-driven naming system
