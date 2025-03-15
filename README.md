@@ -23,12 +23,12 @@ XNS is a decentralized name registry where users burn ETH to acquire permanent o
 - ⭐ **Free ENS Migration:** Migrate your existing .eth ENS names to XNS at no cost.
 - 👑 **The Ultimate "X":** A legendary single-character name unlocked at 1 million ETH burned.
 
-The suffix attached to a name is determined by the amount of ETH burned during registration. As users burn more ETH, they unlock increasingly prestigious suffixes. At the highest tier of 100 ETH, users can register suffix-free names (e.g., "Vitalik", "Trump").
+The suffix attached to a name is determined by the amount of ETH burned during registration. As users burn more ETH, they unlock increasingly prestigious suffixes. At the highest tier of 100 ETH, users can register suffix-free names (e.g., "Vitalik", "Trump"). The crown jewel of XNS is the legendary single-character name "X" which requires 1 million ETH to be burned before it can be claimed for 1000 ETH.
 
 
 ## 🔥 XNS Name Tiers
 
-| ETH Burned | Name Format | Level |
+| ETH Burn | Name Format | Personality |
 |------------|-------------|-----------------|
 | 0.001 ETH | diva.001 | 🐣 Baby steps (we all start somewhere) |
 | 0.500 ETH | diva.500 | 🐢 Slow and steady |
@@ -42,7 +42,7 @@ The suffix attached to a name is determined by the amount of ETH burned during r
 | 7 ETH | diva.chad | 💪 Measures gains in lambos per minute |
 | 8 ETH | diva.og | 🎖 Has more failed ICO tokens than friends |
 | 9 ETH | diva.hodl | 💎 Married to their bags (literally, had a ceremony) |
-| 10 ETH | diva.maxi | ⚡ "Solana is a SQL database" |
+| 10 ETH | diva.maxi | Ξ🦇🔊 "Solana is a SQL database" |
 | 15 ETH | diva.bull | 🦬 Red candles are just discounts |
 | 20 ETH | diva.whale | 🐋 Causes bear markets by taking profits |
 | 25 ETH | diva.pump | 🚀 Thinks sell walls are conspiracy theories |
@@ -57,8 +57,8 @@ The suffix attached to a name is determined by the amount of ETH burned during r
 
 ## ✨ Key functionality
 
-XNS provides the following core functionality:
-* **Register a name:** Users can register a name by calling the [`registerName`](#registername) function and attaching the amount of ETH they want to burn.
+The key functionalities include:
+* **Register a name:** Users can register a name by calling the [`registerName`](#registername) function and sending the amount of ETH they want to burn.
 * **Lookup the address of a name:** Users can retrieve the address for a given name by calling the [`getAddress`](#getaddress) function, passing the name as an argument.
 * **Lookup the name of an address (reverse lookup):** Users can retrieve the name for a given address by calling the [`getName`](#getname) function, passing the address as an argument.
 
