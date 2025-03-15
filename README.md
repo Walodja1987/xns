@@ -59,8 +59,9 @@ The suffix attached to a name is determined by the amount of ETH burned during r
 
 The key functionalities include:
 * **Register a name:** Users can register a name by calling the [`registerName`](#registername) function and sending the amount of ETH they want to burn.
-* **Lookup the address of a name:** Users can retrieve the address for a given name by calling the [`getAddress`](#getaddress) function, passing the name as an argument.
-* **Lookup the name of an address (reverse lookup):** Users can retrieve the name for a given address by calling the [`getName`](#getname) function, passing the address as an argument.
+* **Resolve name to address (forward lookup):** Users can retrieve the address for a given name by calling the [`getAddress`](#getaddress) function, passing the name as an argument.
+* **Resolve address to name (reverse lookup):** Users can retrieve the name for a given address by calling the [`getName`](#getname) function, passing the address as an argument.
+
 
 
 <!-- Calls Saylor "paper hands" -->

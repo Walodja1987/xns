@@ -99,16 +99,16 @@ contract XNS is IXNS {
 
         if (setAsPrimary) {
             userToNames[user].primaryIndex = userToNames[user].names.length - 1;
-            emit PrimaryNameSet(user, fullName);
+            emit PrimaryNameForReverseLookupSet(user, fullName);
         }
 
         emit NameRegistered(user, fullName);
     }
 
-    function setPrimaryNameForDisplay(uint256 _index) external {
+    function setPrimaryNameForReverseLookup(uint256 _index) external {
         require(_index < userToNames[msg.sender].names.length, "Invalid index.");
         userToNames[msg.sender].primaryIndex = _index;
-        emit PrimaryNameSet(msg.sender, userToNames[msg.sender].names[_index]);
+        emit PrimaryNameForReverseLookupSet(msg.sender, userToNames[msg.sender].names[_index]);
     }
 
     function claimAccumulatedFees(address recipient) external {
@@ -140,17 +140,22 @@ contract XNS is IXNS {
         return accumulatedFees;
     }
 
-    function getPrimaryNameForDisplay(address _user) external view returns (string memory) {
+    function getPrimaryNameForReverseLookup(address _user) external view returns (string memory) {
         uint256 primaryIndex = userToNames[_user].primaryIndex;
         return userToNames[_user].names[primaryIndex];
     }
 
-    function getOwnerOfName(string memory _fullName) external view returns (address) {
+    function getAddress(string memory _fullName) external view returns (address) {
         return nameHashToOwners[keccak256(abi.encodePacked(_fullName))];
     }
 
-    function getUserNames(address _user) external view returns (string[] memory) {
+    function getNames(address _user) external view returns (string[] memory) {
         return userToNames[_user].names; // ✅ Directly return the full array
+    }
+
+    function getName(address _user) external view returns (string memory) {
+        uint256 primaryIndex = userToNames[_user].primaryIndex;
+        return userToNames[_user].names[primaryIndex];
     }
 
     function getUserNames(address _user, uint256 from, uint256 to) public view returns (string[] memory) {
@@ -178,23 +183,23 @@ contract XNS is IXNS {
         }
     }
     function getNamedSuffix(uint256 _amount) public pure returns (string memory) {
-        if (_amount == 1 ether) return ".eth";
-        if (_amount == 2 ether) return ".gm";
-        if (_amount == 3 ether) return ".degen";
-        if (_amount == 4 ether) return ".wtf";
-        if (_amount == 5 ether) return ".bro";
-        if (_amount == 6 ether) return ".chad";
-        if (_amount == 7 ether) return ".og";
-        if (_amount == 9 ether) return ".hodl";
-        if (_amount == 10 ether) return ".maxi";
-        if (_amount == 15 ether) return ".bull";
-        if (_amount == 20 ether) return ".whale";
-        if (_amount == 25 ether) return ".pump";
-        if (_amount == 30 ether) return ".100x";
-        if (_amount == 35 ether) return ".defi";
-        if (_amount == 40 ether) return ".ape";
-        if (_amount == 45 ether) return ".moon";
-        if (_amount == 50 ether) return ".X";
+        if (_amount == 1 ether) return ".eth"; // 𖢻 "I'm in it for the tech"
+        if (_amount == 2 ether) return ".gm"; // 🌞 Checks portfolio before brushing teeth
+        if (_amount == 3 ether) return ".degen"; // 🎰 Thinks sleep is a bear market strategy
+        if (_amount == 4 ether) return ".wtf"; // 🤯 Bought LUNA and FTT "just in case"
+        if (_amount == 5 ether) return ".bro"; // 🤝 Gives crypto tips at divorce hearings
+        if (_amount == 6 ether) return ".chad"; // 💪 Measures gains in lambos per minute
+        if (_amount == 7 ether) return ".og"; // 🎖 Has more failed ICO tokens than friends
+        if (_amount == 9 ether) return ".hodl"; // 💎 Married to their bags (literally, had a ceremony)
+        if (_amount == 10 ether) return ".maxi"; // Ξ🦇🔊 "Solana is a SQL database"
+        if (_amount == 15 ether) return ".bull"; // 🦬 Red candles are just discounts
+        if (_amount == 20 ether) return ".whale"; // 🐋 Causes bear markets by taking profits
+        if (_amount == 25 ether) return ".pump"; // 🚀 Thinks sell walls are conspiracy theories
+        if (_amount == 30 ether) return ".100x"; // 💯 Uses leverage to leverage leverage
+        if (_amount == 35 ether) return ".defi"; // 📱 Buidling YOLO contracts
+        if (_amount == 40 ether) return ".ape"; // 🦍 Gets liquidated just to feel something
+        if (_amount == 45 ether) return ".moon"; // 🌕 Earth's gravity can't hold these gains
+        if (_amount == 50 ether) return ".X"; // 👔 CZ's financial advisor
         if (_amount == 100 ether) return ""; // @todo needed becaue it will return "" anyways (see next line)
         return "";
     }
@@ -215,5 +220,30 @@ contract XNS is IXNS {
         }
         return string(buffer);
     }
+
+
+    // function collectReservedName(string memory baseName, string memory suffix) external {
+    //     require(bytes(baseName).length > 0, "Base name cannot be empty.");
+    //     require(bytes(suffix).length > 0, "Suffix cannot be empty.");
+
+    //     string memory fullName = string(abi.encodePacked(baseName, suffix));
+    //     bytes32 nameHash = keccak256(abi.encodePacked(fullName));
+    //     bytes32 suffixHash = keccak256(abi.encodePacked(suffix));
+
+    //     require(suffixActive[suffixHash], "Suffix not activated.");
+    //     address recipient = initializedNameRecipients[suffixHash][nameHash];
+    //     require(recipient != address(0), "Name not initialized.");
+    //     require(nameHashToOwners[nameHash] == address(0), "Name already claimed.");
+
+    //     // ✅ Assign ownership ONLY to the pre-set recipient
+    //     nameHashToOwners[nameHash] = recipient;
+
+    //     // ✅ Remove from temporary storage
+    //     delete initializedNameRecipients[suffixHash][nameHash];
+
+    //     emit NameClaimed(recipient, fullName);
+    // }
+
+
 
 }
