@@ -14,13 +14,17 @@
 
 ## 🚀 Overview
 
-XNS is a decentralized name registry where users burn ETH to acquire permanent ownership of names for their Externally Owned Accounts (EOA) accounts. 
-The suffix attached to a name is determined by the amount of ETH burned during registration. As users burn more ETH, they unlock
-increasingly prestigious suffixes. At the highest tier of 100 ETH, users can register suffix-free names (e.g., "Vitalik", "Trump").
-The crown jewel of XNS is the legendary single-character name "X" which requires 1,000,000 ETH to be burned before it can be claimed for 1000 ETH. 
-Communities can also create their own custom suffixes (like .uni or .aave) for 200 ETH.
+XNS is a decentralized name registry where users burn ETH to acquire permanent ownership of names for their Externally Owned Accounts (EOA) accounts. XNS offers:
 
-Below is a breakdown of all available suffixes and their ETH burn requirements:
+- 🔒 **Permanent Ownership:** No expirations. No renewals. Names are yours forever.
+- 🔄 **Transferability:** Names can be moved between your accounts while preventing speculative resale.
+- 🌐 **Community Domains:** Custom suffixes (like .uni or .aave) for communities.
+- 🔥 **DETH Integration:** Verifiable ETH burns with utility in downstream applications.
+- ⭐ **Free ENS Migration:** Migrate your existing .eth ENS names to XNS at no cost.
+- 👑 **The Ultimate "X":** A legendary single-character name unlocked at 1 million ETH burned.
+
+The suffix attached to a name is determined by the amount of ETH burned during registration. As users burn more ETH, they unlock increasingly prestigious suffixes. At the highest tier of 100 ETH, users can register suffix-free names (e.g., "Vitalik", "Trump").
+
 
 ## 🔥 XNS Name Tiers
 
@@ -49,6 +53,15 @@ Below is a breakdown of all available suffixes and their ETH burn requirements:
 | 50 ETH | diva.X | 👔 CZ's financial advisor |
 | 100 ETH | diva | ⚪ Makes "vitalik.eth" look verbose |
 | 1,000 ETH | X  | 👑 Vitalik asks you for ETH back |
+
+
+## ✨ Key functionality
+
+XNS provides the following core functionality:
+* **Register a name:** Users can register a name by calling the [`registerName`](#registername) function and attaching the amount of ETH they want to burn.
+* **Lookup the address of a name:** Users can retrieve the address for a given name by calling the [`getAddress`](#getaddress) function, passing the name as an argument.
+* **Lookup the name of an address (reverse lookup):** Users can retrieve the name for a given address by calling the [`getName`](#getname) function, passing the address as an argument.
+
 
 <!-- Calls Saylor "paper hands" -->
 <!-- Makes Warren Buffett look like a savings account -->
@@ -81,7 +94,7 @@ To enable a seamless migration of your .eth ENS name (e.g., vitalik.eth) users c
 ### 🔹 DETH Integration: Verifiable ETH Burns
 XNS integrates with DETH, a global ETH burn registry that permanently tracks ETH burns.
 
-✅ How it works:
+✅ **How it works:**
 - When users burn ETH to register a name, the burn is attested in DETH
 - Users receive non-transferable DETH credits, recorded 1:1 with ETH burned
 - These credits prove value destruction and can be leveraged in downstream applications like governance or rewards distributions (e.g., airdrops)
