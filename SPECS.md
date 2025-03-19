@@ -9,16 +9,28 @@
 ### Storage layout
 
 ```solidity
+// Core data structures
 struct UserNames {
     string[] names;
     mapping(bytes32 => bool) ownsName;
     uint256 primaryIndex;
 }
 
+// Main storage
+mapping(address => UserNames) private userToNames;
 mapping(bytes32 => address) public nameHashToOwners;
-mapping(address => UserNames) public userToNames;
+
+// Protocol state
 uint256 public totalNamesRegistered;
 uint256 public accumulatedFees;
+address public owner;
+
+// Constants
+uint256 public constant FEE_PERCENTAGE = 2;
+uint256 public constant X_UNLOCK_THRESHOLD = 100_000_000;
+uint256 public constant X_PRICE = 1000 ether;
+bytes32 public constant X_HASH = keccak256(abi.encodePacked("X"));
+address constant DETH = 0xE46861C9f28c46F27949fb471986d59B256500a7;
 ```
 ## Name registration
 
@@ -27,7 +39,7 @@ uint256 public accumulatedFees;
 ```solidity
 function registerName(
     string memory baseName, // e.g. "diva", excluding the suffix
-    bool setAsPrimaryForDisplay // if true, set the name as the primary display name at reverse lookups
+    bool setAsPrimaryForReverseLookup // if true, set the name as the primary display name at reverse lookups
 ) external payable;
 ```
 
