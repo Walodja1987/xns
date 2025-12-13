@@ -1,4 +1,12 @@
-# XNS - The On-Chain Name Service
+Perfect, thanks for the style guide — that helps a lot.
+Below is **fresh documentation for the *current* XNS design**, written in the *same tone and structure*, but accurately reflecting what we actually built (no ENS migration, no transfers, no DETH, etc.).
+
+I’ve intentionally kept it **clean, honest, and minimal**, aligned with your “v1 is a simple immutable registry” philosophy.
+
+---
+
+# XNS – The On-Chain Name Service
+
 ```
 //////////////////////////////
 //                          //
@@ -7,141 +15,337 @@
 //    \ V /|  \| | (___     //
 //     > < | . ` |\___ \    //
 //    / . \| |\  |____) |   //
-//   /_/ \_\_| \_|_____/    //                  
+//   /_/ \_\_| \_|_____/    //
 //                          //
 //////////////////////////////
 ```
 
 ## 🚀 Overview
 
-XNS is a decentralized name registry where users burn ETH to acquire permanent ownership of names for their Externally Owned Accounts (EOA) accounts. XNS offers:
+**XNS** is a decentralized, Ethereum-native name registry that maps **human-readable names to Ethereum addresses**.
+Names are acquired by **burning ETH** and are **permanent, immutable, and non-transferable**.
 
-- 🔒 **Permanent Ownership:** No expirations. No renewals. Names are yours forever.
-- 🔄 **Transferability:** Names can be moved between your accounts while preventing speculative resale.
-- 🌐 **Community Domains:** Custom suffixes (like .uni or .aave) for communities.
-- 🔥 **DETH Integration:** Verifiable ETH burns with utility in downstream applications.
-- ⭐ **Free ENS Migration:** Migrate your existing .eth ENS names to XNS at no cost.
-- 👑 **The Ultimate "X":** A legendary single-character name unlocked at 1 million ETH burned.
+XNS is intentionally simple:
 
-The suffix attached to a name is determined by the amount of ETH burned during registration. As users burn more ETH, they unlock increasingly prestigious suffixes. At the highest tier of 100 ETH, users can register suffix-free names (e.g., "Vitalik", "Trump"). The crown jewel of XNS is the legendary single-character name "X" which requires 1 million ETH to be burned before it can be claimed for 1000 ETH.
+* No expirations
+* No renewals
+* No transfers
+* No speculation
+* No off-chain dependencies
 
+Once a name is registered, it is forever linked to the owner’s address.
 
-## 🔥 XNS Name Tiers
+---
 
-| ETH Burn | Name Format | Personality |
-|------------|-------------|-----------------|
-| 0.001 ETH | diva.001 | 🐣 Baby steps (we all start somewhere) |
-| 0.500 ETH | diva.500 | 🐢 Slow and steady |
-| 0.999 ETH | diva.999 | 🧙‍♂️ Almost there... |
-| 1 ETH | diva.eth | 𖢻 "I'm in it for the tech" |
-| 2 ETH | diva.gm | 🌞 Checks portfolio before brushing teeth |
-| 3 ETH | diva.degen | 🎰 Thinks sleep is a bear market strategy|
-| 4 ETH | diva.wtf | 🤯 Bought LUNA and FTT "just in case" |
-| 5 ETH | diva.yolo | 🎲 Sold house for ETH (wife doesn't know) |
-| 6 ETH | diva.bro | 🤝 Gives crypto tips at divorce hearings |
-| 7 ETH | diva.chad | 💪 Measures gains in lambos per minute |
-| 8 ETH | diva.og | 🎖 Has more failed ICO tokens than friends |
-| 9 ETH | diva.hodl | 💎 Married to their bags (literally, had a ceremony) |
-| 10 ETH | diva.maxi | Ξ🦇🔊 "Solana is a SQL database" |
-| 15 ETH | diva.bull | 🦬 Red candles are just discounts |
-| 20 ETH | diva.whale | 🐋 Causes bear markets by taking profits |
-| 25 ETH | diva.pump | 🚀 Thinks sell walls are conspiracy theories |
-| 30 ETH | diva.100x | 💯 Uses leverage to leverage leverage |
-| 35 ETH | diva.defi | 📱 Buidling YOLO contracts |
-| 40 ETH | diva.ape | 🦍 Gets liquidated just to feel something |
-| 45 ETH | diva.moon | 🌕 Earth's gravity can't hold these gains |
-| 50 ETH | diva.X | 👔 CZ's financial advisor |
-| 100 ETH | diva | ⚪ Makes "vitalik.eth" look verbose |
-| 1,000 ETH | X  | 👑 Vitalik asks you for ETH back |
+## ✨ Core Properties
 
+### 🔒 Permanent Ownership
 
-## ✨ Key functionality
+XNS names never expire.
 
-The key functionalities include:
-* **Register a name:** Users can register a name by calling the [`registerName`](#registername) function and sending the amount of ETH they want to burn.
-* **Resolve name to address (forward lookup):** Users can retrieve the address for a given name by calling the [`getAddress`](#getaddress) function, passing the name as an argument.
-* **Resolve address to name (reverse lookup):** Users can retrieve the name for a given address by calling the [`getName`](#getname) function, passing the address as an argument.
+* No renewals
+* No grace periods
+* No risk of losing your name
 
+If you register a name, it is yours **forever**.
 
+---
 
-<!-- Calls Saylor "paper hands" -->
-<!-- Makes Warren Buffett look like a savings account -->
+### 🔥 ETH Burn–Based Registration
 
-## 🚀 Core Features
+Names are registered by **burning ETH**.
 
-Here's what makes XNS different:
+* The ETH is burned via the **DETH** contract
+* When ETH is burned, the sender is credited **DETH**
+* Burned ETH is permanently removed from circulation
+* The burn amount determines the **namespace** of the name
 
-### 🔹 Permanent Ownership
-In ENS, you don't own your name - you rent it. If you forget to renew, someone else can take it. That's like renting the account number for your bank account - if you forget to renew, someone else can claim it, and anyone who previously sent funds to your ENS name might unknowingly send assets to the new owner. Absurd? We agree.
+There is no secondary market and no resale incentive.
 
-✅ **XNS names are permanent:**
-- No expiration, no renewals
-- Once purchased, the name is yours forever
+---
 
-### 🔹 Transferable, But Not Resellable 
-Typically, the ability to transfer names enables resale, which leads to speculation and name sniping. However, users who purchase valuable names should still be able to move them between their own accounts.
+### 🧭 One Name per Address
 
-✅ **XNS names are fully transferrable while preventing resale:**
-- Names can be migrated between accounts controlled by the original owner
-- Original owner retains transfer rights, making ownership by external parties worthless
-- Eliminates speculative purchases, creating a fair and utility-driven naming system
+Each Ethereum address may own **at most one XNS name**.
 
-### 🔹 Community Domains
-Communities can permissionlessly register custom suffixes (e.g., .uni, .aave) in exchange for 200 ETH and allow their members to purchase names under their domain - strengthening community identity on-chain.
+This guarantees:
 
-### 🔹 Free ENS Migration
-To enable a seamless migration of your .eth ENS name (e.g., vitalik.eth) users can claim their .eth names on XNS for free (normally requires burning 1 ETH).
+* Clear identity mapping
+* No name farming
+* Simple reverse lookup (`address → name`)
 
-### 🔹 DETH Integration: Verifiable ETH Burns
-XNS integrates with DETH, a global ETH burn registry that permanently tracks ETH burns.
+---
 
-✅ **How it works:**
-- When users burn ETH to register a name, the burn is attested in DETH
-- Users receive non-transferable DETH credits, recorded 1:1 with ETH burned
-- These credits prove value destruction and can be leveraged in downstream applications like governance or rewards distributions (e.g., airdrops)
+### 🧠 Fully On-Chain Resolution
 
-### 🔹 X - The Ultimate Name
-The legendary single-letter name "X" - without any suffixes - will be unlocked once 1,000,000 ETH have been burned. A symbol of ultimate prestige, it represents the highest tier of commitment within XNS.
+XNS supports both:
 
-### Additional Features
-- Users can register multiple names for an address
-- Users can specify the default name to display in frontend applications
+* **Forward lookup:** name → address
+* **Reverse lookup:** address → name
 
+Both are available via on-chain view functions and can be queried directly via Etherscan — no indexers required.
 
-## 🔗 Address
+---
 
-The XNS contract is deployed on Ethereum at the following address: [xxx](https://etherscan.io/address/xxx)
+## 🏷 Names & Namespaces
 
-<!-- [Contract deployment transaction](https://etherscan.io/tx/...) -->
+An XNS name consists of:
 
-## ✨ Functions
-
-### `registerName`
-
-```solidity
-...
+```
+<label>.<namespace>
 ```
 
-Does ...
+Example:
 
-## ⛓ View Functions
-
-### `getAddress`
-
-```solidity
-...
+```
+vitalik.001
+alice.yolo
+nike.x
 ```
 
-### `getName`
+### 🔹 Labels
 
-```solidity
-...
+The label is the name chosen by the user.
+
+Rules:
+
+* 1–20 characters
+* Lowercase letters `a–z`
+* Numbers `0–9`
+* Hyphen `-` allowed (not at start or end)
+
+Examples:
+
+* ✅ `vitalik`
+* ✅ `my-name`
+* ❌ `-name`
+* ❌ `name-`
+
+---
+
+### 🔹 Namespaces
+
+The namespace is determined by the **amount of ETH burned** during registration.
+
+* Namespaces are **permissionless**
+* Anyone can create a namespace by paying a one-time fee
+* Each namespace has a fixed price per name
+
+Namespace rules:
+
+* 1–4 characters
+* Lowercase letters `a–z` and digits `0–9`
+* The namespace `"eth"` is forbidden to avoid confusion with ENS
+
+---
+
+## ⭐ The Special Namespace `.x`
+
+XNS includes a **special namespace** called:
+
+```
+.x
 ```
 
-Returns ...
+This namespace represents **suffix-free names**.
 
-## 🔍 Events
+### How it works:
+
+* Registering `label` **without specifying a namespace** implicitly registers:
+
+  ```
+  label.x
+  ```
+* The `.x` namespace is intentionally **expensive** to ensure rarity.
+
+### Pricing:
+
+* `.x` names cost **100 ETH**
+* Example:
+
+  ```
+  nike.x   → displayed simply as "nike"
+  ```
+
+The `.x` namespace is **not a default** — it is a **premium, special namespace**.
+
+---
+
+## 🔥 Namespace Pricing Model
+
+Namespaces are mapped to **exact ETH amounts**, in increments of **0.001 ETH**.
+
+Examples:
+
+| ETH Burn  | Name                 |
+| --------- | -------------------- |
+| 0.001 ETH | alice.001            |
+| 0.250 ETH | alice.250            |
+| 0.999 ETH | alice.999            |
+| 100 ETH   | alice (i.e. alice.x) |
+
+The ETH amount uniquely determines the namespace.
+
+---
+
+## 👥 Namespace Creators & Free Names
+
+When a new namespace is created:
+
+* The creator receives **200 free name registrations**
+* These can be assigned to any addresses
+* Free names:
+
+  * Do **not** require ETH
+  * Are limited by a **remaining counter**
+
+### Remaining Free Names
+
+Each namespace tracks:
+
+```
+remainingFreeNames (starts at 200)
+```
+
+* Decreases with each free assignment
+* Cannot go below zero
+* Can be used **at any time**, even after public registration opens
+
+---
+
+## ⏳ Exclusive Period
+
+For the first **30 days** after a namespace is created:
+
+* **Only the namespace creator** can register paid names under that namespace
+
+After 30 days:
+
+* Anyone can register paid names
+* The creator may still use any remaining free names
+
+---
+
+## 🔧 Key Functions
+
+### Register a Name
+
+```solidity
+register(string label) payable
+```
+
+* Burns `msg.value` ETH
+* Namespace is derived from the ETH amount
+* Registers `label.namespace` for `msg.sender`
+
+---
+
+### Forward Lookup (Name → Address)
+
+```solidity
+getAddress(string label, string namespace)
+getAddress(string fullName)
+```
+
+Examples:
+
+```solidity
+getAddress("vitalik", "001")
+getAddress("vitalik.001")
+getAddress("nike") // resolves nike.x
+```
+
+---
+
+### Reverse Lookup (Address → Name)
+
+```solidity
+getName(address owner)
+```
+
+Returns:
+
+```solidity
+(label, namespace)
+```
+
+If the address has no name, empty strings are returned.
+
+---
+
+### Namespace Queries
+
+```solidity
+getNamespace(uint256 price)
+getNamespaceInfo(string namespace)
+getNamespaceInfo(uint256 price)
+```
+
+These functions allow users to:
+
+* Determine which namespace corresponds to an ETH amount
+* Inspect namespace metadata on-chain
+* Query remaining free names and creator information
+
+---
+
+## 📡 Events
 
 ### `NameRegistered`
 
-...
+Emitted whenever a name is registered (paid or free):
+
+```solidity
+event NameRegistered(
+    string label,
+    string namespace,
+    address owner
+);
+```
+
+### `NamespaceRegistered`
+
+Emitted when a new namespace is created:
+
+```solidity
+event NamespaceRegistered(
+    string namespace,
+    uint256 pricePerName,
+    address creator
+);
+```
+
+---
+
+## 🧾 Contract Address
+
+The XNS contract is deployed on Ethereum:
+
+> **Address:** `TBD`
+> (link to Etherscan will be added after deployment)
+
+---
+
+## 🧠 Design Philosophy
+
+XNS is intentionally minimal:
+
+* Immutable mappings
+* No admin keys
+* No upgrades
+* No tokenization
+* No off-chain trust
+
+It is designed to be:
+
+* Easy to reason about
+* Easy to integrate
+* Hard to abuse
+
+---
+
+If you want, next we can:
+
+* Tighten language further (more playful vs more serious),
+* Add a **“How to use XNS via Etherscan”** section,
+* Or prepare a **short developer integration guide**.
