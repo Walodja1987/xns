@@ -144,7 +144,7 @@ contract XNS {
     function register(
         string calldata label
     ) external payable {
-        _validateLabel(label);
+        require(_isValidLabel(label), "XNS: invalid label");
 
         uint256 pricePerName = msg.value;
         require(pricePerName > 0, "XNS: zero price");
@@ -192,11 +192,10 @@ contract XNS {
         string calldata namespace_,
         uint256 pricePerName
     ) external payable {
-        _validateNamespace(namespace_);
+        require(_isValidNamespace(namespace_), "XNS: invalid namespace");
 
         // Forbid "eth" namespace to avoid confusion with ENS.
-        // @todo Inline _eq here?
-        require(!_eq(namespace_, "eth"), "XNS: 'eth' namespace forbidden");
+        require(keccak256(bytes(namespace_)) != keccak256(bytes("eth")), "XNS: 'eth' namespace forbidden");
 
         require(pricePerName > 0, "XNS: pricePerName must be > 0");
         require(
@@ -265,7 +264,7 @@ contract XNS {
             string memory label = claims[i].label;
             address owner = claims[i].owner;
 
-            _validateLabel(label);
+            require(_isValidLabel(label), "XNS: invalid label");
             require(
                 bytes(_reverseName[owner].label).length == 0,
                 "XNS: owner already has a name"
@@ -384,20 +383,38 @@ contract XNS {
         return (namespace_, ns.pricePerName, ns.creator, ns.createdAt, ns.remainingFreeNames);
     }
 
-    // =========================================================================
-    // INTERNAL HELPERS
-    // =========================================================================
-
-    /// @dev Validate label:
+    /// @notice Check if a label is valid.
+    /// @dev Returns true if the label meets all validation requirements:
     ///      - non-empty
     ///      - length 1–20
     ///      - consists only of [a-z0-9-]
     ///      - cannot start or end with '-'
-    function _validateLabel(string memory label) internal pure {
+    function isValidLabel(string memory label) external pure returns (bool) {
+        return _isValidLabel(label);
+    }
+
+    /// @notice Check if a namespace is valid.
+    /// @dev Returns true if the namespace meets all validation requirements:
+    ///      - non-empty
+    ///      - length 1–4
+    ///      - consists only of [a-z0-9]
+    function isValidNamespace(string memory namespace_) external pure returns (bool) {
+        return _isValidNamespace(namespace_);
+    }
+
+    // =========================================================================
+    // INTERNAL HELPERS
+    // =========================================================================
+
+    /// @dev Check if a label is valid (returns bool, does not revert).
+    ///      - non-empty
+    ///      - length 1–20
+    ///      - consists only of [a-z0-9-]
+    ///      - cannot start or end with '-'
+    function _isValidLabel(string memory label) internal pure returns (bool) {
         bytes memory b = bytes(label);
         uint256 len = b.length;
-        require(len > 0, "XNS: empty label");
-        require(len <= 20, "XNS: label too long");
+        if (len == 0 || len > 20) return false;
 
         for (uint256 i = 0; i < len; i++) {
             bytes1 c = b[i];
@@ -406,26 +423,22 @@ contract XNS {
             bool isDigit           = (c >= 0x30 && c <= 0x39); // '0'..'9'
             bool isHyphen          = (c == 0x2D);              // '-'
 
-            require(
-                isLowercaseLetter || isDigit || isHyphen,
-                "XNS: invalid label char (allowed: a-z, 0-9, -)"
-            );
+            if (!(isLowercaseLetter || isDigit || isHyphen)) return false;
         }
 
         // No leading or trailing hyphen.
-        require(b[0] != 0x2D, "XNS: label cannot start with '-'");
-        require(b[len - 1] != 0x2D, "XNS: label cannot end with '-'");
+        if (b[0] == 0x2D || b[len - 1] == 0x2D) return false;
+        return true;
     }
 
-    /// @dev Validate namespace:
+    /// @dev Check if a namespace is valid (returns bool, does not revert).
     ///      - non-empty
     ///      - length 1–4
     ///      - consists only of [a-z0-9]
-    function _validateNamespace(string memory namespace_) internal pure {
+    function _isValidNamespace(string memory namespace_) internal pure returns (bool) {
         bytes memory b = bytes(namespace_);
         uint256 len = b.length;
-        require(len > 0, "XNS: empty namespace");
-        require(len <= 4, "XNS: namespace too long");
+        if (len == 0 || len > 4) return false;
 
         for (uint256 i = 0; i < len; i++) {
             bytes1 c = b[i];
@@ -433,16 +446,10 @@ contract XNS {
             bool isLowercaseLetter = (c >= 0x61 && c <= 0x7A); // 'a'..'z'
             bool isDigit           = (c >= 0x30 && c <= 0x39); // '0'..'9'
 
-            require(
-                isLowercaseLetter || isDigit,
-                "XNS: invalid namespace char (allowed: a-z, 0-9)"
-            );
+            if (!(isLowercaseLetter || isDigit)) return false;
         }
-    }
 
-    /// @dev Simple string equality (by keccak256).
-    function _eq(string memory a, string memory b) internal pure returns (bool) {
-        return keccak256(bytes(a)) == keccak256(bytes(b));
+        return true;
     }
 
     /// @dev Burn ETH via DETH contract, crediting the recipient with DETH.
