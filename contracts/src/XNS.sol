@@ -14,7 +14,7 @@ import {IDETH} from "./IDETH.sol";
 //                          //
 //////////////////////////////
 
-/// @title XNSRegistry
+/// @title XNS
 /// @notice Ethereum-only name registry: ETH amount -> namespace, (label, namespace) -> address.
 /// @dev
 /// - Names are immutable and non-transferable.
@@ -26,7 +26,7 @@ import {IDETH} from "./IDETH.sol";
 /// - Each address can own at most one XNS name globally.
 /// - "eth" namespace is forbidden to avoid confusion with ENS.
 /// - Bare labels (e.g. "nike") are treated as "nike.x" (the special namespace).
-contract XNSRegistry {
+contract XNS {
     // -------------------------------------------------------------------------
     // Types & Storage
     // -------------------------------------------------------------------------
@@ -58,7 +58,7 @@ contract XNSRegistry {
     mapping(uint256 => string) private _priceToNamespace;
 
     /// @dev reverse mapping: address -> (label, namespace).
-    ///      If label is empty, the address has no name.
+    /// If label is empty, the address has no name.
     mapping(address => Name) private _reverseName;
 
     /// @dev address of contract creator (deployer).
@@ -112,9 +112,6 @@ contract XNSRegistry {
     // -------------------------------------------------------------------------
 
     constructor() {
-        creator = msg.sender;
-        deployedAt = uint64(block.timestamp);
-
         // Register special namespace "x" as the very first namespace.
         bytes32 nsHash = keccak256(bytes(SPECIAL_NAMESPACE));
         _namespaces[nsHash] = NamespaceData({
@@ -133,6 +130,54 @@ contract XNSRegistry {
     // STATE-MODIFYING FUNCTIONS
     // =========================================================================
 
+    /// @notice Register a name for `msg.sender`.
+    /// @dev
+    /// - `msg.value` is the price-per-name and determines the namespace.
+    /// - That price must already be mapped to a namespace via `registerNamespace`
+    ///   or from the constructor (for the special namespace "x").
+    /// - For the first NS_CREATOR_EXCLUSIVE_PERIOD of a namespace,
+    ///   only the namespace creator can register paid names.
+    /// - `(label, namespace)` must not be registered yet.
+    /// - `msg.sender` must not already have a name.
+    /// - Name is immutable once set.
+    /// - ETH is burned via DETH contract, crediting `msg.sender` with DETH.
+    function register(
+        string calldata label
+    ) external payable {
+        _validateLabel(label);
+
+        uint256 pricePerName = msg.value;
+        require(pricePerName > 0, "XNS: zero price");
+
+        string memory namespace_ = _priceToNamespace[pricePerName];
+        require(bytes(namespace_).length != 0, "XNS: non-existent namespace");
+
+        // Load namespace metadata (we trust it exists because of the price mapping invariant).
+        bytes32 nsHash = keccak256(bytes(namespace_));
+        NamespaceData storage ns = _namespaces[nsHash];
+
+        // During exclusive period, only namespace creator can register paid names.
+        if (block.timestamp < ns.createdAt + NS_CREATOR_EXCLUSIVE_PERIOD) {
+            require(msg.sender == ns.creator, "XNS: namespace in exclusive period");
+        }
+
+        // Enforce one-name-per-address globally.
+        require(
+            bytes(_reverseName[msg.sender].label).length == 0,
+            "XNS: address already has a name"
+        );
+
+        bytes32 key = keccak256(abi.encodePacked(label, ".", namespace_));
+        require(_records[key] == address(0), "XNS: name already registered");
+
+        _records[key] = msg.sender;
+        _reverseName[msg.sender] = Name({label: label, namespace_: namespace_});
+
+        emit NameRegistered(label, namespace_, msg.sender);
+
+        _burn(msg.value, msg.sender);
+    }
+
     /// @notice Register a new namespace and assign a price-per-name to it.
     /// @dev
     /// - Anyone can call this.
@@ -150,6 +195,7 @@ contract XNSRegistry {
         _validateNamespace(namespace_);
 
         // Forbid "eth" namespace to avoid confusion with ENS.
+        // @todo Inline _eq here?
         require(!_eq(namespace_, "eth"), "XNS: 'eth' namespace forbidden");
 
         require(pricePerName > 0, "XNS: pricePerName must be > 0");
@@ -187,54 +233,6 @@ contract XNSRegistry {
         _priceToNamespace[pricePerName] = namespace_;
 
         emit NamespaceRegistered(namespace_, pricePerName, msg.sender);
-
-        _burn(msg.value, msg.sender);
-    }
-
-    /// @notice Register a single paid name for msg.sender.
-    /// @dev
-    /// - `msg.value` is the price-per-name and determines the namespace.
-    /// - That price must already be mapped to a namespace via `registerNamespace`
-    ///   or from the constructor (for the special namespace "x").
-    /// - For the first NS_CREATOR_EXCLUSIVE_PERIOD of a namespace,
-    ///   only the namespace creator can register paid names.
-    /// - `(label, namespace)` must not be registered yet.
-    /// - msg.sender must not already have a name.
-    /// - Name is immutable once set.
-    /// - ETH is burned via DETH contract, crediting msg.sender with DETH.
-    function register(
-        string calldata label
-    ) external payable {
-        _validateLabel(label);
-
-        uint256 pricePerName = msg.value;
-        require(pricePerName > 0, "XNS: zero price");
-
-        string memory namespace_ = _priceToNamespace[pricePerName];
-        require(bytes(namespace_).length != 0, "XNS: price not mapped to namespace");
-
-        // Load namespace metadata (we trust it exists because of the price mapping invariant).
-        bytes32 nsHash = keccak256(bytes(namespace_));
-        NamespaceData storage ns = _namespaces[nsHash];
-
-        // During exclusive period, only namespace creator can register paid names.
-        if (block.timestamp < ns.createdAt + NS_CREATOR_EXCLUSIVE_PERIOD) {
-            require(msg.sender == ns.creator, "XNS: namespace in exclusive period");
-        }
-
-        // Enforce one-name-per-address globally.
-        require(
-            bytes(_reverseName[msg.sender].label).length == 0,
-            "XNS: address already has a name"
-        );
-
-        bytes32 key = keccak256(abi.encodePacked(label, ".", namespace_));
-        require(_records[key] == address(0), "XNS: name already registered");
-
-        _records[key] = msg.sender;
-        _reverseName[msg.sender] = Name({label: label, namespace_: namespace_});
-
-        emit NameRegistered(label, namespace_, msg.sender);
 
         _burn(msg.value, msg.sender);
     }
@@ -293,64 +291,35 @@ contract XNSRegistry {
     // GETTER / VIEW FUNCTIONS
     // =========================================================================
 
-    /// @notice Get the address for a given (label, namespace).
-    function getAddress(
-        string calldata label,
-        string calldata namespace_
-    ) public view returns (address owner) {
-        bytes32 key = keccak256(abi.encodePacked(label, ".", namespace_));
-        return _records[key];
-    }
-
     /// @notice Get the address for a full name string like "nike", "nike.x", "vitalik.001".
     /// @dev
-    /// - If `fullName` contains no dot, it's treated as `label=fullName`, `namespace="x"`.
-    /// - If it contains a dot, split into `label.namespace`.
+    /// - If `fullName` contains no dot, it's treated as `fullName.x` (special namespace).
+    /// - If it contains a dot, it's used as-is (format: `label.namespace`).
     function getAddress(
         string calldata fullName
     ) external view returns (address owner) {
         bytes memory b = bytes(fullName);
         require(b.length > 0, "XNS: empty name");
 
-        // Find last dot (if any)
-        int256 lastDot = -1;
+        // Check if contains a dot
+        bool hasDot = false;
         for (uint256 i = 0; i < b.length; i++) {
             if (b[i] == 0x2E) { // '.'
-                lastDot = int256(i);
+                hasDot = true;
+                break;
             }
         }
 
-        string memory label;
-        string memory namespace_;
-
-        if (lastDot == -1) {
-            // No dot: bare name => use special namespace "x"
-            label = fullName;
-            namespace_ = SPECIAL_NAMESPACE;
+        bytes32 key;
+        if (hasDot) {
+            // Has dot: use fullName as-is (e.g., "nike.x" or "vitalik.001")
+            key = keccak256(abi.encodePacked(fullName));
         } else {
-            // Split at last dot
-            uint256 dotIndex = uint256(lastDot);
-            require(dotIndex > 0 && dotIndex < b.length - 1, "XNS: invalid full name");
-
-            bytes memory bl = new bytes(dotIndex);
-            for (uint256 i = 0; i < dotIndex; i++) {
-                bl[i] = b[i];
-            }
-
-            uint256 nsLen = b.length - dotIndex - 1;
-            bytes memory bn = new bytes(nsLen);
-            for (uint256 i = 0; i < nsLen; i++) {
-                bn[i] = b[dotIndex + 1 + i];
-            }
-
-            label = string(bl);
-            namespace_ = string(bn);
+            // No dot: append ".x" (e.g., "nike" -> "nike.x")
+            key = keccak256(abi.encodePacked(fullName, ".", SPECIAL_NAMESPACE));
         }
 
-        _validateLabel(label);
-        _validateNamespace(namespace_);
-
-        return getAddress(label, namespace_);
+        return _records[key];
     }
 
     /// @notice Reverse lookup: get the XNS name (label, namespace) for an address.
@@ -480,14 +449,5 @@ contract XNSRegistry {
     function _burn(uint256 amount, address recipient) internal {
         if (amount == 0) return;
         IDETH(DETH).burn{value: amount}(recipient);
-    }
-
-    // Disallow plain ETH transfers.
-    receive() external payable {
-        revert("XNS: direct ETH not allowed");
-    }
-
-    fallback() external payable {
-        revert("XNS: fallback not allowed");
     }
 }

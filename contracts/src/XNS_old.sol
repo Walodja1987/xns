@@ -20,7 +20,7 @@ import {IDETH} from "./IDETH.sol";
  * @author Wladimir Weinbender
  * @notice This contract provides a simple on-chain name service.
  */
-contract XNS is IXNS {
+contract XNS_old is IXNS {
     struct UserNames {
         string[] names;
         mapping(bytes32 => bool) ownsName;
