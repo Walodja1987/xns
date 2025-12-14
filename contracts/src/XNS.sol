@@ -14,6 +14,8 @@ import {IDETH} from "./IDETH.sol";
 //                          //
 //////////////////////////////
 
+// @todo Add function to query price for a namespace
+
 /// @title XNS
 /// @notice Ethereum-only name registry: ETH amount -> namespace, (label, namespace) -> address.
 /// @dev
@@ -62,7 +64,7 @@ contract XNS {
     mapping(address => Name) private _reverseName;
 
     /// @dev address of contract creator (deployer).
-    address public immutable creator;
+    address public immutable xnsContractCreator;
 
     /// @dev deployment timestamp.
     uint64 public immutable deployedAt;
@@ -112,6 +114,10 @@ contract XNS {
     // -------------------------------------------------------------------------
 
     constructor() {
+        // Set contract creator and deployment timestamp.
+        xnsContractCreator = msg.sender;
+        deployedAt = uint64(block.timestamp);
+
         // Register special namespace "x" as the very first namespace.
         bytes32 nsHash = keccak256(bytes(SPECIAL_NAMESPACE));
         _namespaces[nsHash] = NamespaceData({
@@ -141,7 +147,7 @@ contract XNS {
     /// - `msg.sender` must not already have a name.
     /// - Name is immutable once set.
     /// - ETH is burned via DETH contract, crediting `msg.sender` with DETH.
-    function register(
+    function registerName(
         string calldata label
     ) external payable {
         require(_isValidLabel(label), "XNS: invalid label");
@@ -212,7 +218,7 @@ contract XNS {
         require(existing.creator == address(0), "XNS: namespace already exists");
 
         bool creatorDiscount = (
-            msg.sender == creator &&
+            msg.sender == xnsContractCreator &&
             block.timestamp < deployedAt + CREATOR_FREE_NAMESPACE_PERIOD
         );
 
@@ -347,7 +353,7 @@ contract XNS {
         view
         returns (
             uint256 pricePerName,
-            address creator_,
+            address creator,
             uint64 createdAt,
             uint16 remainingFreeNames
         )
