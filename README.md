@@ -1,3 +1,8 @@
+# TODO
+* Register ".defi" namespace and then assign free protocol names. Use a rather higher value for that domain (e.g., 50 ETH) for naming
+
+
+
 Perfect, thanks for the style guide — that helps a lot.
 Below is **fresh documentation for the *current* XNS design**, written in the *same tone and structure*, but accurately reflecting what we actually built (no ENS migration, no transfers, no DETH, etc.).
 

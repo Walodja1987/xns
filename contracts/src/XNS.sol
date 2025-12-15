@@ -17,6 +17,7 @@ import {IDETH} from "./IDETH.sol";
 // @todo Add function to query price for a namespace
 // @todo Add function to check existence of a name
 // @todo shall we allow "_" as well? same treatment as "-" ?
+// @todo disallow registering name spaces during the first year?
 
 /// @title XNS
 /// @notice Ethereum-only name registry: ETH amount -> namespace, (label, namespace) -> address.
@@ -68,6 +69,12 @@ contract XNS {
     /// @dev reverse mapping: address -> (label, namespace).
     /// If label is empty, the address has no name.
     mapping(address => Name) private _reverseName;
+
+    /// @dev commitment -> commit timestamp (seconds since epoch)
+    mapping(bytes32 => uint64) private _nameCommitTime;
+
+    /// @dev commitment -> commit timestamp (seconds since epoch)
+    mapping(bytes32 => uint64) private _namespaceCommitTime;
 
     // -------------------------------------------------------------------------
     // Constants
@@ -180,6 +187,28 @@ contract XNS {
         emit NamespaceCommitted(commitment, msg.sender, uint64(block.timestamp));
     }
 
+    /// @notice Register a paid name for msg.sender. Namespace is determined by msg.value.
+    /// @dev One-tx path (no commit required).
+    function registerName(string calldata label) external payable {
+        _registerName(label);
+    }
+
+    /// @notice Register a paid name for msg.sender using commit-reveal.
+    /// @dev Requires a prior commitLabel(commitment) and a 60s delay.
+    ///      Commitment binds to (label, msg.sender, secret). Not to tier/price.
+    function registerNameWithCommit(string calldata label, bytes32 secret) external payable {
+        bytes32 commitment = keccak256(abi.encodePacked(label, msg.sender, secret));
+        
+        // Commit-reveal validation
+        uint64 t = _nameCommitTime[commitment];
+        require(t != 0, "XNS: no commitment");
+        require(block.timestamp >= t + MIN_COMMIT_DELAY, "XNS: too early");
+        require(block.timestamp <= t + MAX_COMMIT_AGE, "XNS: commitment expired");
+        delete _nameCommitTime[commitment];
+        
+        _registerName(label);
+    }
+
     /// @notice Register a name for `msg.sender`.
     /// @dev
     /// - `msg.value` is the price-per-name and determines the namespace.
@@ -191,9 +220,9 @@ contract XNS {
     /// - `msg.sender` must not already have a name.
     /// - Name is immutable once set.
     /// - ETH is burned via DETH contract, crediting `msg.sender` with DETH.
-    function registerName(
+    function _registerName(
         string calldata label
-    ) external payable {
+    ) internal {
         require(_isValidLabel(label), "XNS: invalid label");
 
         uint256 pricePerName = msg.value;
@@ -233,6 +262,32 @@ contract XNS {
         IDETH(DETH).burn{value: msg.value}(msg.sender);
     }
 
+    /// @notice Register a new namespace and assign a price-per-name.
+    /// @dev One-tx path (no commit required).
+    function registerNamespace(string calldata namespace_, uint256 pricePerName) external payable {
+        _registerNamespace(namespace_, pricePerName);
+    }
+
+    /// @notice Register a new namespace using commit-reveal.
+    /// @dev Requires a prior commitNamespace(commitment) and a 60s delay.
+    function registerNamespaceWithCommit(
+        string calldata namespace_,
+        uint256 pricePerName,
+        bytes32 secret
+    ) external payable {
+        // commitment binds to namespace + msg.sender + secret (not price)
+        bytes32 commitment = keccak256(abi.encodePacked(namespace_, msg.sender, secret));
+        
+        // Commit-reveal validation
+        uint64 t = _namespaceCommitTime[commitment];
+        require(t != 0, "XNS: no commitment");
+        require(block.timestamp >= t + MIN_COMMIT_DELAY, "XNS: too early");
+        require(block.timestamp <= t + MAX_COMMIT_AGE, "XNS: commitment expired");
+        delete _namespaceCommitTime[commitment];
+        
+        _registerNamespace(namespace_, pricePerName);
+    }
+
     /// @notice Register a new namespace and assign a price-per-name to it.
     /// @dev
     /// - Anyone can call this.
@@ -243,10 +298,10 @@ contract XNS {
     /// - `namespace_` must be unique, 1–4 chars, only [a-z0-9], and not "eth".
     /// - The fee (if any) is burned.
     /// - The creator gets up to 200 free names for this namespace (usable anytime).
-    function registerNamespace(
+    function _registerNamespace(
         string calldata namespace_,
         uint256 pricePerName
-    ) external payable {
+    ) internal {
         require(_isValidNamespace(namespace_), "XNS: invalid namespace");
 
         // Forbid "eth" namespace to avoid confusion with ENS.
@@ -268,12 +323,12 @@ contract XNS {
         // Prevent namespace from being registered again with a different price.
         require(ns.creator == address(0), "XNS: namespace already exists");
 
-        bool creatorDiscount = (
+        bool isWithinFreePeriod = (
             msg.sender == xnsContractCreator &&
             block.timestamp < deployedAt + CREATOR_FREE_NAMESPACE_PERIOD
         );
 
-        if (creatorDiscount) {
+        if (isWithinFreePeriod) {
             require(msg.value == 0, "XNS: creator pays no fee in first year");
         } else {
             require(msg.value == NAMESPACE_REGISTRATION_FEE, "XNS: wrong namespace fee");
@@ -291,6 +346,9 @@ contract XNS {
         emit NamespaceRegistered(namespace_, pricePerName, msg.sender);
 
         // Burn ETH via DETH contract and credit `msg.sender` with DETH.
+        // `msg.value` could be zero if the xnsContractCreator is registering the namespace during the
+        // first year after the contract was deployed, but zero `msg.value` check skipped
+        // to save gas (DETHburn function does not revert if `msg.value` is zero).
         IDETH(DETH).burn{value: msg.value}(msg.sender);
     }
 
@@ -323,6 +381,7 @@ contract XNS {
             address owner = claims[i].owner;
 
             require(_isValidLabel(label), "XNS: invalid label");
+            require(owner != address(0), "XNS: 0x owner"); // Disallow naming the zero address
             require(
                 bytes(_reverseName[owner].label).length == 0,
                 "XNS: owner already has a name"
@@ -350,32 +409,45 @@ contract XNS {
 
     /// @notice Get the address for a full name string like "nike", "nike.x", "vitalik.001".
     /// @dev
-    /// - If `fullName` contains no dot, it's treated as `fullName.x` (special namespace).
-    /// - If it contains a dot, it's used as-is (format: `label.namespace`).
+    /// - "label" (no dot) is treated as "label.x" (special namespace).
+    /// - Otherwise split at the last dot and interpret as "label.namespace".
+    /// - Returns address(0) if not registered.
     function getAddress(
         string calldata fullName
     ) external view returns (address owner) {
         bytes memory b = bytes(fullName);
-        require(b.length > 0, "XNS: empty name");
+        if (b.length == 0) revert("XNS: empty name");
 
-        // Check if contains a dot
-        bool hasDot = false;
+        int256 lastDot = -1;
         for (uint256 i = 0; i < b.length; i++) {
-            if (b[i] == 0x2E) { // '.'
-                hasDot = true;
-                break;
-            }
+            if (b[i] == 0x2E) lastDot = int256(i); // '.'
         }
 
-        bytes32 key;
-        if (hasDot) {
-            // Has dot: use fullName as-is (e.g., "nike.x" or "vitalik.001")
-            key = keccak256(abi.encodePacked(fullName));
+        string memory label;
+        string memory namespace_;
+
+        if (lastDot == -1) {
+            label = fullName;
+            namespace_ = SPECIAL_NAMESPACE;
         } else {
-            // No dot: append ".x" (e.g., "nike" -> "nike.x")
-            key = keccak256(abi.encodePacked(fullName, ".", SPECIAL_NAMESPACE));
+            uint256 dotIndex = uint256(lastDot);
+            if (dotIndex == 0 || dotIndex >= b.length - 1) revert("XNS: invalid full name");
+
+            bytes memory bl = new bytes(dotIndex);
+            for (uint256 i = 0; i < dotIndex; i++) bl[i] = b[i];
+
+            uint256 nsLen = b.length - dotIndex - 1;
+            bytes memory bn = new bytes(nsLen);
+            for (uint256 i = 0; i < nsLen; i++) bn[i] = b[dotIndex + 1 + i];
+
+            label = string(bl);
+            namespace_ = string(bn);
         }
 
+        require(_isValidLabel(label), "XNS: invalid label");
+        require(_isValidNamespace(namespace_), "XNS: invalid namespace");
+
+        bytes32 key = keccak256(abi.encodePacked(label, ".", namespace_));
         return _records[key];
     }
 
@@ -514,11 +586,9 @@ contract XNS {
 
         for (uint256 i = 0; i < len; i++) {
             bytes1 c = b[i];
-
             bool isLowercaseLetter = (c >= 0x61 && c <= 0x7A); // 'a'..'z'
             bool isDigit           = (c >= 0x30 && c <= 0x39); // '0'..'9'
             bool isHyphen          = (c == 0x2D);              // '-'
-
             if (!(isLowercaseLetter || isDigit || isHyphen)) return false;
         }
 
@@ -538,10 +608,8 @@ contract XNS {
 
         for (uint256 i = 0; i < len; i++) {
             bytes1 c = b[i];
-
             bool isLowercaseLetter = (c >= 0x61 && c <= 0x7A); // 'a'..'z'
             bool isDigit           = (c >= 0x30 && c <= 0x39); // '0'..'9'
-
             if (!(isLowercaseLetter || isDigit)) return false;
         }
 
