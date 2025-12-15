@@ -15,6 +15,8 @@ import {IDETH} from "./IDETH.sol";
 //////////////////////////////
 
 // @todo Add function to query price for a namespace
+// @todo Add function to check existence of a name
+// @todo shall we allow "_" as well? same treatment as "-" ?
 
 /// @title XNS
 /// @notice Ethereum-only name registry: ETH amount -> namespace, (label, namespace) -> address.
@@ -30,7 +32,7 @@ import {IDETH} from "./IDETH.sol";
 /// - Bare labels (e.g. "nike") are treated as "nike.x" (the special namespace).
 contract XNS {
     // -------------------------------------------------------------------------
-    // Types & Storage
+    // Types
     // -------------------------------------------------------------------------
 
     struct NamespaceData {
@@ -50,6 +52,10 @@ contract XNS {
         string namespace_;
     }
 
+    // -------------------------------------------------------------------------
+    // Storage (private, accessed via getters)
+    // -------------------------------------------------------------------------
+
     /// @dev mapping from keccak256(label, ".", namespace) to owner address.
     mapping(bytes32 => address) private _records;
 
@@ -62,6 +68,10 @@ contract XNS {
     /// @dev reverse mapping: address -> (label, namespace).
     /// If label is empty, the address has no name.
     mapping(address => Name) private _reverseName;
+
+    // -------------------------------------------------------------------------
+    // Constants
+    // -------------------------------------------------------------------------
 
     /// @dev address of contract creator (deployer).
     address public immutable xnsContractCreator;
@@ -93,20 +103,36 @@ contract XNS {
     /// @dev Address of DETH contract used to burn ETH and credit the recipient.
     address public constant DETH = 0xE46861C9f28c46F27949fb471986d59B256500a7;
 
+    /// @dev Commit-reveal timing.
+    uint256 public constant MIN_COMMIT_DELAY = 60 seconds;
+    uint256 public constant MAX_COMMIT_AGE = 1 days;
+
     // -------------------------------------------------------------------------
     // Events
     // -------------------------------------------------------------------------
 
     event NameRegistered(
         string indexed label,
-        string indexed namespace_,
+        string indexed namespace,
         address indexed owner
     );
 
     event NamespaceRegistered(
-        string indexed namespace_,
+        string indexed namespace,
         uint256 pricePerName,
         address indexed creator
+    );
+
+    event LabelCommitted(
+        bytes32 indexed commitment,
+        address indexed committer,
+        uint64 timestamp
+    );
+    
+    event NamespaceCommitted(
+        bytes32 indexed commitment,
+        address indexed committer,
+        uint64 timestamp
     );
 
     // -------------------------------------------------------------------------
@@ -136,6 +162,24 @@ contract XNS {
     // STATE-MODIFYING FUNCTIONS
     // =========================================================================
 
+    /// @notice Commit to a label using a commitment hash.
+    /// @dev Commitment binds to (label, owner, secret). Not to tier/price.
+    function commitLabel(bytes32 commitment) external {
+        require(commitment != bytes32(0), "XNS: zero commitment");
+        require(_nameCommitTime[commitment] == 0, "XNS: commitment exists");
+        _nameCommitTime[commitment] = uint64(block.timestamp);
+        emit LabelCommitted(commitment, msg.sender, uint64(block.timestamp));
+    }
+
+    /// @notice Commit to a namespace using a commitment hash.
+    /// @dev Commitment binds to (namespace, owner, secret). Not to pricePerName.
+    function commitNamespace(bytes32 commitment) external {
+        require(commitment != bytes32(0), "XNS: zero commitment");
+        require(_namespaceCommitTime[commitment] == 0, "XNS: commitment exists");
+        _namespaceCommitTime[commitment] = uint64(block.timestamp);
+        emit NamespaceCommitted(commitment, msg.sender, uint64(block.timestamp));
+    }
+
     /// @notice Register a name for `msg.sender`.
     /// @dev
     /// - `msg.value` is the price-per-name and determines the namespace.
@@ -155,12 +199,16 @@ contract XNS {
         uint256 pricePerName = msg.value;
         require(pricePerName > 0, "XNS: zero price");
 
+        // Determine namespace from pricePerName.
         string memory namespace_ = _priceToNamespace[pricePerName];
+        // Prevent the same price from being mapped to multiple namespaces.
         require(bytes(namespace_).length != 0, "XNS: non-existent namespace");
 
         // Load namespace metadata (we trust it exists because of the price mapping invariant).
         bytes32 nsHash = keccak256(bytes(namespace_));
         NamespaceData storage ns = _namespaces[nsHash];
+        // Prevent namespace from being registered again with a different price.
+        require(ns.creator != address(0), "XNS: namespace not found");
 
         // During exclusive period, only namespace creator can register paid names.
         if (block.timestamp < ns.createdAt + NS_CREATOR_EXCLUSIVE_PERIOD) {
@@ -181,7 +229,8 @@ contract XNS {
 
         emit NameRegistered(label, namespace_, msg.sender);
 
-        _burn(msg.value, msg.sender);
+        // Burn ETH via DETH contract and credit `msg.sender` with DETH.
+        IDETH(DETH).burn{value: msg.value}(msg.sender);
     }
 
     /// @notice Register a new namespace and assign a price-per-name to it.
@@ -208,14 +257,16 @@ contract XNS {
             pricePerName % PRICE_STEP == 0,
             "XNS: price must be multiple of 0.001 ETH"
         );
+        // Prevent the same price from being mapped to multiple namespaces.
         require(
             bytes(_priceToNamespace[pricePerName]).length == 0,
             "XNS: price already in use"
         );
 
         bytes32 nsHash = keccak256(bytes(namespace_));
-        NamespaceData storage existing = _namespaces[nsHash];
-        require(existing.creator == address(0), "XNS: namespace already exists");
+        NamespaceData storage ns = _namespaces[nsHash];
+        // Prevent namespace from being registered again with a different price.
+        require(ns.creator == address(0), "XNS: namespace already exists");
 
         bool creatorDiscount = (
             msg.sender == xnsContractCreator &&
@@ -239,7 +290,8 @@ contract XNS {
 
         emit NamespaceRegistered(namespace_, pricePerName, msg.sender);
 
-        _burn(msg.value, msg.sender);
+        // Burn ETH via DETH contract and credit `msg.sender` with DETH.
+        IDETH(DETH).burn{value: msg.value}(msg.sender);
     }
 
     /// @notice Creator-only free registration (can be used any time).
@@ -408,6 +460,44 @@ contract XNS {
         return _isValidNamespace(namespace_);
     }
 
+    /// @notice Helper to compute a label commitment off-chain or on-chain.
+    /// @dev Commitment binds to (label, owner, secret).
+    function makeLabelCommitment(
+        string calldata label,
+        address owner,
+        bytes32 secret
+    ) external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(label, owner, secret));
+    }
+
+    /// @notice Helper to compute a namespace commitment off-chain or on-chain.
+    /// @dev Commitment binds to (namespace, owner, secret).
+    function makeNamespaceCommitment(
+        string calldata namespace_,
+        address owner,
+        bytes32 secret
+    ) external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(namespace_, owner, secret));
+    }
+
+    /// @notice Check whether a name commitment is currently revealable.
+    function canRevealName(bytes32 commitment) external view returns (bool) {
+        uint64 t = _nameCommitTime[commitment];
+        if (t == 0) return false;
+        if (block.timestamp < t + MIN_COMMIT_DELAY) return false;
+        if (block.timestamp > t + MAX_COMMIT_AGE) return false;
+        return true;
+    }
+
+    /// @notice Check whether a namespace commitment is currently revealable.
+    function canRevealNamespace(bytes32 commitment) external view returns (bool) {
+        uint64 t = _namespaceCommitTime[commitment];
+        if (t == 0) return false;
+        if (block.timestamp < t + MIN_COMMIT_DELAY) return false;
+        if (block.timestamp > t + MAX_COMMIT_AGE) return false;
+        return true;
+    }
+
     // =========================================================================
     // INTERNAL HELPERS
     // =========================================================================
@@ -456,11 +546,5 @@ contract XNS {
         }
 
         return true;
-    }
-
-    /// @dev Burn ETH via DETH contract, crediting the recipient with DETH.
-    function _burn(uint256 amount, address recipient) internal {
-        if (amount == 0) return;
-        IDETH(DETH).burn{value: amount}(recipient);
     }
 }
