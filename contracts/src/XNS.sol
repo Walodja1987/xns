@@ -16,8 +16,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 //                          //
 //////////////////////////////
 
-// @todo Add function to query price for a namespace
-// @todo Add function to check existence of a name
 // @todo shall we allow "_" as well? same treatment as "-" ?
 // @todo disallow registering name spaces during the first year?
 
@@ -72,6 +70,9 @@ contract XNS is Ownable2Step {
     /// If label is empty, the address has no name.
     mapping(address => Name) private _reverseName;
 
+    /// @dev mapping from address to pending fees (in wei) that can be claimed.
+    mapping(address => uint256) private _pendingFees;
+
     // -------------------------------------------------------------------------
     // Constants
     // -------------------------------------------------------------------------
@@ -88,8 +89,8 @@ contract XNS is Ownable2Step {
     /// @dev duration of the exclusive namespace-creator window for paid registrations.
     uint256 public constant NS_CREATOR_EXCLUSIVE_PERIOD = 30 days;
 
-    /// @dev period during which the contract creator pays no namespace fee.
-    uint256 public constant CREATOR_FREE_NAMESPACE_PERIOD = 365 days;
+    /// @dev period after contract deployment during which the owner pays no namespace registration fee.
+    uint256 public constant INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD  = 365 days; // @todo reduce to 3 months (90 days)? ; this period may disincentivize early namespace registrations because I could theoretically front-run them -> document properly.
 
     /// @dev unit price step (0.001 ETH).
     uint256 public constant PRICE_STEP = 1e15; // 0.001 ether
@@ -111,32 +112,35 @@ contract XNS is Ownable2Step {
 
     event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator);
 
+    event FeesClaimed(address indexed recipient, uint256 amount);
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(address owner_) Ownable(owner_) {
+    constructor(address _owner) Ownable(_owner) {
         deployedAt = uint64(block.timestamp);
 
         // Register special namespace "x" as the very first namespace.
         bytes32 nsHash = keccak256(bytes(SPECIAL_NAMESPACE));
         _namespaces[nsHash] = NamespaceData({
             pricePerName: SPECIAL_NAMESPACE_PRICE,
-            creator: owner_,
+            creator: _owner, // @todo What if owner changes? then they won't be able to use the free names?
             createdAt: uint64(block.timestamp),
             remainingFreeNames: MAX_FREE_NAMES_PER_NAMESPACE
         });
 
         _priceToNamespace[SPECIAL_NAMESPACE_PRICE] = SPECIAL_NAMESPACE;
 
-        emit NamespaceRegistered(SPECIAL_NAMESPACE, SPECIAL_NAMESPACE_PRICE, owner_);
+        emit NamespaceRegistered(SPECIAL_NAMESPACE, SPECIAL_NAMESPACE_PRICE, _owner);
     }
 
     // =========================================================================
     // STATE-MODIFYING FUNCTIONS
     // =========================================================================
 
-    /// @notice Register a paid name for msg.sender. Namespace is determined by msg.value.
+    /// @notice Register a paid name for `msg.sender`. Namespace is determined by `msg.value`.
+    /// @dev During exclusive period following namespace registration, only namespace creator can register paid names.
     function registerName(string calldata label) external payable {
         require(_isValidLabel(label), "XNS: invalid label");
 
@@ -151,7 +155,7 @@ contract XNS is Ownable2Step {
         bytes32 nsHash = keccak256(bytes(namespace_));
         NamespaceData storage ns = _namespaces[nsHash];
 
-        // During exclusive period, only namespace creator can register paid names.
+        // During exclusive period following namespace registration, only namespace creator can register paid names.
         // A namespace creator would typically first claim free names via the `claimFreeNames` function
         // before registering paid names.
         if (block.timestamp < ns.createdAt + NS_CREATOR_EXCLUSIVE_PERIOD) {
@@ -170,10 +174,12 @@ contract XNS is Ownable2Step {
         emit NameRegistered(label, namespace_, msg.sender);
 
         // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
-        _distributeFees(msg.value, ns.creator);
+        _burnETHAndCreditFees(msg.value, ns.creator);
     }
 
     /// @notice Register a new namespace and assign a price-per-name.
+    /// During initial owner namespace registration period, the owner pays no namespace registration fee.
+    /// Anyone else can register a namespace for a fee, even within the initial owner namespace registration period. @todo Check whether you want to shorten this period, otherwise no incentive for others to participate
     function registerNamespace(string calldata namespace_, uint256 pricePerName) external payable {
         require(_isValidNamespace(namespace_), "XNS: invalid namespace");
 
@@ -190,12 +196,7 @@ contract XNS is Ownable2Step {
         NamespaceData storage existing = _namespaces[nsHash];
         require(existing.creator == address(0), "XNS: namespace already exists");
 
-        // @todo find better name for this as this seems to be only for owner?? or for any contract creator?
-        bool isWithinFreePeriod = (
-            msg.sender == owner() && block.timestamp < deployedAt + CREATOR_FREE_NAMESPACE_PERIOD
-        );
-
-        if (isWithinFreePeriod) {
+        if (msg.sender == owner() && block.timestamp < deployedAt + INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD) {
             require(msg.value == 0, "XNS: creator pays no fee in first year");
         } else {
             require(msg.value == NAMESPACE_REGISTRATION_FEE, "XNS: wrong namespace fee");
@@ -213,13 +214,25 @@ contract XNS is Ownable2Step {
         emit NamespaceRegistered(namespace_, pricePerName, msg.sender);
 
         // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
-        // If msg.value is 0 (free period), no fees are distributed.
+        // `msg.value` = 0 within initial owner namespace registration period (365 days after contract deployment).
         if (msg.value > 0) {
-            _distributeFees(msg.value, msg.sender);
+            _burnETHAndCreditFees(msg.value, msg.sender);
         }
     }
 
-    // @todo Only credit fees and let user claim them later?
+    /// @notice Claim accumulated fees for msg.sender.
+    /// @dev Withdraws all pending fees credited to the caller.
+    function claimFees() external {
+        uint256 amount = _pendingFees[msg.sender];
+        require(amount > 0, "XNS: no fees to claim");
+
+        _pendingFees[msg.sender] = 0;
+
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success, "XNS: fee transfer failed");
+
+        emit FeesClaimed(msg.sender, amount);
+    }
 
     /// @notice Creator-only free registration (can be used any time).
     /// @dev
@@ -355,15 +368,19 @@ contract XNS is Ownable2Step {
         return _isValidNamespace(namespace_);
     }
 
+    /// @notice Get the amount of pending fees that can be claimed by an address.
+    function pendingFees(address recipient) external view returns (uint256) {
+        return _pendingFees[recipient];
+    }
+
     // =========================================================================
     // INTERNAL HELPERS
     // =========================================================================
 
-    /// @dev Distribute fees: 90% burnt via DETH, 5% to namespace creator, 5% to contract owner.
-    ///      If namespace creator equals contract owner, they receive 10% total.
+    /// @dev Distribute fees: 90% burnt via DETH, 5% credited to namespace creator, 5% credited to contract owner.
     /// @param totalAmount The total amount to distribute.
     /// @param namespaceCreator The address of the namespace creator.
-    function _distributeFees(uint256 totalAmount, address namespaceCreator) internal {
+    function _burnETHAndCreditFees(uint256 totalAmount, address namespaceCreator) internal {
         uint256 burnAmount = totalAmount * 90 / 100;
         uint256 creatorFee = totalAmount * 5 / 100;
         uint256 ownerFee = totalAmount - burnAmount - creatorFee; // Ensures exact 100% distribution
@@ -373,22 +390,12 @@ contract XNS is Ownable2Step {
         // Burn 90% via DETH contract and credit `msg.sender` with DETH.
         IDETH(DETH).burn{value: burnAmount}(msg.sender);
 
-        // If namespace creator equals contract owner, send them 10% total.
-        // @todo question whether we want to simplify this and simply always send 2 tx
-        if (namespaceCreator == contractOwner) {
-            (bool success, ) = contractOwner.call{value: creatorFee + ownerFee}("");
-            require(success, "XNS: fee transfer failed");
-        } else {
-            // Send 5% to namespace creator.
-            if (creatorFee > 0) {
-                (bool success1, ) = namespaceCreator.call{value: creatorFee}("");
-                require(success1, "XNS: creator fee transfer failed");
-            }
-            // Send 5% to contract owner.
-            if (ownerFee > 0) {
-                (bool success2, ) = contractOwner.call{value: ownerFee}("");
-                require(success2, "XNS: owner fee transfer failed");
-            }
+        // Credit fees to recipients.
+        if (creatorFee > 0) {
+            _pendingFees[namespaceCreator] += creatorFee;
+        }
+        if (ownerFee > 0) {
+            _pendingFees[contractOwner] += ownerFee;
         }
     }
 
