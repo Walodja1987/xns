@@ -2,6 +2,8 @@
 pragma solidity 0.8.28;
 
 import {IDETH} from "./IDETH.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 //////////////////////////////
 //                          //
@@ -31,7 +33,7 @@ import {IDETH} from "./IDETH.sol";
 /// - Each address can own at most one XNS name globally.
 /// - "eth" namespace is forbidden to avoid confusion with ENS.
 /// - Bare labels (e.g. "nike") are treated as "nike.x" (the special namespace).
-contract XNS {
+contract XNS is Ownable2Step {
     // -------------------------------------------------------------------------
     // Types
     // -------------------------------------------------------------------------
@@ -74,9 +76,6 @@ contract XNS {
     // Constants
     // -------------------------------------------------------------------------
 
-    /// @dev address of contract creator (deployer).
-    address public immutable xnsContractCreator;
-
     /// @dev deployment timestamp.
     uint64 public immutable deployedAt;
 
@@ -116,22 +115,21 @@ contract XNS {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor() {
-        xnsContractCreator = msg.sender;
+    constructor(address owner_) Ownable(owner_) {
         deployedAt = uint64(block.timestamp);
 
         // Register special namespace "x" as the very first namespace.
         bytes32 nsHash = keccak256(bytes(SPECIAL_NAMESPACE));
         _namespaces[nsHash] = NamespaceData({
             pricePerName: SPECIAL_NAMESPACE_PRICE,
-            creator: msg.sender,
+            creator: owner_,
             createdAt: uint64(block.timestamp),
             remainingFreeNames: MAX_FREE_NAMES_PER_NAMESPACE
         });
 
         _priceToNamespace[SPECIAL_NAMESPACE_PRICE] = SPECIAL_NAMESPACE;
 
-        emit NamespaceRegistered(SPECIAL_NAMESPACE, SPECIAL_NAMESPACE_PRICE, msg.sender);
+        emit NamespaceRegistered(SPECIAL_NAMESPACE, SPECIAL_NAMESPACE_PRICE, owner_);
     }
 
     // =========================================================================
@@ -190,8 +188,9 @@ contract XNS {
         NamespaceData storage existing = _namespaces[nsHash];
         require(existing.creator == address(0), "XNS: namespace already exists");
 
+        // @todo find better name for this as this seems to be only for owner?? or for any contract creator?
         bool isWithinFreePeriod = (
-            msg.sender == xnsContractCreator && block.timestamp < deployedAt + CREATOR_FREE_NAMESPACE_PERIOD
+            msg.sender == owner() && block.timestamp < deployedAt + CREATOR_FREE_NAMESPACE_PERIOD
         );
 
         if (isWithinFreePeriod) {

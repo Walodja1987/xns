@@ -1,13 +1,6 @@
 # TODO
 * Register ".defi" namespace and then assign free protocol names. Use a rather higher value for that domain (e.g., 50 ETH) for naming
 
-
-
-Perfect, thanks for the style guide — that helps a lot.
-Below is **fresh documentation for the *current* XNS design**, written in the *same tone and structure*, but accurately reflecting what we actually built (no ENS migration, no transfers, no DETH, etc.).
-
-I’ve intentionally kept it **clean, honest, and minimal**, aligned with your “v1 is a simple immutable registry” philosophy.
-
 ---
 
 # XNS – The On-Chain Name Service
@@ -28,6 +21,7 @@ I’ve intentionally kept it **clean, honest, and minimal**, aligned with your �
 ## 🚀 Overview
 
 **XNS** is a decentralized, Ethereum-native name registry that maps **human-readable names to Ethereum addresses**.
+
 Names are acquired by **burning ETH** and are **permanent, immutable, and non-transferable**.
 
 XNS is intentionally simple:
@@ -38,7 +32,7 @@ XNS is intentionally simple:
 * No speculation
 * No off-chain dependencies
 
-Once a name is registered, it is forever linked to the owner’s address.
+Once a name is registered, it is **forever** linked to the owner’s address.
 
 ---
 
@@ -60,10 +54,10 @@ If you register a name, it is yours **forever**.
 
 Names are registered by **burning ETH**.
 
-* The ETH is burned via the **DETH** contract
-* When ETH is burned, the sender is credited **DETH**
+* ETH is burned via the **DETH** contract
+* The sender is credited **DETH** 1:1
 * Burned ETH is permanently removed from circulation
-* The burn amount determines the **namespace** of the name
+* The **amount of ETH burned determines the namespace**
 
 There is no secondary market and no resale incentive.
 
@@ -83,12 +77,12 @@ This guarantees:
 
 ### 🧠 Fully On-Chain Resolution
 
-XNS supports both:
+XNS supports:
 
 * **Forward lookup:** name → address
 * **Reverse lookup:** address → name
 
-Both are available via on-chain view functions and can be queried directly via Etherscan — no indexers required.
+All resolution is done via on-chain view functions and can be queried directly via **Etherscan** — no indexers required.
 
 ---
 
@@ -100,7 +94,7 @@ An XNS name consists of:
 <label>.<namespace>
 ```
 
-Example:
+Examples:
 
 ```
 vitalik.001
@@ -108,16 +102,21 @@ alice.yolo
 nike.x
 ```
 
+---
+
 ### 🔹 Labels
 
-The label is the name chosen by the user.
+The label is the user-chosen part of the name.
 
 Rules:
 
-* 1–20 characters
-* Lowercase letters `a–z`
-* Numbers `0–9`
-* Hyphen `-` allowed (not at start or end)
+* Length: **1–20 characters**
+* Allowed characters:
+
+  * `a–z`
+  * `0–9`
+  * `-` (hyphen)
+* Hyphen **cannot** be the first or last character
 
 Examples:
 
@@ -130,23 +129,23 @@ Examples:
 
 ### 🔹 Namespaces
 
-The namespace is determined by the **amount of ETH burned** during registration.
+Namespaces are determined **entirely by the ETH amount burned** during registration.
 
 * Namespaces are **permissionless**
 * Anyone can create a namespace by paying a one-time fee
-* Each namespace has a fixed price per name
+* Each namespace has a **fixed price per name**
 
 Namespace rules:
 
-* 1–4 characters
-* Lowercase letters `a–z` and digits `0–9`
-* The namespace `"eth"` is forbidden to avoid confusion with ENS
+* Length: **1–4 characters**
+* Allowed characters: `a–z`, `0–9`
+* The namespace `"eth"` is **forbidden** to avoid confusion with ENS
 
 ---
 
 ## ⭐ The Special Namespace `.x`
 
-XNS includes a **special namespace** called:
+XNS includes a **special premium namespace**:
 
 ```
 .x
@@ -154,25 +153,30 @@ XNS includes a **special namespace** called:
 
 This namespace represents **suffix-free names**.
 
-### How it works:
+### How it works
 
-* Registering `label` **without specifying a namespace** implicitly registers:
+* Registering a label **without a dot** implicitly registers:
 
   ```
   label.x
   ```
-* The `.x` namespace is intentionally **expensive** to ensure rarity.
 
-### Pricing:
+* Resolution treats both forms as equivalent:
+
+  ```
+  getAddress("nike")  == getAddress("nike.x")
+  ```
+
+### Pricing
 
 * `.x` names cost **100 ETH**
 * Example:
 
   ```
-  nike.x   → displayed simply as "nike"
+  nike.x  → displayed simply as "nike"
   ```
 
-The `.x` namespace is **not a default** — it is a **premium, special namespace**.
+The `.x` namespace is **not a default** — it is a **premium, scarce namespace**.
 
 ---
 
@@ -182,12 +186,12 @@ Namespaces are mapped to **exact ETH amounts**, in increments of **0.001 ETH**.
 
 Examples:
 
-| ETH Burn  | Name                 |
-| --------- | -------------------- |
+|  ETH Burn | Name                 |
+| --------: | -------------------- |
 | 0.001 ETH | alice.001            |
 | 0.250 ETH | alice.250            |
 | 0.999 ETH | alice.999            |
-| 100 ETH   | alice (i.e. alice.x) |
+|   100 ETH | alice (i.e. alice.x) |
 
 The ETH amount uniquely determines the namespace.
 
@@ -198,23 +202,24 @@ The ETH amount uniquely determines the namespace.
 When a new namespace is created:
 
 * The creator receives **200 free name registrations**
-* These can be assigned to any addresses
-* Free names:
+* Free names can be assigned to **any addresses**
+* Free registrations:
 
-  * Do **not** require ETH
+  * Require **no ETH**
   * Are limited by a **remaining counter**
+  * Can be used **at any time**
 
 ### Remaining Free Names
 
 Each namespace tracks:
 
 ```
-remainingFreeNames (starts at 200)
+remainingFreeNames
 ```
 
+* Starts at **200**
 * Decreases with each free assignment
 * Cannot go below zero
-* Can be used **at any time**, even after public registration opens
 
 ---
 
@@ -222,11 +227,11 @@ remainingFreeNames (starts at 200)
 
 For the first **30 days** after a namespace is created:
 
-* **Only the namespace creator** can register paid names under that namespace
+* **Only the namespace creator** may register **paid** names under that namespace
 
 After 30 days:
 
-* Anyone can register paid names
+* Anyone may register paid names
 * The creator may still use any remaining free names
 
 ---
@@ -236,29 +241,61 @@ After 30 days:
 ### Register a Name
 
 ```solidity
-register(string label) payable
+registerName(string label) payable
 ```
 
 * Burns `msg.value` ETH
-* Namespace is derived from the ETH amount
+* Namespace is derived from `msg.value`
 * Registers `label.namespace` for `msg.sender`
 
+Example:
+
+```solidity
+xns.registerName{value: 0.001 ether}("alice");
+```
+
 ---
+
+### Register a Namespace
+
+```solidity
+registerNamespace(string namespace, uint256 pricePerName) payable
+```
+
+* Registers a new namespace
+* Binds it to `pricePerName`
+* Grants the creator 200 free names
+
+---
+
+### Assign Free Names (Namespace Creator)
+
+```solidity
+claimFreeNames(string namespace, Claim[] claims)
+```
+
+* Creator-only
+* Assigns free names to arbitrary addresses
+* No ETH required
+
+---
+
+## 🔍 Name Resolution
 
 ### Forward Lookup (Name → Address)
 
 ```solidity
-getAddress(string label, string namespace)
 getAddress(string fullName)
 ```
 
 Examples:
 
 ```solidity
-getAddress("vitalik", "001")
-getAddress("vitalik.001")
-getAddress("nike") // resolves nike.x
+getAddress("vitalik.001");
+getAddress("nike");      // resolves nike.x
 ```
+
+Returns `address(0)` if the name is not registered.
 
 ---
 
@@ -278,27 +315,59 @@ If the address has no name, empty strings are returned.
 
 ---
 
-### Namespace Queries
+## 🧠 Namespace Queries
+
+### Query by Namespace
 
 ```solidity
-getNamespace(uint256 price)
 getNamespaceInfo(string namespace)
+```
+
+Returns:
+
+* `pricePerName`
+* `creator`
+* `createdAt`
+* `remainingFreeNames`
+
+---
+
+### Query by Price
+
+```solidity
 getNamespaceInfo(uint256 price)
 ```
 
-These functions allow users to:
+Returns:
 
-* Determine which namespace corresponds to an ETH amount
-* Inspect namespace metadata on-chain
-* Query remaining free names and creator information
+* `namespace`
+* `pricePerName`
+* `creator`
+* `createdAt`
+* `remainingFreeNames`
+
+---
+
+## ⚠️ Front-Running & Design Choice
+
+XNS **does not** use a commit–reveal pattern.
+
+Why?
+
+* On a public blockchain, **reveals are still front-runnable**
+* Commit–reveal hides intent but does **not** prevent motivated actors from racing the final transaction
+* Including commit–reveal would add complexity without providing real guarantees
+
+**Design choice:**
+XNS embraces simplicity and economic deterrence.
+
+For high-value registrations, users may optionally use **private transaction submission**, but this is intentionally kept **outside the protocol**.
 
 ---
 
 ## 📡 Events
 
 ### `NameRegistered`
-
-Emitted whenever a name is registered (paid or free):
 
 ```solidity
 event NameRegistered(
@@ -308,9 +377,11 @@ event NameRegistered(
 );
 ```
 
-### `NamespaceRegistered`
+Emitted on paid or free registration.
 
-Emitted when a new namespace is created:
+---
+
+### `NamespaceRegistered`
 
 ```solidity
 event NamespaceRegistered(
@@ -320,14 +391,16 @@ event NamespaceRegistered(
 );
 ```
 
+Emitted when a namespace is created.
+
 ---
 
 ## 🧾 Contract Address
 
-The XNS contract is deployed on Ethereum:
+**Ethereum Mainnet**
 
-> **Address:** `TBD`
-> (link to Etherscan will be added after deployment)
+> Address: `TBD`
+> (Etherscan link will be added after deployment)
 
 ---
 
@@ -349,8 +422,8 @@ It is designed to be:
 
 ---
 
-If you want, next we can:
+If you want next, we can:
 
-* Tighten language further (more playful vs more serious),
-* Add a **“How to use XNS via Etherscan”** section,
-* Or prepare a **short developer integration guide**.
+* Add a **“How to use XNS via Etherscan”** walkthrough
+* Write a **short protocol integration guide**
+* Or tighten the tone further (more playful vs more formal)
