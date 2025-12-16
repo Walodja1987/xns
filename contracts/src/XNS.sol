@@ -152,6 +152,8 @@ contract XNS is Ownable2Step {
         NamespaceData storage ns = _namespaces[nsHash];
 
         // During exclusive period, only namespace creator can register paid names.
+        // A namespace creator would typically first claim free names via the `claimFreeNames` function
+        // before registering paid names.
         if (block.timestamp < ns.createdAt + NS_CREATOR_EXCLUSIVE_PERIOD) {
             require(msg.sender == ns.creator, "XNS: namespace in exclusive period");
         }
@@ -167,8 +169,8 @@ contract XNS is Ownable2Step {
 
         emit NameRegistered(label, namespace_, msg.sender);
 
-        // Burn ETH via DETH contract and credit `msg.sender` with DETH.
-        IDETH(DETH).burn{value: msg.value}(msg.sender);
+        // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
+        _distributeFees(msg.value, ns.creator);
     }
 
     /// @notice Register a new namespace and assign a price-per-name.
@@ -210,10 +212,14 @@ contract XNS is Ownable2Step {
 
         emit NamespaceRegistered(namespace_, pricePerName, msg.sender);
 
-        // Burn ETH via DETH contract and credit `msg.sender` with DETH.
-        // DETH does not revert on 0 value.
-        IDETH(DETH).burn{value: msg.value}(msg.sender);
+        // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
+        // If msg.value is 0 (free period), no fees are distributed.
+        if (msg.value > 0) {
+            _distributeFees(msg.value, msg.sender);
+        }
     }
+
+    // @todo Only credit fees and let user claim them later?
 
     /// @notice Creator-only free registration (can be used any time).
     /// @dev
@@ -352,6 +358,39 @@ contract XNS is Ownable2Step {
     // =========================================================================
     // INTERNAL HELPERS
     // =========================================================================
+
+    /// @dev Distribute fees: 90% burnt via DETH, 5% to namespace creator, 5% to contract owner.
+    ///      If namespace creator equals contract owner, they receive 10% total.
+    /// @param totalAmount The total amount to distribute.
+    /// @param namespaceCreator The address of the namespace creator.
+    function _distributeFees(uint256 totalAmount, address namespaceCreator) internal {
+        uint256 burnAmount = totalAmount * 90 / 100;
+        uint256 creatorFee = totalAmount * 5 / 100;
+        uint256 ownerFee = totalAmount - burnAmount - creatorFee; // Ensures exact 100% distribution
+
+        address contractOwner = owner();
+
+        // Burn 90% via DETH contract and credit `msg.sender` with DETH.
+        IDETH(DETH).burn{value: burnAmount}(msg.sender);
+
+        // If namespace creator equals contract owner, send them 10% total.
+        // @todo question whether we want to simplify this and simply always send 2 tx
+        if (namespaceCreator == contractOwner) {
+            (bool success, ) = contractOwner.call{value: creatorFee + ownerFee}("");
+            require(success, "XNS: fee transfer failed");
+        } else {
+            // Send 5% to namespace creator.
+            if (creatorFee > 0) {
+                (bool success1, ) = namespaceCreator.call{value: creatorFee}("");
+                require(success1, "XNS: creator fee transfer failed");
+            }
+            // Send 5% to contract owner.
+            if (ownerFee > 0) {
+                (bool success2, ) = contractOwner.call{value: ownerFee}("");
+                require(success2, "XNS: owner fee transfer failed");
+            }
+        }
+    }
 
     /// @dev Check if a label is valid (returns bool, does not revert).
     ///      - non-empty
