@@ -17,7 +17,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 //                          //
 //////////////////////////////
 
-// @todo disallow registering name spaces during the first year?
+
+// @todo shall we maybe get rid of Ownable2Step? There is just one owner. if owner loses access to keys, there will be a fight to claim the fees, but it's better than someone transferring ownership to another wallet that the old owner will not have access to
 
 /// @title XNS
 /// @notice Ethereum-only name registry: ETH amount -> namespace, (label, namespace) -> address.
@@ -182,8 +183,11 @@ contract XNS is IXNS, Ownable2Step {
     }
 
     /// @notice Register a new namespace and assign a price-per-name.
-    /// During initial owner namespace registration period, the owner pays no namespace registration fee.
-    /// Anyone else can register a namespace for a fee, even within the initial owner namespace registration period. @todo Check whether you want to shorten this period, otherwise no incentive for others to participate
+    /// @dev During initial owner namespace registration period (90 days following contract deployment), the owner pays no namespace registration fee.
+    /// Anyone else can register a namespace for a fee, even within the initial owner namespace registration period.
+    /// Note: The owner could theoretically front-run namespace registrations during this period, but doing so provides no economic benefit:
+    /// the owner would only receive 5% of name registration fees (vs 200 ETH upfront fee), and users can mitigate this by
+    /// waiting until after the 90-day period. This is an accepted design trade-off for simplicity.
     function registerNamespace(string calldata namespace_, uint256 pricePerName) external payable {
         require(_isValidNamespace(namespace_), "XNS: invalid namespace");
 
@@ -200,7 +204,7 @@ contract XNS is IXNS, Ownable2Step {
         NamespaceData storage existing = _namespaces[nsHash];
         require(existing.creator == address(0), "XNS: namespace already exists");
 
-        if (msg.sender == owner() && block.timestamp < deployedAt + INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD) {
+        if (block.timestamp < deployedAt + INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD && msg.sender == owner()) {
             require(msg.value == 0, "XNS: creator pays no fee in first year");
         } else {
             require(msg.value == NAMESPACE_REGISTRATION_FEE, "XNS: wrong namespace fee");
@@ -420,12 +424,8 @@ contract XNS is IXNS, Ownable2Step {
         IDETH(DETH).burn{value: burnAmount}(msg.sender);
 
         // Credit fees to recipients.
-        if (creatorFee > 0) {
-            _pendingFees[namespaceCreator] += creatorFee;
-        }
-        if (ownerFee > 0) {
-            _pendingFees[contractOwner] += ownerFee;
-        }
+        _pendingFees[namespaceCreator] += creatorFee;
+        _pendingFees[contractOwner] += ownerFee;
     }
 
     /// @dev Check if a label is valid (returns bool, does not revert).
