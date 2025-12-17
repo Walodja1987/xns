@@ -18,9 +18,9 @@ import {IDETH} from "./IDETH.sol";
 /// @notice Ethereum-only name registry: ETH amount -> namespace, (label, namespace) -> address.
 /// @dev
 /// - Names are immutable and non-transferable.
-/// - ETH amount per name determines the namespace via a price mapping.
+/// - ETH amount per name determines the namespace via a price mapping (e.g., 0.001 ETH = "xns" namespace).
 /// - Anyone can register new namespaces by paying a one-time fee
-///   (except the contract creator, who pays no namespace fee in the first year).
+///   (except the contract creator, who pays no namespace fee in the first 90 days).
 /// - Namespace creator gets a 1-month exclusive period for paid registrations.
 /// - Namespace creator can assign up to 200 free names per namespace (at any time).
 /// - Each address can own at most one XNS name globally.
