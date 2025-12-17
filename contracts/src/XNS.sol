@@ -2,7 +2,6 @@
 pragma solidity 0.8.28;
 
 import {IDETH} from "./IDETH.sol";
-import {IXNS} from "./IXNS.sol";
 
 //////////////////////////////
 //                          //
@@ -27,7 +26,7 @@ import {IXNS} from "./IXNS.sol";
 /// - Each address can own at most one XNS name globally.
 /// - "eth" namespace is forbidden to avoid confusion with ENS.
 /// - Bare labels (e.g. "nike") are treated as "nike.x" (the special namespace).
-contract XNS is IXNS {
+contract XNS {
     // -------------------------------------------------------------------------
     // Types
     // -------------------------------------------------------------------------
@@ -243,17 +242,14 @@ contract XNS is IXNS {
 
     /// @notice Creator-only free registration (can be used any time).
     /// @dev
-    /// - `msg.sender` must be `namespace_.creator`.
+    /// - `msg.sender` must be `namespace.creator`.
     /// - Up to `MAX_FREE_NAMES_PER_NAMESPACE` total free names per namespace.
     /// - Can assign names to arbitrary owners, but each owner must not already have a name.
-    /// - `msg.value` must be 0.
-    function claimFreeNames(string calldata namespace_, Claim[] calldata claims) external {
-        require(msg.value == 0, "XNS: no ETH for free registration");
-
+    function claimFreeNames(string calldata namespace, Claim[] calldata claims) external {
         uint256 count = claims.length;
         require(count > 0, "XNS: empty claims");
 
-        bytes32 nsHash = keccak256(bytes(namespace_));
+        bytes32 nsHash = keccak256(bytes(namespace));
         NamespaceData storage ns = _namespaces[nsHash];
         require(ns.creator != address(0), "XNS: namespace not found");
         require(msg.sender == ns.creator, "XNS: not namespace creator");
@@ -261,19 +257,19 @@ contract XNS is IXNS {
 
         for (uint256 i = 0; i < count; i++) {
             string memory label = claims[i].label;
-            address owner = claims[i].owner;
+            address _owner = claims[i].owner;
 
             require(_isValidLabel(label), "XNS: invalid label");
-            require(owner != address(0), "XNS: 0x owner");
-            require(bytes(_reverseName[owner].label).length == 0, "XNS: owner already has a name");
+            require(_owner != address(0), "XNS: 0x owner");
+            require(bytes(_reverseName[_owner].label).length == 0, "XNS: owner already has a name");
 
-            bytes32 key = keccak256(abi.encodePacked(label, ".", namespace_));
+            bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
             require(_records[key] == address(0), "XNS: name already registered");
 
-            _records[key] = owner;
-            _reverseName[owner] = Name({label: label, namespace: namespace_});
+            _records[key] = _owner;
+            _reverseName[_owner] = Name({label: label, namespace: namespace});
 
-            emit NameRegistered(label, namespace_, owner);
+            emit NameRegistered(label, namespace, _owner);
         }
 
         ns.remainingFreeNames -= uint16(count);
@@ -288,10 +284,11 @@ contract XNS is IXNS {
     /// - No parsing
     /// - No validation
     /// - Returns address(0) if not registered
+    /// @return _address The address associated with the name, or address(0) if not registered.
     function getAddress(
         string calldata label,
         string calldata namespace
-    ) external view returns (address owner) {
+    ) external view returns (address _address) {
         return _getAddress(label, namespace);
     }
 
@@ -300,7 +297,8 @@ contract XNS is IXNS {
     /// - Best-effort parsing
     /// - Bare names are treated as label.x
     /// - Returns address(0) for anything not registered or malformed
-    function getAddress(string calldata fullName) external view returns (address owner) {
+    /// @return _address The address associated with the name, or address(0) if not registered.
+    function getAddress(string calldata fullName) external view returns (address _address) {
         bytes memory b = bytes(fullName);
         uint256 len = b.length;
         if (len == 0) return address(0);
@@ -343,8 +341,8 @@ contract XNS is IXNS {
 
     /// @notice Reverse lookup: get the XNS name (label, namespace) for an address.
     /// @dev Returns empty strings if the address has no name.
-    function getName(address owner) external view returns (string memory label, string memory namespace_) {
-        Name storage n = _reverseName[owner];
+    function getName(address _address) external view returns (string memory label, string memory namespace_) {
+        Name storage n = _reverseName[_address];
         label = n.label;
         namespace_ = n.namespace;
     }
@@ -403,8 +401,8 @@ contract XNS is IXNS {
     /// @dev Get address for a given label and namespace.
     /// @param label The label part of the name.
     /// @param namespace The namespace part of the name.
-    /// @return owner The address associated with the name, or address(0) if not registered.
-    function _getAddress(string memory label, string memory namespace) internal view returns (address owner) {
+    /// @return _address The address associated with the name, or address(0) if not registered.
+    function _getAddress(string memory label, string memory namespace) internal view returns (address _address) {
         bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
         return _records[key];
     }
