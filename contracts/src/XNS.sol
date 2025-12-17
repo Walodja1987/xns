@@ -2,6 +2,7 @@
 pragma solidity 0.8.28;
 
 import {IDETH} from "./IDETH.sol";
+import {IXNS} from "./IXNS.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -16,7 +17,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 //                          //
 //////////////////////////////
 
-// @todo shall we allow "_" as well? same treatment as "-" ?
 // @todo disallow registering name spaces during the first year?
 
 /// @title XNS
@@ -31,7 +31,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// - Each address can own at most one XNS name globally.
 /// - "eth" namespace is forbidden to avoid confusion with ENS.
 /// - Bare labels (e.g. "nike") are treated as "nike.x" (the special namespace).
-contract XNS is Ownable2Step {
+contract XNS is IXNS, Ownable2Step {
     // -------------------------------------------------------------------------
     // Types
     // -------------------------------------------------------------------------
@@ -90,12 +90,12 @@ contract XNS is Ownable2Step {
     uint256 public constant NS_CREATOR_EXCLUSIVE_PERIOD = 30 days;
 
     /// @dev period after contract deployment during which the owner pays no namespace registration fee.
-    uint256 public constant INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD  = 365 days; // @todo reduce to 3 months (90 days)? ; this period may disincentivize early namespace registrations because I could theoretically front-run them -> document properly.
+    uint256 public constant INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD  = 90 days;
 
     /// @dev unit price step (0.001 ETH).
     uint256 public constant PRICE_STEP = 1e15; // 0.001 ether
 
-    /// @dev special namespace used for bare labels (e.g. "nike" => "nike.x").
+    /// @dev special namespace used for bare labels (e.g. "nike" = "nike.x").
     string public constant SPECIAL_NAMESPACE = "x";
 
     /// @dev price-per-name for the special namespace (bare names).
@@ -122,10 +122,12 @@ contract XNS is Ownable2Step {
         deployedAt = uint64(block.timestamp);
 
         // Register special namespace "x" as the very first namespace.
+        // Note: namespace creator privileges are tied to the address set here, not the contract owner.
+        // If contract ownership is transferred, the original creator retains all namespace privileges.
         bytes32 nsHash = keccak256(bytes(SPECIAL_NAMESPACE));
         _namespaces[nsHash] = NamespaceData({
             pricePerName: SPECIAL_NAMESPACE_PRICE,
-            creator: _owner, // @todo What if owner changes? then they won't be able to use the free names?
+            creator: _owner,
             createdAt: uint64(block.timestamp),
             remainingFreeNames: MAX_FREE_NAMES_PER_NAMESPACE
         });
@@ -140,7 +142,9 @@ contract XNS is Ownable2Step {
     // =========================================================================
 
     /// @notice Register a paid name for `msg.sender`. Namespace is determined by `msg.value`.
-    /// @dev During exclusive period following namespace registration, only namespace creator can register paid names.
+    /// @dev Following namespace registration, the namespace creator has a 30-day exclusivity window for registering paid names.
+    /// A namespace creator would typically first claim free names via the `claimFreeNames` function
+    /// before registering paid names.
     function registerName(string calldata label) external payable {
         require(_isValidLabel(label), "XNS: invalid label");
 
@@ -155,7 +159,7 @@ contract XNS is Ownable2Step {
         bytes32 nsHash = keccak256(bytes(namespace_));
         NamespaceData storage ns = _namespaces[nsHash];
 
-        // During exclusive period following namespace registration, only namespace creator can register paid names.
+        // Following namespace registration, the namespace creator has a 30-day exclusivity window for registering paid names.
         // A namespace creator would typically first claim free names via the `claimFreeNames` function
         // before registering paid names.
         if (block.timestamp < ns.createdAt + NS_CREATOR_EXCLUSIVE_PERIOD) {
@@ -214,7 +218,7 @@ contract XNS is Ownable2Step {
         emit NamespaceRegistered(namespace_, pricePerName, msg.sender);
 
         // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
-        // `msg.value` = 0 within initial owner namespace registration period (365 days after contract deployment).
+        // `msg.value` = 0 within initial owner namespace registration period (90 days after contract deployment).
         if (msg.value > 0) {
             _burnETHAndCreditFees(msg.value, msg.sender);
         }
@@ -276,47 +280,63 @@ contract XNS is Ownable2Step {
     // GETTER / VIEW FUNCTIONS
     // =========================================================================
 
-    /// @notice Get the address for a full name string like "nike", "nike.x", "vitalik.001".
+    /// @notice Canonical resolution: resolve (label, namespace) to an address.
     /// @dev
-    /// - "label" (no dot) is treated as "label.x" (special namespace).
-    /// - Otherwise split at the last dot and interpret as "label.namespace".
-    /// - Returns address(0) if not registered.
+    /// - No parsing
+    /// - No validation
+    /// - Returns address(0) if not registered
+    function getAddress(
+        string calldata label,
+        string calldata namespace
+    ) external view returns (address owner) {
+        return _getAddress(label, namespace);
+    }
+
+    /// @notice Human-friendly resolution: resolve a full name like "nike", "nike.x", "vitalik.001".
+    /// @dev
+    /// - Best-effort parsing
+    /// - Bare names are treated as label.x
+    /// - Returns address(0) for anything not registered or malformed
     function getAddress(string calldata fullName) external view returns (address owner) {
         bytes memory b = bytes(fullName);
-        if (b.length == 0) revert("XNS: empty name");
+        uint256 len = b.length;
+        if (len == 0) return address(0);
 
+        // Search for '.' from the right within the last 5 characters (".xxxx")
+        uint256 endExclusive = (len > 5) ? (len - 5) : 0;
         int256 lastDot = -1;
-        for (uint256 i = 0; i < b.length; i++) {
-            if (b[i] == 0x2E) lastDot = int256(i); // '.'
+
+        for (uint256 i = len - 1; i > endExclusive; i--) {
+            if (b[i] == 0x2E) { // '.'
+                lastDot = int256(i);
+                break;
+            }
         }
 
         string memory label;
-        string memory namespace_;
+        string memory namespace;
 
         if (lastDot == -1) {
+            // Bare label => label.x
             label = fullName;
-            namespace_ = SPECIAL_NAMESPACE;
+            namespace = SPECIAL_NAMESPACE;
         } else {
             uint256 dotIndex = uint256(lastDot);
-            if (dotIndex == 0 || dotIndex >= b.length - 1) revert("XNS: invalid full name");
 
             bytes memory bl = new bytes(dotIndex);
-            for (uint256 i = 0; i < dotIndex; i++) bl[i] = b[i];
+            for (uint256 j = 0; j < dotIndex; j++) bl[j] = b[j];
 
-            uint256 nsLen = b.length - dotIndex - 1;
+            uint256 nsLen = len - dotIndex - 1;
             bytes memory bn = new bytes(nsLen);
-            for (uint256 i = 0; i < nsLen; i++) bn[i] = b[dotIndex + 1 + i];
+            for (uint256 j = 0; j < nsLen; j++) bn[j] = b[dotIndex + 1 + j];
 
             label = string(bl);
-            namespace_ = string(bn);
+            namespace = string(bn);
         }
 
-        require(_isValidLabel(label), "XNS: invalid label");
-        require(_isValidNamespace(namespace_), "XNS: invalid namespace");
-
-        bytes32 key = keccak256(abi.encodePacked(label, ".", namespace_));
-        return _records[key];
+        return _getAddress(label, namespace);
     }
+
 
     /// @notice Reverse lookup: get the XNS name (label, namespace) for an address.
     /// @dev Returns empty strings if the address has no name.
@@ -376,6 +396,15 @@ contract XNS is Ownable2Step {
     // =========================================================================
     // INTERNAL HELPERS
     // =========================================================================
+
+    /// @dev Get address for a given label and namespace.
+    /// @param label The label part of the name.
+    /// @param namespace The namespace part of the name.
+    /// @return owner The address associated with the name, or address(0) if not registered.
+    function _getAddress(string memory label, string memory namespace) internal view returns (address owner) {
+        bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
+        return _records[key];
+    }
 
     /// @dev Distribute fees: 90% burnt via DETH, 5% credited to namespace creator, 5% credited to contract owner.
     /// @param totalAmount The total amount to distribute.

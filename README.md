@@ -1,5 +1,6 @@
 # TODO
 * Register ".defi" namespace and then assign free protocol names. Use a rather higher value for that domain (e.g., 50 ETH) for naming
+* Contract deployment: Mention 90 exclusive namespace creation for contract owner (not creator)
 
 ---
 
@@ -220,6 +221,19 @@ remainingFreeNames
 * Starts at **200**
 * Decreases with each free assignment
 * Cannot go below zero
+
+### Namespace Creator Immutability
+
+**Important:** The namespace creator address is set at namespace creation time and **never changes**.
+
+* Creator privileges are tied to the specific address that created the namespace
+* These privileges are **independent of contract ownership**
+* If contract ownership is transferred, the original namespace creator retains all their privileges:
+  * Can still claim free names (if any remain)
+  * During the exclusive period, only the original creator can register paid names
+* The new contract owner does **not** inherit namespace creator privileges
+
+This ensures that namespace creators maintain full control over their namespaces regardless of contract ownership changes.
 
 ---
 

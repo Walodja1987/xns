@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.28;
+
+interface IXNS {
+    struct Claim {
+        string label;
+        address owner;
+    }
+
+    event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
+    event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator);
+    event FeesClaimed(address indexed recipient, uint256 amount);
+
+    function registerName(string calldata label) external payable;
+    function registerNamespace(string calldata namespace, uint256 pricePerName) external payable;
+    function claimFees() external;
+    function claimFreeNames(string calldata namespace, Claim[] calldata claims) external;
+
+    function getAddress(string calldata label, string calldata namespace) external view returns (address owner);
+    function getAddress(string calldata fullName) external view returns (address owner);
+    function getName(address owner) external view returns (string memory label, string memory namespace);
+    function getNamespaceInfo(string calldata namespace) external view returns (uint256 pricePerName, address creator, uint64 createdAt, uint16 remainingFreeNames);
+    function getNamespaceInfo(uint256 price) external view returns (string memory namespace, uint256 pricePerName, address creator_, uint64 createdAt, uint16 remainingFreeNames);
+    function isValidLabel(string memory label) external pure returns (bool);
+    function isValidNamespace(string memory namespace) external pure returns (bool);
+    function pendingFees(address recipient) external view returns (uint256);
+}
