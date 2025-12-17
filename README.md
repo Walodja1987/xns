@@ -227,13 +227,12 @@ remainingFreeNames
 **Important:** The namespace creator address is set at namespace creation time and **never changes**.
 
 * Creator privileges are tied to the specific address that created the namespace
-* These privileges are **independent of contract ownership**
-* If contract ownership is transferred, the original namespace creator retains all their privileges:
-  * Can still claim free names (if any remain)
-  * During the exclusive period, only the original creator can register paid names
-* The new contract owner does **not** inherit namespace creator privileges
+* These privileges are **immutable** and cannot be transferred
+* Only the original namespace creator can:
+  * Claim free names (up to 200 per namespace, at any time)
+  * Register paid names during the 30-day exclusive period
 
-This ensures that namespace creators maintain full control over their namespaces regardless of contract ownership changes.
+This ensures that namespace creators maintain full control over their namespaces forever.
 
 ---
 
@@ -423,6 +422,7 @@ Emitted when a namespace is created.
 XNS is intentionally minimal:
 
 * Immutable mappings
+* Immutable ownership (set at deployment)
 * No admin keys
 * No upgrades
 * No tokenization

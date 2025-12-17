@@ -3,8 +3,6 @@ pragma solidity 0.8.28;
 
 import {IDETH} from "./IDETH.sol";
 import {IXNS} from "./IXNS.sol";
-import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 //////////////////////////////
 //                          //
@@ -16,9 +14,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 //   /_/ \_\_| \_|_____/    //
 //                          //
 //////////////////////////////
-
-
-// @todo shall we maybe get rid of Ownable2Step? There is just one owner. if owner loses access to keys, there will be a fight to claim the fees, but it's better than someone transferring ownership to another wallet that the old owner will not have access to
 
 /// @title XNS
 /// @notice Ethereum-only name registry: ETH amount -> namespace, (label, namespace) -> address.
@@ -32,7 +27,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// - Each address can own at most one XNS name globally.
 /// - "eth" namespace is forbidden to avoid confusion with ENS.
 /// - Bare labels (e.g. "nike") are treated as "nike.x" (the special namespace).
-contract XNS is IXNS, Ownable2Step {
+contract XNS is IXNS {
     // -------------------------------------------------------------------------
     // Types
     // -------------------------------------------------------------------------
@@ -78,6 +73,9 @@ contract XNS is IXNS, Ownable2Step {
     // Constants
     // -------------------------------------------------------------------------
 
+    /// @dev contract owner address (immutable, set at deployment).
+    address public immutable owner;
+
     /// @dev deployment timestamp.
     uint64 public immutable deployedAt;
 
@@ -119,12 +117,13 @@ contract XNS is IXNS, Ownable2Step {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(address _owner) Ownable(_owner) {
+    constructor(address _owner) {
+        owner = _owner;
         deployedAt = uint64(block.timestamp);
 
         // Register special namespace "x" as the very first namespace.
         // Note: namespace creator privileges are tied to the address set here, not the contract owner.
-        // If contract ownership is transferred, the original creator retains all namespace privileges.
+        // Contract ownership is immutable and cannot be transferred.
         bytes32 nsHash = keccak256(bytes(SPECIAL_NAMESPACE));
         _namespaces[nsHash] = NamespaceData({
             pricePerName: SPECIAL_NAMESPACE_PRICE,
@@ -204,7 +203,7 @@ contract XNS is IXNS, Ownable2Step {
         NamespaceData storage existing = _namespaces[nsHash];
         require(existing.creator == address(0), "XNS: namespace already exists");
 
-        if (block.timestamp < deployedAt + INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD && msg.sender == owner()) {
+        if (block.timestamp < deployedAt + INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD && msg.sender == owner) {
             require(msg.value == 0, "XNS: creator pays no fee in first year");
         } else {
             require(msg.value == NAMESPACE_REGISTRATION_FEE, "XNS: wrong namespace fee");
@@ -418,14 +417,12 @@ contract XNS is IXNS, Ownable2Step {
         uint256 creatorFee = totalAmount * 5 / 100;
         uint256 ownerFee = totalAmount - burnAmount - creatorFee; // Ensures exact 100% distribution
 
-        address contractOwner = owner();
-
         // Burn 90% via DETH contract and credit `msg.sender` with DETH.
         IDETH(DETH).burn{value: burnAmount}(msg.sender);
 
         // Credit fees to recipients.
         _pendingFees[namespaceCreator] += creatorFee;
-        _pendingFees[contractOwner] += ownerFee;
+        _pendingFees[owner] += ownerFee;
     }
 
     /// @dev Check if a label is valid (returns bool, does not revert).

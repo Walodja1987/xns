@@ -340,23 +340,10 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should preserve namespace creator privileges after contract ownership transfer.
-- Should allow original creator to claim free names after ownership transfer.
-- Should allow original creator to register paid names during exclusive period after ownership transfer.
-- Should not grant new owner namespace creator privileges.
-
----
-
-### Ownership Transfer
-
-#### Functionality
-
-- Should follow the two-step transfer process correctly (Ownable2Step).
-
-#### Reverts
-
-- Should revert if non-owner tries to transfer ownership.
-- Should revert if non-pending owner tries to accept ownership.
+- Should preserve namespace creator privileges forever (immutable).
+- Should allow original creator to claim free names at any time.
+- Should allow original creator to register paid names during exclusive period.
+- Should ensure namespace creator privileges cannot be transferred or revoked.
 
 ---
 
