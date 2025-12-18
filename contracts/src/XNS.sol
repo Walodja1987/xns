@@ -88,7 +88,7 @@ contract XNS {
     uint16 public constant MAX_FREE_NAMES_PER_NAMESPACE = 200;
 
     /// @dev duration of the exclusive namespace-creator window for paid registrations.
-    uint256 public constant NS_CREATOR_EXCLUSIVE_PERIOD = 30 days;
+    uint256 public constant NAMESPACE_CREATOR_EXCLUSIVE_PERIOD = 30 days;
 
     /// @dev period after contract deployment during which the owner pays no namespace registration fee.
     uint256 public constant INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD  = 90 days;
@@ -162,7 +162,7 @@ contract XNS {
         // Following namespace registration, the namespace creator has a 30-day exclusivity window for registering paid names.
         // A namespace creator would typically first claim free names via the `claimFreeNames` function
         // before registering paid names.
-        if (block.timestamp < ns.createdAt + NS_CREATOR_EXCLUSIVE_PERIOD) {
+        if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
             require(msg.sender == ns.creator, "XNS: not namespace creator during exclusive period");
         }
 
@@ -296,11 +296,11 @@ contract XNS {
     /// - No parsing
     /// - No validation
     /// - Returns address(0) if not registered
-    /// @return _address The address associated with the name, or address(0) if not registered.
+    /// @return addr The address associated with the name, or address(0) if not registered.
     function getAddress(
         string calldata label,
         string calldata namespace
-    ) external view returns (address _address) {
+    ) external view returns (address addr) {
         return _getAddress(label, namespace);
     }
 
@@ -309,8 +309,8 @@ contract XNS {
     /// - Best-effort parsing
     /// - Bare names are treated as label.x
     /// - Returns address(0) for anything not registered or malformed
-    /// @return _address The address associated with the name, or address(0) if not registered.
-    function getAddress(string calldata fullName) external view returns (address _address) {
+    /// @return addr The address associated with the name, or address(0) if not registered.
+    function getAddress(string calldata fullName) external view returns (address addr) {
         bytes memory b = bytes(fullName);
         uint256 len = b.length;
         if (len == 0) return address(0);
@@ -353,9 +353,10 @@ contract XNS {
     /// @dev Get address for a given label and namespace.
     /// @param label The label part of the name.
     /// @param namespace The namespace part of the name.
-    /// @return _address The address associated with the name, or address(0) if not registered.
-    function _getAddress(string memory label, string memory namespace) private view returns (address _address) {
+    /// @return addr The address associated with the name, or address(0) if not registered.
+    function _getAddress(string memory label, string memory namespace) private view returns (address addr) {
         bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
+
         return _records[key];
     }
 
