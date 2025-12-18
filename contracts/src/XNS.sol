@@ -224,18 +224,18 @@ contract XNS {
         }
     }
 
-    /// @notice Claim accumulated fees for msg.sender.
-    /// @dev Withdraws all pending fees credited to the caller.
-    function claimFees() external {
-        uint256 amount = _pendingFees[msg.sender];
-        require(amount > 0, "XNS: no fees to claim");
+    /// @notice Claim accumulated fees for msg.sender and send to recipient.
+    /// @dev Withdraws all pending fees credited to msg.sender and transfers them to recipient.
+    /// @param recipient The address that will receive the claimed fees.
+    function claimFees(address recipient) external {
+        require(recipient != address(0), "XNS: zero recipient");
+        _claimFees(recipient);
+    }
 
-        _pendingFees[msg.sender] = 0;
-
-        (bool success, ) = msg.sender.call{value: amount}("");
-        require(success, "XNS: fee transfer failed");
-
-        emit FeesClaimed(msg.sender, amount);
+    /// @notice Claim accumulated fees for msg.sender and send to msg.sender.
+    /// @dev Convenience function that claims fees for msg.sender and sends them to msg.sender.
+    function claimFeesToSelf() external {
+        _claimFees(msg.sender);
     }
 
     /// @notice Creator-only free registration (can be used any time).
@@ -392,6 +392,20 @@ contract XNS {
     // =========================================================================
     // INTERNAL HELPERS
     // =========================================================================
+
+    /// @dev Claim accumulated fees for msg.sender and send to recipient.
+    /// @param recipient The address that will receive the claimed fees.
+    function _claimFees(address recipient) private {
+        uint256 amount = _pendingFees[msg.sender];
+        require(amount > 0, "XNS: no fees to claim");
+
+        _pendingFees[msg.sender] = 0;
+
+        (bool success, ) = recipient.call{value: amount}("");
+        require(success, "XNS: fee transfer failed");
+
+        emit FeesClaimed(recipient, amount);
+    }
 
     /// @dev Get address for a given label and namespace.
     /// @param label The label part of the name.

@@ -13,7 +13,8 @@ interface IXNS {
 
     function registerName(string calldata label) external payable;
     function registerNamespace(string calldata namespace, uint256 pricePerName) external payable;
-    function claimFees() external;
+    function claimFees(address recipient) external;
+    function claimFeesToSelf() external;
     function claimFreeNames(string calldata namespace, Claim[] calldata claims) external;
 
     function getAddress(string calldata label, string calldata namespace) external view returns (address owner);
