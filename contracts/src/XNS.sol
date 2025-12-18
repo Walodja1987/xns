@@ -123,8 +123,7 @@ contract XNS {
         // Register special namespace "x" as the very first namespace.
         // Note: namespace creator privileges are tied to the address set here, not the contract owner.
         // Contract ownership is immutable and cannot be transferred.
-        bytes32 nsHash = keccak256(bytes(SPECIAL_NAMESPACE));
-        _namespaces[nsHash] = NamespaceData({
+        _namespaces[keccak256(bytes(SPECIAL_NAMESPACE))] = NamespaceData({
             pricePerName: SPECIAL_NAMESPACE_PRICE,
             creator: _owner,
             createdAt: uint64(block.timestamp),
@@ -155,8 +154,7 @@ contract XNS {
         require(bytes(namespace_).length != 0, "XNS: non-existent namespace");
 
         // Load namespace metadata.
-        bytes32 nsHash = keccak256(bytes(namespace_));
-        NamespaceData storage ns = _namespaces[nsHash];
+        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace_))];
 
         // Following namespace registration, the namespace creator has a 30-day exclusivity window for registering paid names.
         // A namespace creator would typically first claim free names via the `claimFreeNames` function
@@ -249,8 +247,7 @@ contract XNS {
         uint256 count = claims.length;
         require(count > 0, "XNS: empty claims");
 
-        bytes32 nsHash = keccak256(bytes(namespace));
-        NamespaceData storage ns = _namespaces[nsHash];
+        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
         require(msg.sender == ns.creator, "XNS: not namespace creator");
         require(count <= ns.remainingFreeNames, "XNS: free name quota exceeded");
@@ -355,8 +352,7 @@ contract XNS {
         view
         returns (uint256 pricePerName, address creator, uint64 createdAt, uint16 remainingFreeNames)
     {
-        bytes32 nsHash = keccak256(bytes(namespace_));
-        NamespaceData storage ns = _namespaces[nsHash];
+        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace_))];
         require(ns.creator != address(0), "XNS: namespace not found");
         return (ns.pricePerName, ns.creator, ns.createdAt, ns.remainingFreeNames);
     }
@@ -372,8 +368,7 @@ contract XNS {
         namespace_ = _priceToNamespace[price];
         require(bytes(namespace_).length != 0, "XNS: price not mapped to namespace");
 
-        bytes32 nsHash = keccak256(bytes(namespace_));
-        NamespaceData storage ns = _namespaces[nsHash];
+        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace_))];
         require(ns.creator != address(0), "XNS: namespace not found");
 
         return (namespace_, ns.pricePerName, ns.creator, ns.createdAt, ns.remainingFreeNames);
