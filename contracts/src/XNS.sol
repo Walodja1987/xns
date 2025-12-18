@@ -14,6 +14,9 @@ import {IDETH} from "./IDETH.sol";
 //                          //
 //////////////////////////////
 
+// @todo think about whether to extend initial period to 1 year again bc it could serve as an incentive for wallet provider and integrations to adopt XNS
+// But theoretically, you could also earn the fee and then forward it to them
+
 /// @title XNS
 /// @notice Ethereum-only name registry: ETH amount -> namespace, (label, namespace) -> address.
 /// @dev
@@ -160,7 +163,7 @@ contract XNS {
         // A namespace creator would typically first claim free names via the `claimFreeNames` function
         // before registering paid names.
         if (block.timestamp < ns.createdAt + NS_CREATOR_EXCLUSIVE_PERIOD) {
-            require(msg.sender == ns.creator, "XNS: namespace in exclusive period");
+            require(msg.sender == ns.creator, "XNS: not namespace creator during exclusive period");
         }
 
         // Enforce one-name-per-address globally.
@@ -200,9 +203,7 @@ contract XNS {
         NamespaceData storage existing = _namespaces[nsHash];
         require(existing.creator == address(0), "XNS: namespace already exists");
 
-        if (block.timestamp < deployedAt + INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD && msg.sender == owner) {
-            require(msg.value == 0, "XNS: creator pays no fee in first year");
-        } else {
+        if (!(block.timestamp < deployedAt + INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD && msg.sender == owner)) {
             require(msg.value == NAMESPACE_REGISTRATION_FEE, "XNS: wrong namespace fee");
         }
 
