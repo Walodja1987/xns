@@ -238,6 +238,20 @@ contract XNS {
         _claimFees(msg.sender);
     }
 
+    /// @dev Claim accumulated fees for msg.sender and send to recipient.
+    /// @param recipient The address that will receive the claimed fees.
+    function _claimFees(address recipient) private {
+        uint256 amount = _pendingFees[msg.sender];
+        require(amount > 0, "XNS: no fees to claim");
+
+        _pendingFees[msg.sender] = 0;
+
+        (bool success, ) = recipient.call{value: amount}("");
+        require(success, "XNS: fee transfer failed");
+
+        emit FeesClaimed(recipient, amount);
+    }
+
     /// @notice Creator-only free registration (can be used any time).
     /// @dev
     /// - `msg.sender` must be `namespace.creator`.
@@ -335,6 +349,15 @@ contract XNS {
         return _getAddress(label, namespace);
     }
 
+    /// @dev Get address for a given label and namespace.
+    /// @param label The label part of the name.
+    /// @param namespace The namespace part of the name.
+    /// @return _address The address associated with the name, or address(0) if not registered.
+    function _getAddress(string memory label, string memory namespace) private view returns (address _address) {
+        bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
+        return _records[key];
+    }
+
 
     /// @notice Reverse lookup: get the XNS name (label, namespace) for an address.
     /// @dev Returns empty strings if the address has no name.
@@ -390,31 +413,8 @@ contract XNS {
     }
 
     // =========================================================================
-    // INTERNAL HELPERS
+    // INTERNAL MULTI-USE HELPERS
     // =========================================================================
-
-    /// @dev Claim accumulated fees for msg.sender and send to recipient.
-    /// @param recipient The address that will receive the claimed fees.
-    function _claimFees(address recipient) private {
-        uint256 amount = _pendingFees[msg.sender];
-        require(amount > 0, "XNS: no fees to claim");
-
-        _pendingFees[msg.sender] = 0;
-
-        (bool success, ) = recipient.call{value: amount}("");
-        require(success, "XNS: fee transfer failed");
-
-        emit FeesClaimed(recipient, amount);
-    }
-
-    /// @dev Get address for a given label and namespace.
-    /// @param label The label part of the name.
-    /// @param namespace The namespace part of the name.
-    /// @return _address The address associated with the name, or address(0) if not registered.
-    function _getAddress(string memory label, string memory namespace) private view returns (address _address) {
-        bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
-        return _records[key];
-    }
 
     /// @dev Burns 90% of ETH sent via DETH, credits 5% to namespace creator and 5% to contract owner.
     /// @param totalAmount The total amount of ETH sent to this contract.
