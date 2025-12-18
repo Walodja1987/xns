@@ -23,5 +23,5 @@ interface IXNS {
     function getNamespaceInfo(uint256 price) external view returns (string memory namespace, uint256 pricePerName, address creator_, uint64 createdAt, uint16 remainingFreeNames);
     function isValidLabel(string memory label) external pure returns (bool);
     function isValidNamespace(string memory namespace) external pure returns (bool);
-    function pendingFees(address recipient) external view returns (uint256);
+    function getPendingFees(address recipient) external view returns (uint256);
 }

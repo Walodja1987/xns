@@ -184,11 +184,11 @@ contract XNS {
     /// Note: The owner could theoretically front-run namespace registrations during this period, but doing so provides no economic benefit:
     /// the owner would only receive 5% of name registration fees (vs 200 ETH upfront fee), and users can mitigate this by
     /// waiting until after the 90-day period. This is an accepted design trade-off for simplicity.
-    function registerNamespace(string calldata namespace_, uint256 pricePerName) external payable {
-        require(_isValidNamespace(namespace_), "XNS: invalid namespace");
+    function registerNamespace(string calldata namespace, uint256 pricePerName) external payable {
+        require(_isValidNamespace(namespace), "XNS: invalid namespace");
 
         // Forbid "eth" namespace to avoid confusion with ENS.
-        require(keccak256(bytes(namespace_)) != keccak256(bytes("eth")), "XNS: 'eth' namespace forbidden");
+        require(keccak256(bytes(namespace)) != keccak256(bytes("eth")), "XNS: 'eth' namespace forbidden");
 
         require(pricePerName > 0, "XNS: pricePerName must be > 0");
         require(pricePerName % PRICE_STEP == 0, "XNS: price must be multiple of 0.001 ETH");
@@ -196,7 +196,7 @@ contract XNS {
         // Prevent the same price from being mapped to multiple namespaces.
         require(bytes(_priceToNamespace[pricePerName]).length == 0, "XNS: price already in use");
 
-        bytes32 nsHash = keccak256(bytes(namespace_));
+        bytes32 nsHash = keccak256(bytes(namespace));
         NamespaceData storage existing = _namespaces[nsHash];
         require(existing.creator == address(0), "XNS: namespace already exists");
 
@@ -213,9 +213,9 @@ contract XNS {
             remainingFreeNames: MAX_FREE_NAMES_PER_NAMESPACE
         });
 
-        _priceToNamespace[pricePerName] = namespace_;
+        _priceToNamespace[pricePerName] = namespace;
 
-        emit NamespaceRegistered(namespace_, pricePerName, msg.sender);
+        emit NamespaceRegistered(namespace, pricePerName, msg.sender);
 
         // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
         // `msg.value` = 0 within initial owner namespace registration period (90 days after contract deployment).
@@ -254,7 +254,7 @@ contract XNS {
 
         for (uint256 i = 0; i < count; i++) {
             string memory label = claims[i].label;
-            address _owner = claims[i].owner;
+            address _owner = claims[i].owner;  // @todo if we rename _owner to $owner, then change _owner to owner
 
             require(_isValidLabel(label), "XNS: invalid label");
             require(_owner != address(0), "XNS: 0x owner");
@@ -338,21 +338,21 @@ contract XNS {
 
     /// @notice Reverse lookup: get the XNS name (label, namespace) for an address.
     /// @dev Returns empty strings if the address has no name.
-    function getName(address _address) external view returns (string memory label, string memory namespace_) {
+    function getName(address _address) external view returns (string memory label, string memory namespace) {
         Name storage n = _reverseName[_address];
         label = n.label;
-        namespace_ = n.namespace;
+        namespace = n.namespace;
     }
 
     /// @notice Get namespace metadata by namespace string.
     function getNamespaceInfo(
-        string calldata namespace_
+        string calldata namespace
     )
         external
         view
         returns (uint256 pricePerName, address creator, uint64 createdAt, uint16 remainingFreeNames)
     {
-        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace_))];
+        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
         return (ns.pricePerName, ns.creator, ns.createdAt, ns.remainingFreeNames);
     }
@@ -363,15 +363,15 @@ contract XNS {
     )
         external
         view
-        returns (string memory namespace_, uint256 pricePerName, address creator_, uint64 createdAt, uint16 remainingFreeNames)
+        returns (string memory namespace, uint256 pricePerName, address creator, uint64 createdAt, uint16 remainingFreeNames)
     {
-        namespace_ = _priceToNamespace[price];
-        require(bytes(namespace_).length != 0, "XNS: price not mapped to namespace");
+        namespace = _priceToNamespace[price];
+        require(bytes(namespace).length != 0, "XNS: price not mapped to namespace");
 
-        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace_))];
+        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
 
-        return (namespace_, ns.pricePerName, ns.creator, ns.createdAt, ns.remainingFreeNames);
+        return (namespace, ns.pricePerName, ns.creator, ns.createdAt, ns.remainingFreeNames);
     }
 
     /// @notice Check if a label is valid.
@@ -380,12 +380,12 @@ contract XNS {
     }
 
     /// @notice Check if a namespace is valid.
-    function isValidNamespace(string memory namespace_) external pure returns (bool) {
-        return _isValidNamespace(namespace_);
+    function isValidNamespace(string memory namespace) external pure returns (bool) {
+        return _isValidNamespace(namespace);
     }
 
     /// @notice Get the amount of pending fees that can be claimed by an address.
-    function pendingFees(address recipient) external view returns (uint256) {
+    function getPendingFees(address recipient) external view returns (uint256) {
         return _pendingFees[recipient];
     }
 
