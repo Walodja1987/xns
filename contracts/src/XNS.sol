@@ -363,8 +363,8 @@ contract XNS {
 
     /// @notice Reverse lookup: get the XNS name (label, namespace) for an address.
     /// @dev Returns empty strings if the address has no name.
-    function getName(address _address) external view returns (string memory label, string memory namespace) {
-        Name storage n = _reverseName[_address];
+    function getName(address addr) external view returns (string memory label, string memory namespace) {
+        Name storage n = _reverseName[addr];
         label = n.label;
         namespace = n.namespace;
     }
