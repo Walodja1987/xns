@@ -365,8 +365,8 @@ contract XNS {
     /// @dev Returns empty strings if the address has no name.
     function getName(address addr) external view returns (string memory label, string memory namespace) {
         Name storage n = _reverseName[addr];
-        label = n.label;
-        namespace = n.namespace;
+
+        return (n.label, n.namespace);
     }
 
     /// @notice Get namespace metadata by namespace string.
@@ -379,6 +379,7 @@ contract XNS {
     {
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
+
         return (ns.pricePerName, ns.creator, ns.createdAt, ns.remainingFreeNames);
     }
 

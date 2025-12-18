@@ -53,12 +53,12 @@ If you register a name, it is yours **forever**.
 
 ### 🔥 ETH Burn–Based Registration
 
-Names are registered by **burning ETH**.
+Names are registered by burning ETH. The amount of ETH burned determines the namespace.
 
-* ETH is burned via the **DETH** contract
-* The sender is credited **DETH** 1:1
-* Burned ETH is permanently removed from circulation
-* The **amount of ETH burned determines the namespace**
+* 90% of ETH sent is burned via the [DETH contract](https://github.com/Walodja1987/deth)
+* The sender is credited DETH 1:1
+* Burned ETH is permanently removed from circulation, contributing Ethereum's deflationary mechanism and ETH's value accrual
+
 
 There is no secondary market and no resale incentive.
 
@@ -278,6 +278,8 @@ registerNamespace(string namespace, uint256 pricePerName) payable
 * Registers a new namespace
 * Binds it to `pricePerName`
 * Grants the creator 200 free names
+* During the initial 90-day period, the contract owner can register namespaces for free
+* All others must pay the namespace registration fee (200 ETH)
 
 ---
 
@@ -290,6 +292,50 @@ claimFreeNames(string namespace, Claim[] claims)
 * Creator-only
 * Assigns free names to arbitrary addresses
 * No ETH required
+
+---
+
+## 💰 Fee Management
+
+### Fee Distribution
+
+When names are registered (via `registerName`) or namespaces are created with fees:
+* **90%** of ETH is burned via DETH contract
+* **5%** is credited to the namespace creator
+* **5%** is credited to the contract owner
+
+Fees accumulate and must be explicitly claimed.
+
+---
+
+### Claim Fees
+
+```solidity
+claimFees(address recipient)
+```
+
+* Claims all accumulated fees for `msg.sender`
+* Transfers fees to the specified `recipient` address
+* Resets pending fees to zero
+* Emits `FeesClaimed` event
+
+```solidity
+claimFeesToSelf()
+```
+
+* Convenience function that claims fees for `msg.sender` and sends them to `msg.sender`
+* Equivalent to `claimFees(msg.sender)`
+
+---
+
+### Check Pending Fees
+
+```solidity
+getPendingFees(address recipient)
+```
+
+* Returns the amount of pending fees that can be claimed by an address
+* Returns zero if the address has no pending fees
 
 ---
 
@@ -315,7 +361,7 @@ Returns `address(0)` if the name is not registered.
 ### Reverse Lookup (Address → Name)
 
 ```solidity
-getName(address owner)
+getName(address addr)
 ```
 
 Returns:

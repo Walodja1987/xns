@@ -87,28 +87,29 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should set `createdAt` to current block timestamp.
 - Should initialize namespace with 200 free names.
 - Should map price to namespace correctly.
-- Should allow owner to register namespace without fee during initial period (90 days).
+- Should allow owner to register namespace without fee (msg.value = 0) during initial period (90 days).
+- Should allow owner to register namespace with fees during initial period (optional payment).
+- Should distribute fees correctly when owner chooses to pay fees during initial period.
 - Should allow anyone to register namespace with correct fee after initial period.
 - Should allow anyone to register namespace with correct fee even during initial period (non-owner).
 - Should emit `NamespaceRegistered` event with correct parameters.
 - Should distribute fees correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
 - Should credit pending fees to namespace creator (5%).
 - Should credit pending fees to contract owner (5%).
-- Should not distribute fees when owner registers during initial period (msg.value = 0).
+- Should not distribute fees when owner registers with msg.value = 0 during initial period.
 
 #### Reverts
 
-- Should revert with `invalid namespace` error for empty namespace.
-- Should revert with `invalid namespace` error for namespace longer than 4 characters.
-- Should revert with `invalid namespace` error for namespace with invalid characters.
-- Should revert with `'eth' namespace forbidden` error when trying to register "eth" namespace.
-- Should revert with `pricePerName must be > 0` error for zero price.
-- Should revert with `price must be multiple of 0.001 ETH` error for non-multiple price.
-- Should revert with `price already in use` error when price is already mapped to another namespace.
-- Should revert with `namespace already exists` error when namespace already exists.
-- Should revert with `wrong namespace fee` error when non-owner pays incorrect fee during initial period.
-- Should revert with `wrong namespace fee` error when non-owner pays incorrect fee after initial period.
-- Should revert with `creator pays no fee in first year` error when owner pays fee during initial period.
+- Should revert with `XNS: invalid namespace` error for empty namespace.
+- Should revert with `XNS: invalid namespace` error for namespace longer than 4 characters.
+- Should revert with `XNS: invalid namespace` error for namespace with invalid characters.
+- Should revert with `XNS: 'eth' namespace forbidden` error when trying to register "eth" namespace.
+- Should revert with `XNS: pricePerName must be > 0` error for zero price.
+- Should revert with `XNS: price must be multiple of 0.001 ETH` error for non-multiple price.
+- Should revert with `XNS: price already in use` error when price is already mapped to another namespace.
+- Should revert with `XNS: namespace already exists` error when namespace already exists.
+- Should revert with `XNS: wrong namespace fee` error when non-owner pays incorrect fee during initial period.
+- Should revert with `XNS: wrong namespace fee` error when non-owner pays incorrect fee after initial period.
 
 ---
 
@@ -133,12 +134,12 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Reverts
 
-- Should revert with `invalid label` error for invalid label.
-- Should revert with `zero price` error when msg.value is zero.
-- Should revert with `non-existent namespace` error when price doesn't map to a namespace.
-- Should revert with `namespace in exclusive period` error when non-creator tries to register during exclusive period.
-- Should revert with `address already has a name` error when address already owns a name.
-- Should revert with `name already registered` error when name is already registered.
+- Should revert with `XNS: invalid label` error for invalid label.
+- Should revert with `XNS: zero price` error when msg.value is zero.
+- Should revert with `XNS: non-existent namespace` error when price doesn't map to a namespace.
+- Should revert with `XNS: namespace in exclusive period` error when non-creator tries to register during exclusive period.
+- Should revert with `XNS: address already has a name` error when address already owns a name.
+- Should revert with `XNS: name already registered` error when name is already registered.
 
 ---
 
@@ -159,15 +160,15 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Reverts
 
-- Should revert with `no ETH for free registration` error when msg.value > 0.
-- Should revert with `empty claims` error when claims array is empty.
-- Should revert with `namespace not found` error for non-existent namespace.
-- Should revert with `not namespace creator` error when called by non-creator.
-- Should revert with `free name quota exceeded` error when claiming more than remaining free names.
-- Should revert with `invalid label` error for invalid label in claims.
-- Should revert with `0x owner` error when owner address is zero.
-- Should revert with `owner already has a name` error when target owner already has a name.
-- Should revert with `name already registered` error when name is already registered.
+- Should revert with `XNS: no ETH for free registration` error when msg.value > 0.
+- Should revert with `XNS: empty claims` error when claims array is empty.
+- Should revert with `XNS: namespace not found` error for non-existent namespace.
+- Should revert with `XNS: not namespace creator` error when called by non-creator.
+- Should revert with `XNS: free name quota exceeded` error when claiming more than remaining free names.
+- Should revert with `XNS: invalid label` error for invalid label in claims.
+- Should revert with `XNS: 0x owner` error when owner address is zero.
+- Should revert with `XNS: owner already has a name` error when target owner already has a name.
+- Should revert with `XNS: name already registered` error when name is already registered.
 
 ---
 
@@ -220,7 +221,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Reverts
 
-- Should revert with `namespace not found` error for non-existent namespace.
+- Should revert with `XNS: namespace not found` error for non-existent namespace.
 
 ---
 
@@ -237,12 +238,12 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Reverts
 
-- Should revert with `price not mapped to namespace` error for unmapped price.
-- Should revert with `namespace not found` error when price maps to non-existent namespace.
+- Should revert with `XNS: price not mapped to namespace` error for unmapped price.
+- Should revert with `XNS: namespace not found` error when price maps to non-existent namespace.
 
 ---
 
-### pendingFees
+### getPendingFees
 
 #### Functionality
 
@@ -260,9 +261,10 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should transfer all pending fees to caller.
+- Should claim all pending fees for msg.sender and transfer to recipient.
 - Should reset pending fees to zero after claiming.
-- Should emit `FeesClaimed` event with correct parameters.
+- Should emit `FeesClaimed` event with correct recipient and amount.
+- Should allow claiming fees to different recipient addresses.
 - Should allow claiming fees multiple times as they accumulate.
 - Should work correctly for namespace creator.
 - Should work correctly for contract owner.
@@ -270,8 +272,25 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Reverts
 
-- Should revert with `no fees to claim` error when caller has no pending fees.
-- Should revert with `fee transfer failed` error when transfer fails (if applicable).
+- Should revert with `XNS: zero recipient` error when recipient is address(0).
+- Should revert with `XNS: no fees to claim` error when caller has no pending fees.
+- Should revert with `XNS: fee transfer failed` error when transfer fails (if applicable).
+
+---
+
+### claimFeesToSelf
+
+#### Functionality
+
+- Should claim all pending fees for msg.sender and transfer to msg.sender.
+- Should reset pending fees to zero after claiming.
+- Should emit `FeesClaimed` event with msg.sender as recipient.
+- Should be equivalent to calling `claimFees(msg.sender)`.
+
+#### Reverts
+
+- Should revert with `XNS: no fees to claim` error when caller has no pending fees.
+- Should revert with `XNS: fee transfer failed` error when transfer fails (if applicable).
 
 ---
 
@@ -301,7 +320,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Reverts
 
-- Should revert with `namespace in exclusive period` when non-creator tries to register during exclusive period.
+- Should revert with `XNS: not namespace creator during exclusive period` when non-creator tries to register during exclusive period.
 
 ---
 
@@ -309,15 +328,14 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should allow owner to register namespaces without fee during first 90 days.
+- Should allow owner to register namespaces without fee (msg.value = 0) during first 90 days.
 - Should require owner to pay fee after 90 days.
 - Should allow non-owners to register namespaces with fee even during initial period.
 - Should correctly calculate period from contract deployment time.
 
 #### Reverts
 
-- Should revert with `wrong namespace fee` when owner tries to pay fee during initial period.
-- Should revert with `wrong namespace fee` when non-owner pays incorrect fee.
+- Should revert with `XNS: wrong namespace fee` when non-owner pays incorrect fee.
 
 ---
 
@@ -331,8 +349,8 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Reverts
 
-- Should revert with `address already has a name` when trying to register second name.
-- Should revert with `owner already has a name` when trying to assign second name via `claimFreeNames`.
+- Should revert with `XNS: address already has a name` when trying to register second name.
+- Should revert with `XNS: owner already has a name` when trying to assign second name via `claimFreeNames`.
 
 ---
 
