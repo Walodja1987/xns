@@ -411,15 +411,15 @@ contract XNS {
     /// @param label The label part of the name.
     /// @param namespace The namespace part of the name.
     /// @return _address The address associated with the name, or address(0) if not registered.
-    function _getAddress(string memory label, string memory namespace) internal view returns (address _address) {
+    function _getAddress(string memory label, string memory namespace) private view returns (address _address) {
         bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
         return _records[key];
     }
 
-    /// @dev Distribute fees: 90% burnt via DETH, 5% credited to namespace creator, 5% credited to contract owner.
-    /// @param totalAmount The total amount to distribute.
-    /// @param namespaceCreator The address of the namespace creator.
-    function _burnETHAndCreditFees(uint256 totalAmount, address namespaceCreator) internal {
+    /// @dev Burns 90% of ETH sent via DETH, credits 5% to namespace creator and 5% to contract owner.
+    /// @param totalAmount The total amount of ETH sent to this contract.
+    /// @param namespaceCreator The address of the namespace creator that shall receive a portion of the fees.
+    function _burnETHAndCreditFees(uint256 totalAmount, address namespaceCreator) private {
         uint256 burnAmount = totalAmount * 90 / 100;
         uint256 creatorFee = totalAmount * 5 / 100;
         uint256 ownerFee = totalAmount - burnAmount - creatorFee; // Ensures exact 100% distribution
@@ -437,7 +437,7 @@ contract XNS {
     ///      - length 1–20
     ///      - consists only of [a-z0-9-]
     ///      - cannot start or end with '-'
-    function _isValidLabel(string memory label) internal pure returns (bool) {
+    function _isValidLabel(string memory label) private pure returns (bool) {
         bytes memory b = bytes(label);
         uint256 len = b.length;
         if (len == 0 || len > 20) return false;
@@ -451,6 +451,7 @@ contract XNS {
         }
 
         if (b[0] == 0x2D || b[len - 1] == 0x2D) return false; // no leading/trailing '-'
+
         return true;
     }
 
@@ -458,7 +459,7 @@ contract XNS {
     ///      - non-empty
     ///      - length 1–4
     ///      - consists only of [a-z0-9]
-    function _isValidNamespace(string memory namespace_) internal pure returns (bool) {
+    function _isValidNamespace(string memory namespace_) private pure returns (bool) {
         bytes memory b = bytes(namespace_);
         uint256 len = b.length;
         if (len == 0 || len > 4) return false;

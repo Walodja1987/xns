@@ -11,7 +11,8 @@
   "function PRICE_STEP() view returns (uint256)",
   "function SPECIAL_NAMESPACE() view returns (string)",
   "function SPECIAL_NAMESPACE_PRICE() view returns (uint256)",
-  "function claimFees()",
+  "function claimFees(address)",
+  "function claimFeesToSelf()",
   "function claimFreeNames(string,tuple(string,address)[])",
   "function deployedAt() view returns (uint64)",
   "function getAddress(string,string) view returns (address)",
@@ -19,10 +20,10 @@
   "function getName(address) view returns (string, string)",
   "function getNamespaceInfo(string) view returns (uint256, address, uint64, uint16)",
   "function getNamespaceInfo(uint256) view returns (string, uint256, address, uint64, uint16)",
+  "function getPendingFees(address) view returns (uint256)",
   "function isValidLabel(string) pure returns (bool)",
   "function isValidNamespace(string) pure returns (bool)",
   "function owner() view returns (address)",
-  "function pendingFees(address) view returns (uint256)",
   "function registerName(string) payable",
   "function registerNamespace(string,uint256) payable"
 ]
