@@ -31,25 +31,25 @@ function delay(ms: number) {
 // Namespace tiers: price (in ETH) -> namespace
 const NAMESPACE_TIERS: Array<{ priceETH: string; namespace: string }> = [
   { priceETH: "0.001", namespace: "xns" },
-  { priceETH: "0.002", namespace: "gm" },
-  { priceETH: "0.003", namespace: "degen" },
-  { priceETH: "0.004", namespace: "wtf" },
-  { priceETH: "0.005", namespace: "yolo" },
-  { priceETH: "0.006", namespace: "bro" },
-  { priceETH: "0.007", namespace: "chatd" },
-  { priceETH: "0.008", namespace: "og" },
-  { priceETH: "0.009", namespace: "hodl" },
-  { priceETH: "0.01", namespace: "maxi" },
-  { priceETH: "0.015", namespace: "bull" },
-  { priceETH: "0.02", namespace: "whale" },
-  { priceETH: "0.025", namespace: "pump" },
-  { priceETH: "0.030", namespace: "100x" },
-  { priceETH: "0.035", namespace: "xyz" },
-  { priceETH: "0.040", namespace: "ape" },
-  { priceETH: "0.045", namespace: "moon" },
-  { priceETH: "0.050", namespace: "com" },
-  { priceETH: "0.055", namespace: "io" },
-  { priceETH: "0.060", namespace: "xyz" }, // Note: duplicate namespace, will fail if already registered
+  // { priceETH: "0.002", namespace: "gm" },
+  // { priceETH: "0.003", namespace: "long" },
+  // { priceETH: "0.004", namespace: "wtf" },
+  // { priceETH: "0.005", namespace: "yolo" },
+  // { priceETH: "0.006", namespace: "bro" },
+  // { priceETH: "0.007", namespace: "chatd" },
+  // { priceETH: "0.008", namespace: "og" },
+  // { priceETH: "0.009", namespace: "hodl" },
+  // { priceETH: "0.01", namespace: "maxi" },
+  // { priceETH: "0.015", namespace: "bull" },
+  // { priceETH: "0.02", namespace: "whale" }, //  -> too long
+  // { priceETH: "0.025", namespace: "pump" },
+  // { priceETH: "0.030", namespace: "100x" },
+  // { priceETH: "0.035", namespace: "xyz" },
+  // { priceETH: "0.040", namespace: "ape" },
+  // { priceETH: "0.045", namespace: "moon" },
+  // { priceETH: "0.050", namespace: "com" },
+  // { priceETH: "0.055", namespace: "io" },
+  // { priceETH: "0.888", namespace: "888" }, // Note: duplicate namespace, will fail if already registered
 ];
 
 export default async function main(hre: HardhatRuntimeEnvironment) {

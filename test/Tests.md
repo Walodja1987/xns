@@ -25,7 +25,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should have correct `NAMESPACE_REGISTRATION_FEE` (200 ether).
 - Should have correct `MAX_FREE_NAMES_PER_NAMESPACE` (200).
 - Should have correct `NS_CREATOR_EXCLUSIVE_PERIOD` (30 days).
-- Should have correct `INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD` (90 days).
+- Should have correct `INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD` (1 year).
 - Should have correct `PRICE_STEP` (0.001 ether / 1e15).
 - Should have correct `SPECIAL_NAMESPACE` ("x").
 - Should have correct `SPECIAL_NAMESPACE_PRICE` (100 ether).
@@ -87,7 +87,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should set `createdAt` to current block timestamp.
 - Should initialize namespace with 200 free names.
 - Should map price to namespace correctly.
-- Should allow owner to register namespace without fee (msg.value = 0) during initial period (90 days).
+- Should allow owner to register namespace without fee (msg.value = 0) during initial period (1 year).
 - Should allow owner to register namespace with fees during initial period (optional payment).
 - Should distribute fees correctly when owner chooses to pay fees during initial period.
 - Should allow anyone to register namespace with correct fee after initial period.
@@ -328,8 +328,8 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should allow owner to register namespaces without fee (msg.value = 0) during first 90 days.
-- Should require owner to pay fee after 90 days.
+- Should allow owner to register namespaces without fee (msg.value = 0) during first year.
+- Should require owner to pay fee after 1 year.
 - Should allow non-owners to register namespaces with fee even during initial period.
 - Should correctly calculate period from contract deployment time.
 

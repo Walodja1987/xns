@@ -14,21 +14,26 @@ import {IDETH} from "./IDETH.sol";
 //                          //
 //////////////////////////////
 
-// @todo think about whether to extend initial period to 1 year again bc it could serve as an incentive for wallet provider and integrations to adopt XNS
-// But theoretically, you could also earn the fee and then forward it to them
-
 /// @title XNS
-/// @notice Ethereum-only name registry: ETH amount -> namespace, (label, namespace) -> address.
+/// @author Wladimir Weinbender
+/// @notice An Ethereum-native name registry that maps human-readable names to Ethereum addresses.
+/// Names are permanent, immutable, and non-transferable. Each address can own at most one name.
 /// @dev
-/// - Names are immutable and non-transferable.
-/// - ETH amount per name determines the namespace via a price mapping (e.g., 0.001 ETH = "xns" namespace).
-/// - Anyone can register new namespaces by paying a one-time fee
-///   (except the contract creator, who pays no namespace fee in the first 90 days).
-/// - Namespace creator gets a 1-month exclusive period for paid registrations.
-/// - Namespace creator can assign up to 200 free names per namespace (at any time).
-/// - Each address can own at most one XNS name globally.
-/// - "eth" namespace is forbidden to avoid confusion with ENS.
-/// - Bare labels (e.g. "nike") are treated as "nike.x" (the special namespace).
+/// - Name = [label].[namespace] (e.g., alice.xns, bob.yolo, vitalik.100x, garry.ape)
+/// - ETH amount sent to the XNS contract during name registration determines 
+///   the namespace (e.g., 0.001 ETH -> "xns", 0.002 ETH -> "yolo").
+/// - Supports bare names like "vitalik" or "bankless" (these are equivalent to names in the 
+///   special "x" namespace, e.g., "vitalik.x" or "bankless.x").
+/// - The special "x" namespace is a premium namespace that costs 100 ETH per name. The XNS contract
+///   owner is the creator of this namespace and can assign up to 200 free names at any time, and has
+///   exclusive rights to register paid names in the first 30 days after namespace creation.
+/// - Anyone can register new namespaces by paying a one-time fee of 200 ETH.
+/// - Namespace creators receive the right to assign up to 200 free names (no time limit)
+///   and enjoy a 30-day exclusive window for registering paid names.
+/// - The XNS contract owner can register namespaces for free in the first year following contract deployment.
+/// - "eth" namespace is disallowed to avoid confusion with ENS.
+/// - 90% of ETH sent during name registration is burned via the DETH contract (0xE46861C9f28c46F27949fb471986d59B256500a7)
+///   and 10% is distributed to the namespace creator and the XNS contract owner as a fee (5% each).
 contract XNS {
     // -------------------------------------------------------------------------
     // Types
@@ -91,7 +96,7 @@ contract XNS {
     uint256 public constant NAMESPACE_CREATOR_EXCLUSIVE_PERIOD = 30 days;
 
     /// @dev period after contract deployment during which the owner pays no namespace registration fee.
-    uint256 public constant INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD  = 90 days;
+    uint256 public constant INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD  = 365 days;
 
     /// @dev unit price step (0.001 ETH).
     uint256 public constant PRICE_STEP = 1e15; // 0.001 ether
@@ -182,11 +187,11 @@ contract XNS {
     }
 
     /// @notice Register a new namespace and assign a price-per-name.
-    /// @dev During initial owner namespace registration period (90 days following contract deployment), the owner pays no namespace registration fee.
+    /// @dev During initial owner namespace registration period (1 year following contract deployment), the owner pays no namespace registration fee.
     /// Anyone else can register a namespace for a fee, even within the initial owner namespace registration period.
     /// Note: The owner could theoretically front-run namespace registrations during this period, but doing so provides no economic benefit:
     /// the owner would only receive 5% of name registration fees (vs 200 ETH upfront fee), and users can mitigate this by
-    /// waiting until after the 90-day period. This is an accepted design trade-off for simplicity.
+    /// waiting until after the 1-year period. This is an accepted design trade-off for simplicity.
     function registerNamespace(string calldata namespace, uint256 pricePerName) external payable {
         require(_isValidNamespace(namespace), "XNS: invalid namespace");
 
@@ -219,7 +224,7 @@ contract XNS {
         emit NamespaceRegistered(namespace, pricePerName, msg.sender);
 
         // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
-        // `msg.value` = 0 within initial owner namespace registration period (90 days after contract deployment).
+        // `msg.value` = 0 within initial owner namespace registration period (1 year after contract deployment).
         if (msg.value > 0) {
             _burnETHAndCreditFees(msg.value, msg.sender);
         }

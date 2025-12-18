@@ -1,6 +1,5 @@
 # TODO
-* Register ".defi" namespace and then assign free protocol names. Use a rather higher value for that domain (e.g., 50 ETH) for naming
-* Contract deployment: Mention 90 exclusive namespace creation for contract owner (not creator)
+* Register ".defi" namespace and then assign free protocol names (coordinate with protocol owners). Use a rather higher value for that domain (e.g., 50 ETH) for naming
 
 ---
 
@@ -278,7 +277,7 @@ registerNamespace(string namespace, uint256 pricePerName) payable
 * Registers a new namespace
 * Binds it to `pricePerName`
 * Grants the creator 200 free names
-* During the initial 90-day period, the contract owner can register namespaces for free
+* During the initial 1-year period, the contract owner can register namespaces for free
 * All others must pay the namespace registration fee (200 ETH)
 
 ---
