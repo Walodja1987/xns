@@ -78,9 +78,10 @@ contract XNS {
     // -------------------------------------------------------------------------
 
     // @todo need @dev comments for all storage variables??
+    // @todo Review natspac (e.g., include return comments)
 
     /// @dev mapping from keccak256(label, ".", namespace) to owner address.
-    mapping(bytes32 => address) private _records;
+    mapping(bytes32 => address) private _nameHashToAddress;
 
     /// @dev mapping from namespace hash to namespace metadata.
     mapping(bytes32 => NamespaceData) private _namespaces;
@@ -90,7 +91,7 @@ contract XNS {
 
     /// @dev mapping: address -> (label, namespace).
     /// If label is empty, the address has no name.
-    mapping(address => Name) private _addressName;
+    mapping(address => Name) private _addressToName;
 
     /// @dev mapping from address to pending fees (in wei) that can be claimed.
     mapping(address => uint256) private _pendingFees;
@@ -191,13 +192,13 @@ contract XNS {
         }
 
         // Enforce one-name-per-address globally.
-        require(bytes(_addressName[msg.sender].label).length == 0, "XNS: address already has a name");
+        require(bytes(_addressToName[msg.sender].label).length == 0, "XNS: address already has a name");
 
         bytes32 key = keccak256(abi.encodePacked(label, ".", namespace_));
-        require(_records[key] == address(0), "XNS: name already registered");
+        require(_nameHashToAddress[key] == address(0), "XNS: name already registered");
 
-        _records[key] = msg.sender;
-        _addressName[msg.sender] = Name({label: label, namespace: namespace_});
+        _nameHashToAddress[key] = msg.sender;
+        _addressToName[msg.sender] = Name({label: label, namespace: namespace_});
 
         emit NameRegistered(label, namespace_, msg.sender);
 
@@ -269,13 +270,13 @@ contract XNS {
 
             require(_isValidLabel(label), "XNS: invalid label");
             require(to != address(0), "XNS: 0x owner");
-            require(bytes(_addressName[to].label).length == 0, "XNS: owner already has a name");
+            require(bytes(_addressToName[to].label).length == 0, "XNS: owner already has a name");
 
             bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
-            require(_records[key] == address(0), "XNS: name already registered");
+            require(_nameHashToAddress[key] == address(0), "XNS: name already registered");
 
-            _records[key] = to;
-            _addressName[to] = Name({label: label, namespace: namespace});
+            _nameHashToAddress[key] = to;
+            _addressToName[to] = Name({label: label, namespace: namespace});
 
             emit NameRegistered(label, namespace, to);
         }
@@ -381,16 +382,15 @@ contract XNS {
     function _getAddress(string memory label, string memory namespace) private view returns (address addr) {
         bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
 
-        return _records[key];
+        return _nameHashToAddress[key];
     }
-
 
     /// @notice Reverse lookup: get the XNS name for an address.
     /// @dev Returns empty string if the address has no name.
     /// @dev For bare names (namespace "x"), returns just the label without the ".x" suffix.
     /// @dev For regular names, returns the full name in format "label.namespace".
     function getName(address addr) external view returns (string memory) {
-        Name storage n = _addressName[addr];
+        Name storage n = _addressToName[addr];
 
         if (bytes(n.label).length == 0) {
             return "";
@@ -498,8 +498,8 @@ contract XNS {
     ///      - non-empty
     ///      - length 1–4
     ///      - consists only of [a-z0-9]
-    function _isValidNamespace(string memory namespace_) private pure returns (bool) {
-        bytes memory b = bytes(namespace_);
+    function _isValidNamespace(string memory namespace) private pure returns (bool) {
+        bytes memory b = bytes(namespace);
         uint256 len = b.length;
         if (len == 0 || len > 4) return false;
 
