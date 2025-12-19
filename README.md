@@ -363,13 +363,19 @@ Returns `address(0)` if the name is not registered.
 getName(address addr)
 ```
 
-Returns:
+Returns the full XNS name as a string:
+
+* For bare names (registered in the "x" namespace): returns just the label (e.g., `"vitalik"`)
+* For regular names: returns the full name in format `"label.namespace"` (e.g., `"alice.001"`)
+* If the address has no name: returns an empty string `""`
+
+Examples:
 
 ```solidity
-(label, namespace)
+getName(0x123...) // returns "vitalik" (bare name)
+getName(0x456...) // returns "alice.001" (regular name)
+getName(0x789...) // returns "" (no name)
 ```
-
-If the address has no name, empty strings are returned.
 
 ---
 

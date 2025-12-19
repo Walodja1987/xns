@@ -202,10 +202,12 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should return correct label and namespace for registered address.
-- Should return empty strings for address without a name.
+- Should return correct full name string for registered address.
+- Should return empty string for address without a name.
 - Should return correct name for addresses registered via `registerName`.
 - Should return correct name for addresses registered via `assignFreeNames`.
+- Should return bare name without ".x" suffix for names in the "x" namespace (e.g., returns "vitalik" not "vitalik.x").
+- Should return full name with namespace for regular names (e.g., returns "alice.001").
 
 ---
 

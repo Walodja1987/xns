@@ -90,7 +90,7 @@ contract XNS {
 
     /// @dev reverse mapping: address -> (label, namespace).
     /// If label is empty, the address has no name.
-    mapping(address => Name) private _reverseName;
+    mapping(address => Name) private _reverseName; // @todo I don't like the name
 
     /// @dev mapping from address to pending fees (in wei) that can be claimed.
     mapping(address => uint256) private _pendingFees;
@@ -385,12 +385,24 @@ contract XNS {
     }
 
 
-    /// @notice Reverse lookup: get the XNS name (label, namespace) for an address.
-    /// @dev Returns empty strings if the address has no name.
-    function getName(address addr) external view returns (string memory label, string memory namespace) {
+    /// @notice Reverse lookup: get the XNS name for an address.
+    /// @dev Returns empty string if the address has no name.
+    /// @dev For bare names (namespace "x"), returns just the label without the ".x" suffix.
+    /// @dev For regular names, returns the full name in format "label.namespace".
+    function getName(address addr) external view returns (string memory) {
         Name storage n = _reverseName[addr];
 
-        return (n.label, n.namespace);
+        if (bytes(n.label).length == 0) {
+            return "";
+        }
+
+        if (keccak256(bytes(n.namespace)) == keccak256(bytes(SPECIAL_NAMESPACE))) {
+            // Bare name: return just the label without ".x"
+            return n.label;
+        }
+
+        // Regular name: return "label.namespace"
+        return string.concat(n.label, ".", n.namespace);
     }
 
     /// @notice Get namespace metadata by namespace string.
