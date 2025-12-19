@@ -17,11 +17,11 @@ import {IDETH} from "./IDETH.sol";
 /// @title XNS
 /// @author Wladimir Weinbender
 /// @notice An Ethereum-native name registry that maps human-readable names to Ethereum addresses.
-/// Names are permanent, immutable, and non-transferable.
-/// @dev
-/// General:
-/// - Name format: [label].[namespace] (e.g., alice.xns, bob.yolo, vitalik.100x, garry.ape)
-/// - Each address can own at most one name.
+/// Names are **permanent, immutable, and non-transferable**.
+/// Each address can own at most one name.
+///
+/// Name format: **[label].[namespace]** (e.g., alice.xns, bob.yolo, vitalik.100x, garry.ape)
+/// 
 ///
 /// Name registration:
 /// - To register a name, users call `registerName(label)` and send ETH.
@@ -99,34 +99,34 @@ contract XNS {
     // Constants
     // -------------------------------------------------------------------------
 
-    /// @dev Contract owner address (immutable, set at deployment).
+    /// @notice Contract owner address (immutable, set at deployment).
     address public immutable owner;
 
-    /// @dev XNS contract deployment timestamp.
+    /// @notice XNS contract deployment timestamp.
     uint64 public immutable deployedAt;
 
-    /// @dev Fee to register a new namespace.
+    /// @notice Fee to register a new namespace.
     uint256 public constant NAMESPACE_REGISTRATION_FEE = 200 ether;
 
-    /// @dev Maximum number of free names the creator can mint in their namespace.
+    /// @notice Maximum number of free names the creator can mint in their namespace.
     uint16 public constant MAX_FREE_NAMES_PER_NAMESPACE = 200;
 
-    /// @dev Duration of the exclusive namespace-creator window for paid registrations.
+    /// @notice Duration of the exclusive namespace-creator window for paid registrations.
     uint256 public constant NAMESPACE_CREATOR_EXCLUSIVE_PERIOD = 30 days;
 
-    /// @dev Period after contract deployment during which the owner pays no namespace registration fee.
+    /// @notice Period after contract deployment during which the owner pays no namespace registration fee.
     uint256 public constant INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD  = 365 days;
 
-    /// @dev Unit price step (0.001 ETH).
+    /// @notice Unit price step (0.001 ETH).
     uint256 public constant PRICE_STEP = 1e15; // 0.001 ether
 
-    /// @dev Special namespace used for bare labels (e.g. "nike" = "nike.x").
+    /// @notice Special namespace used for bare labels (e.g. "nike" = "nike.x").
     string public constant SPECIAL_NAMESPACE = "x";
 
-    /// @dev Price-per-name for the special namespace (bare names).
+    /// @notice Price-per-name for the special namespace (bare names).
     uint256 public constant SPECIAL_NAMESPACE_PRICE = 100 ether;
 
-    /// @dev Address of DETH contract used to burn ETH and credit the recipient.
+    /// @notice Address of DETH contract used to burn ETH and credit the recipient.
     address public constant DETH = 0xE46861C9f28c46F27949fb471986d59B256500a7;
 
     // -------------------------------------------------------------------------
@@ -166,7 +166,7 @@ contract XNS {
     // STATE-MODIFYING FUNCTIONS
     // =========================================================================
 
-    /// @notice Register a paid name for `msg.sender`. Namespace is determined by `msg.value`.
+    /// @notice Registers a paid name for `msg.sender`. Namespace is determined by `msg.value`.
     /// @dev Following namespace registration, the namespace creator has a 30-day exclusivity window for registering paid names.
     /// A namespace creator would typically first assign free names via the `assignFreeNames` function
     /// before registering paid names.
@@ -283,21 +283,21 @@ contract XNS {
         ns.remainingFreeNames -= uint16(count);
     }
 
-    /// @notice Claim accumulated fees for msg.sender and send to recipient.
-    /// @dev Withdraws all pending fees credited to msg.sender and transfers them to recipient.
+    /// @notice Claim accumulated fees for `msg.sender` and send to recipient.
+    /// @dev Withdraws all pending fees credited to `msg.sender` and transfers them to `recipient`.
     /// @param recipient The address that will receive the claimed fees.
     function claimFees(address recipient) external {
         require(recipient != address(0), "XNS: zero recipient");
         _claimFees(recipient);
     }
 
-    /// @notice Claim accumulated fees for msg.sender and send to msg.sender.
-    /// @dev Convenience function that claims fees for msg.sender and sends them to msg.sender.
+    /// @notice Claim accumulated fees for `msg.sender` and send to `msg.sender`.
+    /// @dev Convenience function that claims fees for `msg.sender` and sends them to `msg.sender`.
     function claimFeesToSelf() external {
         _claimFees(msg.sender);
     }
 
-    /// @dev Claim accumulated fees for msg.sender and send to recipient.
+    /// @dev Claim accumulated fees for `msg.sender` and send to `recipient`.
     /// @param recipient The address that will receive the claimed fees.
     function _claimFees(address recipient) private {
         uint256 amount = _pendingFees[msg.sender];
@@ -315,25 +315,10 @@ contract XNS {
     // GETTER / VIEW FUNCTIONS
     // =========================================================================
 
-    /// @notice Canonical resolution: resolve (label, namespace) to an address.
-    /// @dev
-    /// - No parsing
-    /// - No validation
-    /// - Returns address(0) if not registered
-    /// @return addr The address associated with the name, or address(0) if not registered.
-    function getAddress(
-        string calldata label,
-        string calldata namespace
-    ) external view returns (address addr) {
-        return _getAddress(label, namespace);
-    }
-
-    /// @notice Human-friendly resolution: resolve a full name like "nike", "nike.x", "vitalik.001".
-    /// @dev
-    /// - Best-effort parsing
-    /// - Bare names are treated as label.x
-    /// - Returns address(0) for anything not registered or malformed
-    /// @return addr The address associated with the name, or address(0) if not registered.
+    /// @notice Resolves a name string like "nike", "nike.x", "vitalik.001" to an address.
+    /// @dev Returns `address(0)` for anything not registered or malformed.
+    /// @param fullName The name string to resolve.
+    /// @return addr The address associated with the name, or `address(0)` if not registered.
     function getAddress(string calldata fullName) external view returns (address addr) {
         bytes memory b = bytes(fullName);
         uint256 len = b.length;
@@ -374,10 +359,19 @@ contract XNS {
         return _getAddress(label, namespace);
     }
 
-    /// @dev Get address for a given label and namespace.
+    /// @notice More gas efficient variant of `getAddress(string calldata fullName)`.
+    /// @dev Returns `address(0)` if not registered.
     /// @param label The label part of the name.
     /// @param namespace The namespace part of the name.
-    /// @return addr The address associated with the name, or address(0) if not registered.
+    /// @return addr The address associated with the name, or `address(0)` if not registered.
+    function getAddress(string calldata label, string calldata namespace) external view returns (address addr) {
+        return _getAddress(label, namespace);
+    }
+
+    /// @dev Helper function to get address for a given label and namespace.
+    /// @param label The label part of the name.
+    /// @param namespace The namespace part of the name.
+    /// @return addr The address associated with the name, or `address(0)` if not registered.
     function _getAddress(string memory label, string memory namespace) private view returns (address addr) {
         bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
 
