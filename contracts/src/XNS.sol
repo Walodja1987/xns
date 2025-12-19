@@ -60,7 +60,7 @@ contract XNS {
         uint256 pricePerName;
         address creator;
         uint64 createdAt;
-        uint16 remainingFreeNames; // how many free names are still available (max 200 initially)
+        uint16 remainingFreeNames;
     }
 
     struct Assignment {
@@ -80,51 +80,50 @@ contract XNS {
     // @todo need @dev comments for all storage variables??
     // @todo Review natspac (e.g., include return comments)
 
-    /// @dev mapping from keccak256(label, ".", namespace) to owner address.
+    // Mapping from keccak256(label, ".", namespace) to name owner address.
     mapping(bytes32 => address) private _nameHashToAddress;
 
-    /// @dev mapping from namespace hash to namespace metadata.
+    // Mapping from keccak256(namespace) to namespace metadata.
     mapping(bytes32 => NamespaceData) private _namespaces;
 
-    /// @dev mapping from price-per-name (wei) to namespace string.
+    // Mapping from price-per-name to namespace string.
     mapping(uint256 => string) private _priceToNamespace;
 
-    /// @dev mapping: address -> (label, namespace).
-    /// If label is empty, the address has no name.
+    // Mapping from address to name (label, namespace). If label is empty, the address has no name.
     mapping(address => Name) private _addressToName;
 
-    /// @dev mapping from address to pending fees (in wei) that can be claimed.
+    // Mapping from address to pending fees that can be claimed.
     mapping(address => uint256) private _pendingFees;
 
     // -------------------------------------------------------------------------
     // Constants
     // -------------------------------------------------------------------------
 
-    /// @dev contract owner address (immutable, set at deployment).
+    /// @dev Contract owner address (immutable, set at deployment).
     address public immutable owner;
 
-    /// @dev deployment timestamp.
+    /// @dev XNS contract deployment timestamp.
     uint64 public immutable deployedAt;
 
-    /// @dev flat fee to register a new namespace (in wei) for non-creator callers.
+    /// @dev Fee to register a new namespace.
     uint256 public constant NAMESPACE_REGISTRATION_FEE = 200 ether;
 
-    /// @dev maximum number of free names the creator can mint in their namespace.
+    /// @dev Maximum number of free names the creator can mint in their namespace.
     uint16 public constant MAX_FREE_NAMES_PER_NAMESPACE = 200;
 
-    /// @dev duration of the exclusive namespace-creator window for paid registrations.
+    /// @dev Duration of the exclusive namespace-creator window for paid registrations.
     uint256 public constant NAMESPACE_CREATOR_EXCLUSIVE_PERIOD = 30 days;
 
-    /// @dev period after contract deployment during which the owner pays no namespace registration fee.
+    /// @dev Period after contract deployment during which the owner pays no namespace registration fee.
     uint256 public constant INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD  = 365 days;
 
-    /// @dev unit price step (0.001 ETH).
+    /// @dev Unit price step (0.001 ETH).
     uint256 public constant PRICE_STEP = 1e15; // 0.001 ether
 
-    /// @dev special namespace used for bare labels (e.g. "nike" = "nike.x").
+    /// @dev Special namespace used for bare labels (e.g. "nike" = "nike.x").
     string public constant SPECIAL_NAMESPACE = "x";
 
-    /// @dev price-per-name for the special namespace (bare names).
+    /// @dev Price-per-name for the special namespace (bare names).
     uint256 public constant SPECIAL_NAMESPACE_PRICE = 100 ether;
 
     /// @dev Address of DETH contract used to burn ETH and credit the recipient.
@@ -178,11 +177,11 @@ contract XNS {
         require(pricePerName > 0, "XNS: zero price");
 
         // Determine namespace from pricePerName.
-        string memory namespace_ = _priceToNamespace[pricePerName];
-        require(bytes(namespace_).length != 0, "XNS: non-existent namespace");
+        string memory namespace = _priceToNamespace[pricePerName];
+        require(bytes(namespace).length != 0, "XNS: non-existent namespace");
 
         // Load namespace metadata.
-        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace_))];
+        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
 
         // Following namespace registration, the namespace creator has a 30-day exclusivity window for registering
         // names within the registered namespace. A namespace creator would typically first assign free names via
@@ -194,13 +193,13 @@ contract XNS {
         // Enforce one-name-per-address globally.
         require(bytes(_addressToName[msg.sender].label).length == 0, "XNS: address already has a name");
 
-        bytes32 key = keccak256(abi.encodePacked(label, ".", namespace_));
+        bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
         require(_nameHashToAddress[key] == address(0), "XNS: name already registered");
 
         _nameHashToAddress[key] = msg.sender;
-        _addressToName[msg.sender] = Name({label: label, namespace: namespace_});
+        _addressToName[msg.sender] = Name({label: label, namespace: namespace});
 
-        emit NameRegistered(label, namespace_, msg.sender);
+        emit NameRegistered(label, namespace, msg.sender);
 
         // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
         _burnETHAndCreditFees(msg.value, ns.creator);
