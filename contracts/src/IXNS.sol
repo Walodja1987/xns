@@ -2,9 +2,9 @@
 pragma solidity 0.8.28;
 
 interface IXNS {
-    struct Claim {
+    struct Assignment {
         string label;
-        address owner;
+        address to;
     }
 
     event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
@@ -15,7 +15,7 @@ interface IXNS {
     function registerNamespace(string calldata namespace, uint256 pricePerName) external payable;
     function claimFees(address recipient) external;
     function claimFeesToSelf() external;
-    function claimFreeNames(string calldata namespace, Claim[] calldata claims) external;
+    function assignFreeNames(string calldata namespace, Assignment[] calldata assignments) external;
 
     function getAddress(string calldata label, string calldata namespace) external view returns (address addr);
     function getAddress(string calldata fullName) external view returns (address addr);

@@ -143,7 +143,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
-### claimFreeNames
+### assignFreeNames
 
 #### Functionality
 
@@ -152,20 +152,20 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should map names to addresses correctly.
 - Should map addresses to names correctly (reverse lookup).
 - Should decrease `remainingFreeNames` counter correctly.
-- Should allow multiple claims in one transaction.
+- Should allow multiple assignments in one transaction.
 - Should emit `NameRegistered` event for each free name.
 - Should allow assigning names to different addresses in one call.
-- Should allow namespace creator to claim free names at any time (even after exclusive period).
+- Should allow namespace creator to assign free names at any time (even after exclusive period).
 - Should correctly handle multiple free name assignments up to the limit (200).
 
 #### Reverts
 
 - Should revert with `XNS: no ETH for free registration` error when msg.value > 0.
-- Should revert with `XNS: empty claims` error when claims array is empty.
+- Should revert with `XNS: empty assignments` error when assignments array is empty.
 - Should revert with `XNS: namespace not found` error for non-existent namespace.
 - Should revert with `XNS: not namespace creator` error when called by non-creator.
-- Should revert with `XNS: free name quota exceeded` error when claiming more than remaining free names.
-- Should revert with `XNS: invalid label` error for invalid label in claims.
+- Should revert with `XNS: free name quota exceeded` error when assigning more than remaining free names.
+- Should revert with `XNS: invalid label` error for invalid label in assignments.
 - Should revert with `XNS: 0x owner` error when owner address is zero.
 - Should revert with `XNS: owner already has a name` error when target owner already has a name.
 - Should revert with `XNS: name already registered` error when name is already registered.
@@ -179,7 +179,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should return correct owner address for registered name.
 - Should return `address(0)` for unregistered name.
 - Should return correct address for names registered via `registerName`.
-- Should return correct address for names registered via `claimFreeNames`.
+- Should return correct address for names registered via `assignFreeNames`.
 - Should handle special namespace "x" correctly.
 
 ---
@@ -205,7 +205,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should return correct label and namespace for registered address.
 - Should return empty strings for address without a name.
 - Should return correct name for addresses registered via `registerName`.
-- Should return correct name for addresses registered via `claimFreeNames`.
+- Should return correct name for addresses registered via `assignFreeNames`.
 
 ---
 
@@ -344,13 +344,13 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 #### Functionality
 
 - Should prevent address from registering second name.
-- Should prevent address from receiving second name via `claimFreeNames`.
+- Should prevent address from receiving second name via `assignFreeNames`.
 - Should allow address to have one name only.
 
 #### Reverts
 
 - Should revert with `XNS: address already has a name` when trying to register second name.
-- Should revert with `XNS: owner already has a name` when trying to assign second name via `claimFreeNames`.
+- Should revert with `XNS: owner already has a name` when trying to assign second name via `assignFreeNames`.
 
 ---
 

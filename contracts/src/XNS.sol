@@ -63,9 +63,9 @@ contract XNS {
         uint16 remainingFreeNames; // how many free names are still available (max 200 initially)
     }
 
-    struct Claim {
+    struct Assignment {
         string label;
-        address owner; // @todo confusing -> use nameOwner?
+        address to;
     }
 
     struct Name {
@@ -76,6 +76,8 @@ contract XNS {
     // -------------------------------------------------------------------------
     // Storage (private, accessed via getters)
     // -------------------------------------------------------------------------
+
+    // @todo need @dev comments for all storage variables??
 
     /// @dev mapping from keccak256(label, ".", namespace) to owner address.
     mapping(bytes32 => address) private _records;
@@ -166,7 +168,7 @@ contract XNS {
 
     /// @notice Register a paid name for `msg.sender`. Namespace is determined by `msg.value`.
     /// @dev Following namespace registration, the namespace creator has a 30-day exclusivity window for registering paid names.
-    /// A namespace creator would typically first claim free names via the `claimFreeNames` function
+    /// A namespace creator would typically first assign free names via the `assignFreeNames` function
     /// before registering paid names.
     function registerName(string calldata label) external payable {
         require(_isValidLabel(label), "XNS: invalid label");
@@ -182,8 +184,8 @@ contract XNS {
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace_))];
 
         // Following namespace registration, the namespace creator has a 30-day exclusivity window for registering
-        // names within the registered namespace. A namespace creator would typically first claim free names via
-        // the `claimFreeNames` function before registering paid names.
+        // names within the registered namespace. A namespace creator would typically first assign free names via
+        // the `assignFreeNames` function before registering paid names.
         if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
             require(msg.sender == ns.creator, "XNS: not namespace creator during exclusive period");
         }
@@ -251,10 +253,10 @@ contract XNS {
     /// @dev
     /// - `msg.sender` must be `namespace.creator`.
     /// - Up to `MAX_FREE_NAMES_PER_NAMESPACE` total free names per namespace.
-    /// - Can assign names to arbitrary owners, but each owner must not already have a name.
-    function claimFreeNames(string calldata namespace, Claim[] calldata claims) external {
-        uint256 count = claims.length;
-        require(count > 0, "XNS: empty claims");
+    /// - Can assign names to arbitrary addresses, but each address must not already have a name.
+    function assignFreeNames(string calldata namespace, Assignment[] calldata assignments) external {
+        uint256 count = assignments.length;
+        require(count > 0, "XNS: empty assignments");
 
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
@@ -262,20 +264,20 @@ contract XNS {
         require(count <= ns.remainingFreeNames, "XNS: free name quota exceeded");
 
         for (uint256 i = 0; i < count; i++) {
-            string memory label = claims[i].label;
-            address _owner = claims[i].owner;  // @todo if we rename _owner to $owner, then change _owner to owner
+            string memory label = assignments[i].label;
+            address to = assignments[i].to;
 
             require(_isValidLabel(label), "XNS: invalid label");
-            require(_owner != address(0), "XNS: 0x owner");
-            require(bytes(_reverseName[_owner].label).length == 0, "XNS: owner already has a name");
+            require(to != address(0), "XNS: 0x owner");
+            require(bytes(_reverseName[to].label).length == 0, "XNS: owner already has a name");
 
             bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
             require(_records[key] == address(0), "XNS: name already registered");
 
-            _records[key] = _owner;
-            _reverseName[_owner] = Name({label: label, namespace: namespace});
+            _records[key] = to;
+            _reverseName[to] = Name({label: label, namespace: namespace});
 
-            emit NameRegistered(label, namespace, _owner);
+            emit NameRegistered(label, namespace, to);
         }
 
         ns.remainingFreeNames -= uint16(count);

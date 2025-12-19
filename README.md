@@ -285,7 +285,7 @@ registerNamespace(string namespace, uint256 pricePerName) payable
 ### Assign Free Names (Namespace Creator)
 
 ```solidity
-claimFreeNames(string namespace, Claim[] claims)
+assignFreeNames(string namespace, Assignment[] assignments)
 ```
 
 * Creator-only
