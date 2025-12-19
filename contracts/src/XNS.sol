@@ -17,23 +17,40 @@ import {IDETH} from "./IDETH.sol";
 /// @title XNS
 /// @author Wladimir Weinbender
 /// @notice An Ethereum-native name registry that maps human-readable names to Ethereum addresses.
-/// Names are permanent, immutable, and non-transferable. Each address can own at most one name.
+/// Names are permanent, immutable, and non-transferable.
 /// @dev
-/// - Name = [label].[namespace] (e.g., alice.xns, bob.yolo, vitalik.100x, garry.ape)
-/// - ETH amount sent to the XNS contract during name registration determines 
-///   the namespace (e.g., 0.001 ETH -> "xns", 0.002 ETH -> "yolo").
-/// - Supports bare names like "vitalik" or "bankless" (these are equivalent to names in the 
-///   special "x" namespace, e.g., "vitalik.x" or "bankless.x").
-/// - The special "x" namespace is a premium namespace that costs 100 ETH per name. The XNS contract
-///   owner is the creator of this namespace and can assign up to 200 free names at any time, and has
-///   exclusive rights to register paid names in the first 30 days after namespace creation.
+/// General:
+/// - Name format: [label].[namespace] (e.g., alice.xns, bob.yolo, vitalik.100x, garry.ape)
+/// - Each address can own at most one name.
+///
+/// Name registration:
+/// - To register a name, users call `registerName(label)` and send ETH.
+/// - The amount of ETH sent determines the namespace. It must match a namespace's registered price. 
+/// - For example, if the "100x" namespace was registered with price 0.1 ETH, then calling `registerName("vitalik")` with 0.1 ETH
+///   registers "vitalik.100x".
+/// - Names are always linked to the caller's address and cannot be assigned to another address,
+///   except namespace creators can assign free names (see Namespace registration section).
+///
+/// Bare names:
+/// - A bare name is a name without a namespace (e.g., "vitalik" or "bankless").
+/// - Bare names are equivalent to names in the special "x" namespace, i.e., "vitalik" = "vitalik.x" or "bankless" = "bankless.x".
+/// - Bare names are considered premium names and cost 100 ETH per name.
+///
+/// Namespace registration:
 /// - Anyone can register new namespaces by paying a one-time fee of 200 ETH.
-/// - Namespace creators receive the right to assign up to 200 free names (no time limit)
-///   and enjoy a 30-day exclusive window for registering paid names.
+/// - Namespace creators receive two privileges:
+///     i)  The right to assign up to 200 free names to any address that does not already have a name (no time limit), and 
+///     ii) A 30-day exclusive window for registering paid names within the registered namespace.
+/// - The exclusive window is useful if a creator exhausts their 200 free names and wants to register additional names
+///   before the namespace becomes publicly available.
 /// - The XNS contract owner can register namespaces for free in the first year following contract deployment.
+/// - The XNS contract owner is set as the creator of the "x" namespace (bare names) at contract deployment.
 /// - "eth" namespace is disallowed to avoid confusion with ENS.
-/// - 90% of ETH sent during name registration is burned via the DETH contract (0xE46861C9f28c46F27949fb471986d59B256500a7)
-///   and 10% is distributed to the namespace creator and the XNS contract owner as a fee (5% each).
+///
+/// Ethereum-aligned:
+/// - 90% of ETH sent during name / namespace registration is burnt via the DETH contract,
+///   supporting Ethereum's deflationary mechanism and ETH's value accrual.
+/// - 10% is credited as fees to the namespace creator and the XNS contract owner (5% each).
 contract XNS {
     // -------------------------------------------------------------------------
     // Types
@@ -48,7 +65,7 @@ contract XNS {
 
     struct Claim {
         string label;
-        address owner;
+        address owner; // @todo confusing -> use nameOwner?
     }
 
     struct Name {
@@ -164,9 +181,9 @@ contract XNS {
         // Load namespace metadata.
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace_))];
 
-        // Following namespace registration, the namespace creator has a 30-day exclusivity window for registering paid names.
-        // A namespace creator would typically first claim free names via the `claimFreeNames` function
-        // before registering paid names.
+        // Following namespace registration, the namespace creator has a 30-day exclusivity window for registering
+        // names within the registered namespace. A namespace creator would typically first claim free names via
+        // the `claimFreeNames` function before registering paid names.
         if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
             require(msg.sender == ns.creator, "XNS: not namespace creator during exclusive period");
         }
@@ -230,34 +247,6 @@ contract XNS {
         }
     }
 
-    /// @notice Claim accumulated fees for msg.sender and send to recipient.
-    /// @dev Withdraws all pending fees credited to msg.sender and transfers them to recipient.
-    /// @param recipient The address that will receive the claimed fees.
-    function claimFees(address recipient) external {
-        require(recipient != address(0), "XNS: zero recipient");
-        _claimFees(recipient);
-    }
-
-    /// @notice Claim accumulated fees for msg.sender and send to msg.sender.
-    /// @dev Convenience function that claims fees for msg.sender and sends them to msg.sender.
-    function claimFeesToSelf() external {
-        _claimFees(msg.sender);
-    }
-
-    /// @dev Claim accumulated fees for msg.sender and send to recipient.
-    /// @param recipient The address that will receive the claimed fees.
-    function _claimFees(address recipient) private {
-        uint256 amount = _pendingFees[msg.sender];
-        require(amount > 0, "XNS: no fees to claim");
-
-        _pendingFees[msg.sender] = 0;
-
-        (bool success, ) = recipient.call{value: amount}("");
-        require(success, "XNS: fee transfer failed");
-
-        emit FeesClaimed(recipient, amount);
-    }
-
     /// @notice Creator-only free registration (can be used any time).
     /// @dev
     /// - `msg.sender` must be `namespace.creator`.
@@ -290,6 +279,34 @@ contract XNS {
         }
 
         ns.remainingFreeNames -= uint16(count);
+    }
+
+    /// @notice Claim accumulated fees for msg.sender and send to recipient.
+    /// @dev Withdraws all pending fees credited to msg.sender and transfers them to recipient.
+    /// @param recipient The address that will receive the claimed fees.
+    function claimFees(address recipient) external {
+        require(recipient != address(0), "XNS: zero recipient");
+        _claimFees(recipient);
+    }
+
+    /// @notice Claim accumulated fees for msg.sender and send to msg.sender.
+    /// @dev Convenience function that claims fees for msg.sender and sends them to msg.sender.
+    function claimFeesToSelf() external {
+        _claimFees(msg.sender);
+    }
+
+    /// @dev Claim accumulated fees for msg.sender and send to recipient.
+    /// @param recipient The address that will receive the claimed fees.
+    function _claimFees(address recipient) private {
+        uint256 amount = _pendingFees[msg.sender];
+        require(amount > 0, "XNS: no fees to claim");
+
+        _pendingFees[msg.sender] = 0;
+
+        (bool success, ) = recipient.call{value: amount}("");
+        require(success, "XNS: fee transfer failed");
+
+        emit FeesClaimed(recipient, amount);
     }
 
     // =========================================================================
