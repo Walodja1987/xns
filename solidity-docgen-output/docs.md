@@ -1,26 +1,33 @@
+# XNS Contract Documentation
+
 ## XNS
 
 An Ethereum-native name registry that maps human-readable names to Ethereum addresses.
 Names are **permanent, immutable, and non-transferable**.
-Each address can own at most one name.
 
-Name format: **[label].[namespace]** (e.g., alice.xns, bob.yolo, vitalik.100x, garry.ape)
+Name format: **[label].[namespace]** 
 
+Examples:
+- alice.xns
+- bob.yolo
+- vitalik.100x
+- garry.ape
 
-Name registration:
+### Name registration
 - To register a name, users call `registerName(label)` and send ETH.
 - The amount of ETH sent determines the namespace. It must match a namespace's registered price. 
 - For example, if the "100x" namespace was registered with price 0.1 ETH, then calling `registerName("vitalik")` with 0.1 ETH
   registers "vitalik.100x".
+- Each address can own at most one name.
 - Names are always linked to the caller's address and cannot be assigned to another address,
   except namespace creators can assign free names (see Namespace registration section).
 
-Bare names:
+### Bare names
 - A bare name is a name without a namespace (e.g., "vitalik" or "bankless").
 - Bare names are equivalent to names in the special "x" namespace, i.e., "vitalik" = "vitalik.x" or "bankless" = "bankless.x".
 - Bare names are considered premium names and cost 100 ETH per name.
 
-Namespace registration:
+### Namespace registration
 - Anyone can register new namespaces by paying a one-time fee of 200 ETH.
 - Namespace creators receive two privileges:
     i)  The right to assign up to 200 free names to any address that does not already have a name (no time limit), and 
@@ -31,7 +38,7 @@ Namespace registration:
 - The XNS contract owner is set as the creator of the "x" namespace (bare names) at contract deployment.
 - "eth" namespace is disallowed to avoid confusion with ENS.
 
-Ethereum-aligned:
+### Ethereum-native economics
 - 90% of ETH sent during name / namespace registration is burnt via the DETH contract,
   supporting Ethereum's deflationary mechanism and ETH's value accrual.
 - 10% is credited as fees to the namespace creator and the XNS contract owner (5% each).
@@ -45,11 +52,22 @@ Ethereum-aligned:
 function registerName(string label) external payable
 ```
 
-Registers a paid name for `msg.sender`. Namespace is determined by `msg.value`.
+Function to register a paid name for `msg.sender`. Namespace is determined by `msg.value`.
+Namespace creators have a 30-day exclusivity window for registering names
+within their registered namespace, following namespace registration.
 
-_Following namespace registration, the namespace creator has a 30-day exclusivity window for registering paid names.
-A namespace creator would typically first assign free names via the `assignFreeNames` function
-before registering paid names._
+**Requirements:**
+- Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
+- `msg.value` must be > 0.
+- Namespace must exist.
+- Caller must not already have a name.
+- Name must not already be registered.
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| label | string | The label part of the name to register. |
 
 ### registerNamespace
 
@@ -57,13 +75,27 @@ before registering paid names._
 function registerNamespace(string namespace, uint256 pricePerName) external payable
 ```
 
-Register a new namespace and assign a price-per-name.
+Function to register a new namespace and assign a price-per-name.
 
-_During initial owner namespace registration period (1 year following contract deployment), the owner pays no namespace registration fee.
-Anyone else can register a namespace for a fee, even within the initial owner namespace registration period.
-Note: The owner could theoretically front-run namespace registrations during this period, but doing so provides no economic benefit:
-the owner would only receive 5% of name registration fees (vs 200 ETH upfront fee), and users can mitigate this by
-waiting until after the 1-year period. This is an accepted design trade-off for simplicity._
+**Requirements:**
+- Namespace must be valid (non-empty, length 1–4, consists only of [a-z0-9])
+- `msg.value` must be 200 ETH.
+- Price per name must be a multiple of 0.001 ETH.
+- Price per name must not already be in use.
+- Namespace must not equal "eth".
+
+**Note:**
+- During initial owner namespace registration period (1 year following contract deployment), the owner pays no namespace registration fee.
+- Anyone can register a namespace for a 200 ETH fee, even within the initial owner namespace registration period.
+- The owner could theoretically front-run namespace registrations during this period, but doing so provides no economic benefit: 
+the owner would only receive 5% of name registration fees (vs 200 ETH upfront fee), and users can mitigate this by waiting until after the 1-year period. This is an accepted design trade-off for simplicity.
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| namespace | string | The namespace to register. |
+| pricePerName | uint256 | The price per name to assign to the namespace. |
 
 ### assignFreeNames
 
@@ -71,11 +103,12 @@ waiting until after the 1-year period. This is an accepted design trade-off for 
 function assignFreeNames(string namespace, struct XNS.Assignment[] assignments) external
 ```
 
-Creator-only free registration (can be used any time).
-@dev
-- `msg.sender` must be `namespace.creator`.
-- Up to `MAX_FREE_NAMES_PER_NAMESPACE` total free names per namespace.
-- Can assign names to arbitrary addresses, but each address must not already have a name.
+Function to assign free names to arbitrary addresses.
+
+**Requirements:**
+- Caller must be the creator of the specified namespace.
+- Each recipient address must not own a name already.
+- Cannot exceed the total quota of 200 free names per namespace.
 
 ### claimFees
 

@@ -1844,8 +1844,6 @@ const config: HardhatUserConfig = {
   // },
   docgen: {
     outputDir: "./solidity-docgen-output",
-    clear: true,
-    runOnCompile: true,
     templates: './solidity-docgen-templates', // Path to your custom templates directory
     pages: (item, file, config) => {
       // Only include XNS contract
