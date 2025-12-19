@@ -88,9 +88,9 @@ contract XNS {
     /// @dev mapping from price-per-name (wei) to namespace string.
     mapping(uint256 => string) private _priceToNamespace;
 
-    /// @dev reverse mapping: address -> (label, namespace).
+    /// @dev mapping: address -> (label, namespace).
     /// If label is empty, the address has no name.
-    mapping(address => Name) private _reverseName; // @todo I don't like the name
+    mapping(address => Name) private _addressName;
 
     /// @dev mapping from address to pending fees (in wei) that can be claimed.
     mapping(address => uint256) private _pendingFees;
@@ -191,13 +191,13 @@ contract XNS {
         }
 
         // Enforce one-name-per-address globally.
-        require(bytes(_reverseName[msg.sender].label).length == 0, "XNS: address already has a name");
+        require(bytes(_addressName[msg.sender].label).length == 0, "XNS: address already has a name");
 
         bytes32 key = keccak256(abi.encodePacked(label, ".", namespace_));
         require(_records[key] == address(0), "XNS: name already registered");
 
         _records[key] = msg.sender;
-        _reverseName[msg.sender] = Name({label: label, namespace: namespace_});
+        _addressName[msg.sender] = Name({label: label, namespace: namespace_});
 
         emit NameRegistered(label, namespace_, msg.sender);
 
@@ -269,13 +269,13 @@ contract XNS {
 
             require(_isValidLabel(label), "XNS: invalid label");
             require(to != address(0), "XNS: 0x owner");
-            require(bytes(_reverseName[to].label).length == 0, "XNS: owner already has a name");
+            require(bytes(_addressName[to].label).length == 0, "XNS: owner already has a name");
 
             bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
             require(_records[key] == address(0), "XNS: name already registered");
 
             _records[key] = to;
-            _reverseName[to] = Name({label: label, namespace: namespace});
+            _addressName[to] = Name({label: label, namespace: namespace});
 
             emit NameRegistered(label, namespace, to);
         }
@@ -390,7 +390,7 @@ contract XNS {
     /// @dev For bare names (namespace "x"), returns just the label without the ".x" suffix.
     /// @dev For regular names, returns the full name in format "label.namespace".
     function getName(address addr) external view returns (string memory) {
-        Name storage n = _reverseName[addr];
+        Name storage n = _addressName[addr];
 
         if (bytes(n.label).length == 0) {
             return "";
