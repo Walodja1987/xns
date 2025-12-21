@@ -1843,8 +1843,8 @@ const config: HardhatUserConfig = {
   //   deploymentsDir: "deployments_tenderly",
   // },
   docgen: {
-    outputDir: "./solidity-docgen-output",
-    templates: './solidity-docgen-templates', // Path to your custom templates directory
+    outputDir: "./docgen-output",
+    templates: './docgen-templates', // Path to your custom templates directory
     pages: (item, file, config) => {
       // Only include XNS contract
       if (item.nodeType === "ContractDefinition" && item.name !== "XNS") {

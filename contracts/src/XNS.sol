@@ -19,7 +19,7 @@ import {IDETH} from "./interfaces/IDETH.sol";
 /// @notice An Ethereum-native name registry that maps human-readable names to Ethereum addresses.
 /// Names are **permanent, immutable, and non-transferable**.
 /// 
-/// Name format: **[label].[namespace]** 
+/// Name format: [label].[namespace]
 ///
 /// Examples:
 /// - alice.xns
@@ -104,11 +104,11 @@ contract XNS {
     // Constants
     // -------------------------------------------------------------------------
 
-    /// @notice Contract owner address (immutable, set at deployment).
-    address public immutable owner;
+    /// @notice XNS contract owner address (immutable, set at deployment).
+    address public immutable OWNER;
 
     /// @notice XNS contract deployment timestamp.
-    uint64 public immutable deployedAt;
+    uint64 public immutable DEPLOYED_AT;
 
     /// @notice Fee to register a new namespace.
     uint256 public constant NAMESPACE_REGISTRATION_FEE = 200 ether;
@@ -148,23 +148,27 @@ contract XNS {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(address _owner) {
-        owner = _owner;
-        deployedAt = uint64(block.timestamp);
+    /// @dev Initializes the contract by setting the immutable owner and deployment timestamp.
+    /// Also pre-registers the special namespace "x" (bare names) with the given owner as its creator
+    /// and a price of 100 ETH per name.
+    /// @param owner Address that will own the contract and receive protocol fees.
+    constructor(address owner) {
+        OWNER = owner;
+        DEPLOYED_AT = uint64(block.timestamp);
 
         // Register special namespace "x" as the very first namespace.
         // Note: namespace creator privileges are tied to the address set here, not the contract owner.
         // Contract ownership is immutable and cannot be transferred.
         _namespaces[keccak256(bytes(SPECIAL_NAMESPACE))] = NamespaceData({
             pricePerName: SPECIAL_NAMESPACE_PRICE,
-            creator: _owner,
+            creator: owner,
             createdAt: uint64(block.timestamp),
             remainingFreeNames: MAX_FREE_NAMES_PER_NAMESPACE
         });
 
         _priceToNamespace[SPECIAL_NAMESPACE_PRICE] = SPECIAL_NAMESPACE;
 
-        emit NamespaceRegistered(SPECIAL_NAMESPACE, SPECIAL_NAMESPACE_PRICE, _owner);
+        emit NamespaceRegistered(SPECIAL_NAMESPACE, SPECIAL_NAMESPACE_PRICE, owner);
     }
 
     // =========================================================================
@@ -251,7 +255,7 @@ contract XNS {
         NamespaceData storage existing = _namespaces[nsHash];
         require(existing.creator == address(0), "XNS: namespace already exists");
 
-        if (!(block.timestamp < deployedAt + INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD && msg.sender == owner)) {
+        if (!(block.timestamp < DEPLOYED_AT + INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD && msg.sender == OWNER)) {
             require(msg.value == NAMESPACE_REGISTRATION_FEE, "XNS: wrong namespace fee");
         }
 
@@ -497,7 +501,7 @@ contract XNS {
 
         // Credit fees to recipients.
         _pendingFees[namespaceCreator] += creatorFee;
-        _pendingFees[owner] += ownerFee;
+        _pendingFees[OWNER] += ownerFee;
     }
 
     /// @dev Check if a label is valid (returns bool, does not revert).

@@ -5,7 +5,7 @@
 An Ethereum-native name registry that maps human-readable names to Ethereum addresses.
 Names are **permanent, immutable, and non-transferable**.
 
-Name format: **[label].[namespace]** 
+Name format: [label].[namespace]
 
 Examples:
 - alice.xns
@@ -85,9 +85,9 @@ Function to register a new namespace and assign a price-per-name.
 - Namespace must not equal "eth".
 
 **Note:**
-- During initial owner namespace registration period (1 year following contract deployment), the owner pays no namespace registration fee.
+- During the initial owner namespace registration period (1 year following contract deployment), the owner pays no namespace registration fee.
 - Anyone can register a namespace for a 200 ETH fee, even within the initial owner namespace registration period.
-- The owner could theoretically front-run namespace registrations during this period, but doing so provides no economic benefit: 
+- Front-running namespace registrations by the owner during the initial owner namespace registration period provides no economic benefit: 
 the owner would only receive 5% of name registration fees (vs 200 ETH upfront fee), and users can mitigate this by waiting until after the 1-year period. This is an accepted design trade-off for simplicity.
 
 #### Parameters
@@ -110,15 +110,25 @@ Function to assign free names to arbitrary addresses.
 - Each recipient address must not own a name already.
 - Cannot exceed the total quota of 200 free names per namespace.
 
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| namespace | string | The namespace to assign free names to. |
+| assignments | struct XNS.Assignment[] | An array of assignments, each containing a label and an address. |
+
 ### claimFees
 
 ```solidity
 function claimFees(address recipient) external
 ```
 
-Claim accumulated fees for `msg.sender` and send to recipient.
+Function to claim accumulated fees for `msg.sender` and send to recipient.
+Withdraws all pending fees credited to `msg.sender` and transfers them to `recipient`.
 
-_Withdraws all pending fees credited to `msg.sender` and transfers them to `recipient`._
+**Requirements:**
+- `recipient` must not be the zero address.
+- `msg.sender` must have pending fees to claim.
 
 #### Parameters
 
@@ -132,9 +142,10 @@ _Withdraws all pending fees credited to `msg.sender` and transfers them to `reci
 function claimFeesToSelf() external
 ```
 
-Claim accumulated fees for `msg.sender` and send to `msg.sender`.
+Function to claim accumulated fees for `msg.sender` and send to `msg.sender`.
 
-_Convenience function that claims fees for `msg.sender` and sends them to `msg.sender`._
+**Requirements:**
+- `msg.sender` must have pending fees to claim.
 
 ### getAddress
 
@@ -143,6 +154,10 @@ function getAddress(string fullName) external view returns (address addr)
 ```
 
 Resolves a name string like "nike", "nike.x", "vitalik.001" to an address.
+
+**Requirements:**
+- `fullName` must not be empty.
+- `fullName` must be a valid name string (label.namespace).
 
 _Returns `address(0)` for anything not registered or malformed._
 
@@ -262,19 +277,19 @@ event FeesClaimed(address recipient, uint256 amount)
 
 ## State Variables
 
-### owner
+### OWNER
 
 ```solidity
-address owner
+address OWNER
 ```
 
-Contract owner address (immutable, set at deployment).
+XNS contract owner address (immutable, set at deployment).
 
 
-### deployedAt
+### DEPLOYED_AT
 
 ```solidity
-uint64 deployedAt
+uint64 DEPLOYED_AT
 ```
 
 XNS contract deployment timestamp.
