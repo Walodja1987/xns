@@ -134,8 +134,8 @@ function assignFreeNames(string namespace, struct XNS.Assignment[] assignments) 
 ### claimFees
 
 
-Function to claim accumulated fees for `msg.sender` and send to recipient.
-Withdraws all pending fees credited to `msg.sender` and transfers them to `recipient`.
+Function to claim accumulated fees for `msg.sender` and send to `recipient`.
+Withdraws all pending fees. Partial claims are not possible.
 
 **Requirements:**
 - `recipient` must not be the zero address.
@@ -157,6 +157,7 @@ function claimFees(address recipient) external
 
 
 Function to claim accumulated fees for `msg.sender` and send to `msg.sender`.
+Withdraws all pending fees. Partial claims are not possible.
 
 **Requirements:**
 - `msg.sender` must have pending fees to claim.
@@ -171,7 +172,7 @@ function claimFeesToSelf() external
 ### getAddress
 
 
-Resolves a name string like "nike", "nike.x", "vitalik.001" to an address.
+Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an address.
 
 **Requirements:**
 - `fullName` must not be empty.
@@ -198,6 +199,7 @@ _Returns `address(0)` for anything not registered or malformed._
 ### getAddress
 
 
+Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an address.
 More gas efficient variant of `getAddress(string calldata fullName)`.
 
 ```solidity
@@ -222,17 +224,26 @@ _Returns `address(0)` if not registered._
 ### getName
 
 
-Reverse lookup: get the XNS name for an address.
+Function to lookup the XNS name for an address.
 
 ```solidity
 function getName(address addr) external view returns (string)
 ```
 
-_Returns empty string if the address has no name.
-For bare names (namespace "x"), returns just the label without the ".x" suffix.
-For regular names, returns the full name in format "label.namespace"._
+_Returns empty string if the address has no name. For bare names (namespace "x"), 
+returns just the label without the ".x" suffix. For regular names, returns the full name in format "label.namespace"._
 
+#### Parameters
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| addr | address | The address to lookup the XNS name for. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | string | name The XNS name for the address, or empty string if the address has no name. |
 
 ### getNamespaceInfo
 
@@ -249,50 +260,105 @@ function getNamespaceInfo(string namespace) external view returns (uint256 price
 ### getNamespaceInfo
 
 
-Get namespace metadata by price (and also return the namespace string).
+Function to retrieve the namespace metadata based on price.
 
 ```solidity
 function getNamespaceInfo(uint256 price) external view returns (string namespace, uint256 pricePerName, address creator, uint64 createdAt, uint16 remainingFreeNames)
 ```
 
 
+#### Parameters
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| price | uint256 | The price to retrieve the namespace metadata for. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| namespace | string | The namespace string. |
+| pricePerName | uint256 | The price per name for the namespace. |
+| creator | address | The creator of the namespace. |
+| createdAt | uint64 | The timestamp when the namespace was created. |
+| remainingFreeNames | uint16 | The remaining number of free names in the namespace that can be assigned by the namespace creator. |
 
 ### isValidLabel
 
 
-Check if a label is valid.
+Function to check if a label is valid (returns bool, does not revert).
+
+**Requirements:**
+- Label must be non-empty
+- Label must be 1–20 characters long
+- Label must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
+- Label cannot start or end with '-'
 
 ```solidity
-function isValidLabel(string label) external pure returns (bool)
+function isValidLabel(string label) external pure returns (bool isValid)
 ```
 
 
+#### Parameters
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| label | string | The label to check if is valid. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| isValid | bool | True if the label is valid, false otherwise. |
 
 ### isValidNamespace
 
 
-Check if a namespace is valid.
+Function to check if a namespace is valid (returns bool, does not revert).
+
+**Requirements:**
+- Namespace must be non-empty
+- Namespace must be 1–4 characters long
+- Namespace must consist only of [a-z0-9] (lowercase letters and digits)
 
 ```solidity
-function isValidNamespace(string namespace) external pure returns (bool)
+function isValidNamespace(string namespace) external pure returns (bool isValid)
 ```
 
 
+#### Parameters
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| namespace | string | The namespace to check if is valid. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| isValid | bool | True if the namespace is valid, false otherwise. |
 
 ### getPendingFees
 
 
-Get the amount of pending fees that can be claimed by an address.
+Function to retrieve the amount of pending fees that can be claimed by an address.
 
 ```solidity
-function getPendingFees(address recipient) external view returns (uint256)
+function getPendingFees(address recipient) external view returns (uint256 amount)
 ```
 
 
+#### Parameters
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| recipient | address | The address to retrieve the pending fees for. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| amount | uint256 | The amount of pending fees that can be claimed by the address. |
 
 
 ## Events

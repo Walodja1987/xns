@@ -21,8 +21,8 @@ interface IXNS {
     function getAddress(string calldata fullName) external view returns (address addr);
     function getName(address addr) external view returns (string memory);
     function getNamespaceInfo(string calldata namespace) external view returns (uint256 pricePerName, address creator, uint64 createdAt, uint16 remainingFreeNames);
-    function getNamespaceInfo(uint256 price) external view returns (string memory namespace, uint256 pricePerName, address creator_, uint64 createdAt, uint16 remainingFreeNames);
-    function isValidLabel(string memory label) external pure returns (bool);
-    function isValidNamespace(string memory namespace) external pure returns (bool);
-    function getPendingFees(address recipient) external view returns (uint256);
+    function getNamespaceInfo(uint256 price) external view returns (string memory namespace, uint256 pricePerName, address creator, uint64 createdAt, uint16 remainingFreeNames);
+    function isValidLabel(string memory label) external pure returns (bool isValid);
+    function isValidNamespace(string memory namespace) external pure returns (bool isValid);
+    function getPendingFees(address recipient) external view returns (uint256 amount);
 }

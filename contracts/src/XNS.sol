@@ -322,8 +322,8 @@ contract XNS {
         ns.remainingFreeNames -= uint16(count);
     }
 
-    /// @notice Function to claim accumulated fees for `msg.sender` and send to recipient.
-    /// Withdraws all pending fees credited to `msg.sender` and transfers them to `recipient`.
+    /// @notice Function to claim accumulated fees for `msg.sender` and send to `recipient`.
+    /// Withdraws all pending fees. Partial claims are not possible.
     /// 
     /// **Requirements:**
     /// - `recipient` must not be the zero address.
@@ -336,6 +336,7 @@ contract XNS {
     }
 
     /// @notice Function to claim accumulated fees for `msg.sender` and send to `msg.sender`.
+    /// Withdraws all pending fees. Partial claims are not possible.
     /// 
     /// **Requirements:**
     /// - `msg.sender` must have pending fees to claim.
@@ -360,7 +361,7 @@ contract XNS {
     // GETTER / VIEW FUNCTIONS
     // =========================================================================
 
-    /// @notice Resolves a name string like "nike", "nike.x", "vitalik.001" to an address.
+    /// @notice Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an address.
     /// 
     /// **Requirements:**
     /// - `fullName` must not be empty.
@@ -409,7 +410,8 @@ contract XNS {
         return _getAddress(label, namespace);
     }
 
-    /// @notice More gas efficient variant of `getAddress(string calldata fullName)`.
+    /// @notice Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an address.
+    /// More gas efficient variant of `getAddress(string calldata fullName)`.
     /// @dev Returns `address(0)` if not registered.
     /// @param label The label part of the name.
     /// @param namespace The namespace part of the name.
@@ -425,10 +427,11 @@ contract XNS {
         return _nameHashToAddress[key];
     }
 
-    /// @notice Reverse lookup: get the XNS name for an address.
-    /// @dev Returns empty string if the address has no name.
-    /// @dev For bare names (namespace "x"), returns just the label without the ".x" suffix.
-    /// @dev For regular names, returns the full name in format "label.namespace".
+    /// @notice Function to lookup the XNS name for an address.
+    /// @dev Returns an empty string if the address has no name. For bare names (namespace "x"), 
+    /// returns just the label without the ".x" suffix. For regular names, returns the full name in format "label.namespace".
+    /// @param addr The address to lookup the XNS name for.
+    /// @return name The XNS name for the address, or empty string if the address has no name.
     function getName(address addr) external view returns (string memory) {
         Name storage n = _addressToName[addr];
 
@@ -445,13 +448,24 @@ contract XNS {
         return string.concat(n.label, ".", n.namespace);
     }
 
-    /// @notice Get namespace metadata by namespace string.
+    /// @notice Function to retrieve the namespace metadata associated with `namespace`.
+    /// @param namespace The namespace to retrieve the metadata for.
+    /// @return pricePerName The price per name for the namespace.
+    /// @return creator The creator of the namespace.
+    /// @return createdAt The timestamp when the namespace was created.
+    /// @return remainingFreeNames The remaining number of free names in the namespace
+    /// that can be assigned by the namespace creator.
     function getNamespaceInfo(
         string calldata namespace
     )
         external
         view
-        returns (uint256 pricePerName, address creator, uint64 createdAt, uint16 remainingFreeNames)
+        returns (
+            uint256 pricePerName,
+            address creator,
+            uint64 createdAt,
+            uint16 remainingFreeNames
+        )
     {
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
@@ -459,13 +473,26 @@ contract XNS {
         return (ns.pricePerName, ns.creator, ns.createdAt, ns.remainingFreeNames);
     }
 
-    /// @notice Get namespace metadata by price (and also return the namespace string).
+    /// @notice Function to retrieve the namespace metadata associated with `price`.
+    /// @param price The price to retrieve the namespace metadata for.
+    /// @return namespace The namespace string.
+    /// @return pricePerName The price per name for the namespace.
+    /// @return creator The creator of the namespace.
+    /// @return createdAt The timestamp when the namespace was created.
+    /// @return remainingFreeNames The remaining number of free names in the namespace
+    /// that can be assigned by the namespace creator.
     function getNamespaceInfo(
         uint256 price
     )
         external
         view
-        returns (string memory namespace, uint256 pricePerName, address creator, uint64 createdAt, uint16 remainingFreeNames)
+        returns (
+            string memory namespace,
+            uint256 pricePerName,
+            address creator,
+            uint64 createdAt,
+            uint16 remainingFreeNames
+        )
     {
         namespace = _priceToNamespace[price];
         require(bytes(namespace).length != 0, "XNS: price not mapped to namespace");
@@ -476,47 +503,59 @@ contract XNS {
         return (namespace, ns.pricePerName, ns.creator, ns.createdAt, ns.remainingFreeNames);
     }
 
-    /// @notice Check if a label is valid.
-    function isValidLabel(string memory label) external pure returns (bool) {
+    /// @notice Function to check if a label is valid (returns bool, does not revert).
+    /// 
+    /// **Requirements:**
+    /// - Label must be 1–20 characters long
+    /// - Label must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
+    /// - Label cannot start or end with '-'
+    /// @param label The label to check if is valid.
+    /// @return isValid True if the label is valid, false otherwise.
+    function isValidLabel(string memory label) external pure returns (bool isValid) {
         return _isValidLabel(label);
     }
 
-    /// @notice Check if a namespace is valid.
-    function isValidNamespace(string memory namespace) external pure returns (bool) {
+    /// @notice Function to check if a namespace is valid (returns bool, does not revert).
+    ///
+    /// **Requirements:**
+    /// - Namespace must be 1–4 characters long
+    /// - Namespace must consist only of [a-z0-9] (lowercase letters and digits)
+    /// @param namespace The namespace to check if is valid.
+    /// @return isValid True if the namespace is valid, false otherwise.
+    function isValidNamespace(string memory namespace) external pure returns (bool isValid) {
         return _isValidNamespace(namespace);
     }
 
-    /// @notice Get the amount of pending fees that can be claimed by an address.
-    function getPendingFees(address recipient) external view returns (uint256) {
+    /// @notice Function to retrieve the amount of pending fees that can be claimed by an address.
+    /// @param recipient The address to retrieve the pending fees for.
+    /// @return amount The amount of pending fees that can be claimed by the address.
+    function getPendingFees(address recipient) external view returns (uint256 amount) {
         return _pendingFees[recipient];
     }
 
     // =========================================================================
-    // INTERNAL MULTI-USE HELPERS
+    // INTERNAL MULTI-USE HELPER FUNCTIONS
     // =========================================================================
 
-    /// @dev Burns 90% of ETH sent via DETH, credits 5% to namespace creator and 5% to contract owner.
+    /// @dev Helper function to burn 90% of ETH sent via DETH and credit 5% to namespace creator and 5% to contract owner.
+    /// Used in `registerName` and `registerNamespace`.
     /// @param totalAmount The total amount of ETH sent to this contract.
     /// @param namespaceCreator The address of the namespace creator that shall receive a portion of the fees.
     function _burnETHAndCreditFees(uint256 totalAmount, address namespaceCreator) private {
         uint256 burnAmount = totalAmount * 90 / 100;
         uint256 creatorFee = totalAmount * 5 / 100;
-        uint256 ownerFee = totalAmount - burnAmount - creatorFee; // Ensures exact 100% distribution
+        uint256 ownerFee = totalAmount - burnAmount - creatorFee;
 
-        // Burn 90% via DETH contract and credit `msg.sender` with DETH.
+        // Burn 90% via DETH contract and credit `msg.sender` (buyer of the name/namespace) with DETH.
         IDETH(DETH).burn{value: burnAmount}(msg.sender);
 
-        // Credit fees to recipients.
+        // Credit fees to namespace creator and contract owner.
         _pendingFees[namespaceCreator] += creatorFee;
         _pendingFees[OWNER] += ownerFee;
     }
 
-    /// @dev Check if a label is valid (returns bool, does not revert).
-    ///      - non-empty
-    ///      - length 1–20
-    ///      - consists only of [a-z0-9-]
-    ///      - cannot start or end with '-'
-    function _isValidLabel(string memory label) private pure returns (bool) {
+    /// @dev Helper function to check if a label is valid. Used in `registerName`, `assignFreeNames` and `isValidLabel`.
+    function _isValidLabel(string memory label) private pure returns (bool isValid) {
         bytes memory b = bytes(label);
         uint256 len = b.length;
         if (len == 0 || len > 20) return false;
@@ -534,11 +573,8 @@ contract XNS {
         return true;
     }
 
-    /// @dev Check if a namespace is valid (returns bool, does not revert).
-    ///      - non-empty
-    ///      - length 1–4
-    ///      - consists only of [a-z0-9]
-    function _isValidNamespace(string memory namespace) private pure returns (bool) {
+    /// @dev Helper function to check if a namespace is valid. Used in `registerNamespace` and `isValidNamespace`.
+    function _isValidNamespace(string memory namespace) private pure returns (bool isValid) {
         bytes memory b = bytes(namespace);
         uint256 len = b.length;
         if (len == 0 || len > 4) return false;
