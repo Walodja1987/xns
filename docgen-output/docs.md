@@ -20,8 +20,15 @@ Examples:
 - For example, if the "100x" namespace was registered with price 0.1 ETH, then calling `registerName("vitalik")` with 0.1 ETH
   registers "vitalik.100x".
 - Each address can own at most one name.
-- Names are always linked to the caller's address and cannot be assigned to another address,
-  except namespace creators can assign free names (see Namespace registration section).
+- Names are always linked to the caller's address and cannot be assigned to another address.
+
+### Sponsorship via authorization (EIP-712 + EIP-1271)
+- `registerNameWithAuthorization` allows a sponsor (tx sender) to pay and register a name for a recipient
+  who explicitly authorized it via signature.
+- During the namespace creator exclusivity window, only the namespace creator may sponsor registrations
+  in that namespace (public `registerName` is disabled for non-creators).
+- Recipients sign an EIP-712 message authorizing the specific name registration, providing opt-in consent.
+- Supports both EOA signatures and EIP-1271 contract wallet signatures (Safe, Argent, etc.).
 
 ### Bare names
 - A bare name is a name without a namespace (e.g., "vitalik" or "bankless").
@@ -30,11 +37,9 @@ Examples:
 
 ### Namespace registration
 - Anyone can register new namespaces by paying a one-time fee of 200 ETH.
-- Namespace creators receive two privileges:
-    i)  The right to assign up to 200 free names to any address that does not already have a name (no time limit), and 
-    ii) A 30-day exclusive window for registering paid names within the registered namespace.
-- The exclusive window is useful if a creator exhausts their 200 free names and wants to register additional names
-  before the namespace becomes publicly available.
+- Namespace creators receive a 30-day exclusive window for registering paid names within the registered namespace.
+  During this period, only the creator can use `registerName` for themselves or sponsor registrations via
+  `registerNameWithAuthorization` for others.
 - The XNS contract owner can register namespaces for free in the first year following contract deployment.
 - The XNS contract owner is set as the creator of the "x" namespace (bare names) at contract deployment.
 - "eth" namespace is disallowed to avoid confusion with ENS.
@@ -77,6 +82,38 @@ function registerName(string label) external payable
 | label | string | The label part of the name to register. |
 
 
+### registerNameWithAuthorization
+
+
+Function to sponsor a paid name registration for `recipient` who explicitly authorized it via signature.
+Allows a third party (relayer) to pay gas and registration fees while the recipient explicitly approves via EIP-712 signature.
+During the namespace creator exclusivity period, only the namespace creator may sponsor registrations in that namespace.
+
+**Requirements:**
+- Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
+- `recipient` must not be the zero address.
+- `msg.value` must be > 0 and must match the namespace's registered price.
+- Namespace must exist.
+- During exclusivity: only namespace creator can call this function.
+- Recipient must not already have a name.
+- Name must not already be registered.
+- Signature must be valid EIP-712 signature from `recipient`.
+
+```solidity
+function registerNameWithAuthorization(string label, string namespace, address recipient, bytes signature) external payable
+```
+
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| label | string | The label part of the name to register. |
+| namespace | string | The namespace part of the name. |
+| recipient | address | The address that will receive the name (must match the signature signer). |
+| signature | bytes | EIP-712 signature by `recipient` (EOA) or EIP-1271 contract signature. |
+
+
 ### registerNamespace
 
 
@@ -106,29 +143,6 @@ function registerNamespace(string namespace, uint256 pricePerName) external paya
 | ---- | ---- | ----------- |
 | namespace | string | The namespace to register. |
 | pricePerName | uint256 | The price per name to assign to the namespace. |
-
-
-### assignFreeNames
-
-
-Function to assign free names to arbitrary addresses.
-
-**Requirements:**
-- Caller must be the creator of the specified namespace.
-- Each recipient address must not own a name already.
-- Cannot exceed the total quota of 200 free names per namespace.
-
-```solidity
-function assignFreeNames(string namespace, struct XNS.Assignment[] assignments) external
-```
-
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| namespace | string | The namespace to assign free names to. |
-| assignments | struct XNS.Assignment[] | An array of assignments, each containing a label and an address. |
 
 
 ### claimFees
@@ -200,13 +214,13 @@ _Returns `address(0)` for anything not registered or malformed._
 
 
 Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an address.
-More gas efficient variant of `getAddress(string calldata fullName)`.
 
 ```solidity
 function getAddress(string label, string namespace) external view returns (address addr)
 ```
 
-_Returns `address(0)` if not registered._
+_This version is more gas efficient than `getAddress(string calldata fullName)` as it does not require string splitting.
+Returns `address(0)` if not registered._
 
 #### Parameters
 
@@ -230,7 +244,7 @@ Function to lookup the XNS name for an address.
 function getName(address addr) external view returns (string)
 ```
 
-_Returns empty string if the address has no name. For bare names (namespace "x"), 
+_Returns an empty string if the address has no name. For bare names (namespace "x"), 
 returns just the label without the ".x" suffix. For regular names, returns the full name in format "label.namespace"._
 
 #### Parameters
@@ -248,22 +262,34 @@ returns just the label without the ".x" suffix. For regular names, returns the f
 ### getNamespaceInfo
 
 
-Get namespace metadata by namespace string.
+Function to retrieve the namespace metadata associated with `namespace`.
 
 ```solidity
-function getNamespaceInfo(string namespace) external view returns (uint256 pricePerName, address creator, uint64 createdAt, uint16 remainingFreeNames)
+function getNamespaceInfo(string namespace) external view returns (uint256 pricePerName, address creator, uint64 createdAt)
 ```
 
 
+#### Parameters
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| namespace | string | The namespace to retrieve the metadata for. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| pricePerName | uint256 | The price per name for the namespace. |
+| creator | address | The creator of the namespace. |
+| createdAt | uint64 | The timestamp when the namespace was created. |
 
 ### getNamespaceInfo
 
 
-Function to retrieve the namespace metadata based on price.
+Function to retrieve the namespace metadata associated with `price`.
 
 ```solidity
-function getNamespaceInfo(uint256 price) external view returns (string namespace, uint256 pricePerName, address creator, uint64 createdAt, uint16 remainingFreeNames)
+function getNamespaceInfo(uint256 price) external view returns (string namespace, uint256 pricePerName, address creator, uint64 createdAt)
 ```
 
 
@@ -281,7 +307,6 @@ function getNamespaceInfo(uint256 price) external view returns (string namespace
 | pricePerName | uint256 | The price per name for the namespace. |
 | creator | address | The creator of the namespace. |
 | createdAt | uint64 | The timestamp when the namespace was created. |
-| remainingFreeNames | uint16 | The remaining number of free names in the namespace that can be assigned by the namespace creator. |
 
 ### isValidLabel
 
@@ -289,7 +314,6 @@ function getNamespaceInfo(uint256 price) external view returns (string namespace
 Function to check if a label is valid (returns bool, does not revert).
 
 **Requirements:**
-- Label must be non-empty
 - Label must be 1–20 characters long
 - Label must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
 - Label cannot start or end with '-'
@@ -317,7 +341,6 @@ function isValidLabel(string label) external pure returns (bool isValid)
 Function to check if a namespace is valid (returns bool, does not revert).
 
 **Requirements:**
-- Namespace must be non-empty
 - Namespace must be 1–4 characters long
 - Namespace must consist only of [a-z0-9] (lowercase letters and digits)
 
@@ -372,7 +395,7 @@ function getPendingFees(address recipient) external view returns (uint256 amount
 event NameRegistered(string label, string namespace, address owner)
 ```
 
-_Emitted in `registerName` and `assignFreeNames` functions._
+_Emitted in `registerName` and `registerNameWithAuthorization` functions._
 
 
 
@@ -410,6 +433,19 @@ _Emitted in `claimFees` and `claimFeesToSelf` functions._
 
 ## State Variables
 
+### nonces
+
+
+
+
+```solidity
+mapping(address => uint256) nonces
+```
+
+
+
+
+
 ### OWNER
 
 
@@ -443,19 +479,6 @@ Fee to register a new namespace.
 
 ```solidity
 uint256 NAMESPACE_REGISTRATION_FEE
-```
-
-
-
-
-
-### MAX_FREE_NAMES_PER_NAMESPACE
-
-
-Maximum number of free names the creator can mint in their namespace.
-
-```solidity
-uint16 MAX_FREE_NAMES_PER_NAMESPACE
 ```
 
 
@@ -550,30 +573,12 @@ struct NamespaceData {
   uint256 pricePerName;
   address creator;
   uint64 createdAt;
-  uint16 remainingFreeNames;
 ```
 
 
 
 
 _Data structure to store namespace metadata._
-
-
-
-
-### Assignment
-
-```solidity
-struct Assignment {
-  string label;
-  address to;
-```
-
-
-
-
-_Used as input to the `assignFreeNames` function, representing a name assignment
-(label and recipient address) to be made by a namespace creator within their own namespace._
 
 
 

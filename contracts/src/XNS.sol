@@ -2,6 +2,8 @@
 pragma solidity 0.8.28;
 
 import {IDETH} from "./interfaces/IDETH.sol";
+import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
 //////////////////////////////
 //                          //
@@ -35,6 +37,14 @@ import {IDETH} from "./interfaces/IDETH.sol";
 /// - Each address can own at most one name.
 /// - Names are always linked to the caller's address and cannot be assigned to another address.
 ///
+/// ### Sponsorship via authorization (EIP-712 + EIP-1271)
+/// - `registerNameWithAuthorization` allows a sponsor (tx sender) to pay and register a name for a recipient
+///   who explicitly authorized it via signature.
+/// - During the namespace creator exclusivity window, only the namespace creator may sponsor registrations
+///   in that namespace (public `registerName` is disabled for non-creators).
+/// - Recipients sign an EIP-712 message authorizing the specific name registration, providing opt-in consent.
+/// - Supports both EOA signatures and EIP-1271 contract wallet signatures (Safe, Argent, etc.).
+///
 /// ### Bare names
 /// - A bare name is a name without a namespace (e.g., "vitalik" or "bankless").
 /// - Bare names are equivalent to names in the special "x" namespace, i.e., "vitalik" = "vitalik.x" or "bankless" = "bankless.x".
@@ -43,6 +53,8 @@ import {IDETH} from "./interfaces/IDETH.sol";
 /// ### Namespace registration
 /// - Anyone can register new namespaces by paying a one-time fee of 200 ETH.
 /// - Namespace creators receive a 30-day exclusive window for registering paid names within the registered namespace.
+///   During this period, only the creator can use `registerName` for themselves or sponsor registrations via
+///   `registerNameWithAuthorization` for others.
 /// - The XNS contract owner can register namespaces for free in the first year following contract deployment.
 /// - The XNS contract owner is set as the creator of the "x" namespace (bare names) at contract deployment.
 /// - "eth" namespace is disallowed to avoid confusion with ENS.
@@ -51,7 +63,7 @@ import {IDETH} from "./interfaces/IDETH.sol";
 /// - 90% of ETH sent during name / namespace registration is burnt via the DETH contract,
 ///   supporting Ethereum's deflationary mechanism and ETH's value accrual.
 /// - 10% is credited as fees to the namespace creator and the XNS contract owner (5% each).
-contract XNS {
+contract XNS is EIP712 {
     // -------------------------------------------------------------------------
     // Types
     // -------------------------------------------------------------------------
@@ -91,6 +103,9 @@ contract XNS {
     // Mapping from address to pending fees that can be claimed.
     mapping(address => uint256) private _pendingFees;
 
+    // Mapping from address to nonce (for EIP-712 signature replay protection).
+    mapping(address => uint256) public nonces;
+
     // -------------------------------------------------------------------------
     // Constants
     // -------------------------------------------------------------------------
@@ -123,10 +138,18 @@ contract XNS {
     address public constant DETH = 0xE46861C9f28c46F27949fb471986d59B256500a7;
 
     // -------------------------------------------------------------------------
+    // EIP-712 Constants
+    // -------------------------------------------------------------------------
+
+    /// @dev EIP-712 struct type hash for RegisterNameAuth.
+    bytes32 private constant _REGISTER_AUTH_TYPEHASH =
+        keccak256("RegisterNameAuth(address recipient,bytes32 labelHash,bytes32 namespaceHash,uint256 nonce)"); // @todo consider doing it like in voucher example
+
+    // -------------------------------------------------------------------------
     // Events
     // -------------------------------------------------------------------------
 
-    /// @dev Emitted in `registerName` function.
+    /// @dev Emitted in `registerName` and `registerNameWithAuthorization` functions.
     event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
 
     /// @dev Emitted in constructor when "x" namespace is registered, and in `registerNamespace` function.
@@ -143,7 +166,7 @@ contract XNS {
     /// Also pre-registers the special namespace "x" (bare names) with the given owner as its creator
     /// and a price of 100 ETH per name.
     /// @param owner Address that will own the contract and receive protocol fees.
-    constructor(address owner) {
+    constructor(address owner) EIP712("XNS", "1") {
         OWNER = owner;
         DEPLOYED_AT = uint64(block.timestamp);
 
@@ -207,6 +230,92 @@ contract XNS {
         _addressToName[msg.sender] = Name({label: label, namespace: namespace});
 
         emit NameRegistered(label, namespace, msg.sender);
+
+        // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
+        _burnETHAndCreditFees(msg.value, ns.creator);
+    }
+
+    // @todo Question: How to batch this function with msg.value?
+    /// @notice Function to sponsor a paid name registration for `recipient` who explicitly authorized it via signature.
+    /// Allows a third party (relayer) to pay gas and registration fees while the recipient explicitly approves via EIP-712 signature.
+    /// During the namespace creator exclusivity period, only the namespace creator may sponsor registrations in that namespace.
+    /// 
+    /// **Requirements:**
+    /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
+    /// - `recipient` must not be the zero address.
+    /// - `msg.value` must be > 0 and must match the namespace's registered price.
+    /// - Namespace must exist.
+    /// - During exclusivity: only namespace creator can call this function.
+    /// - Recipient must not already have a name.
+    /// - Name must not already be registered.
+    /// - Signature must be valid EIP-712 signature from `recipient`.
+    /// 
+    /// @param label The label part of the name to register.
+    /// @param namespace The namespace part of the name.
+    /// @param recipient The address that will receive the name (must match the signature signer).
+    /// @param signature EIP-712 signature by `recipient` (EOA) or EIP-1271 contract signature.
+    function registerNameWithAuthorization(
+        string calldata label,
+        string calldata namespace,
+        address recipient,
+        bytes calldata signature
+    ) external payable {
+        require(_isValidLabel(label), "XNS: invalid label");
+        require(recipient != address(0), "XNS: 0x recipient");
+
+        uint256 pricePerName = msg.value;
+        require(pricePerName > 0, "XNS: zero price");
+
+        // Verify namespace exists.
+        bytes32 nsHash = keccak256(bytes(namespace));
+        NamespaceData storage ns = _namespaces[nsHash];
+        require(ns.creator != address(0), "XNS: namespace not found");
+
+        // Verify msg.value matches namespace price.
+        require(pricePerName == ns.pricePerName, "XNS: price mismatch");
+
+        // During exclusivity, only namespace creator may sponsor registrations.
+        if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
+            require(msg.sender == ns.creator, "XNS: only creator can sponsor during exclusivity");
+        }
+
+        // Enforce one-name-per-address globally.
+        require(bytes(_addressToName[recipient].label).length == 0, "XNS: recipient already has a name");
+
+        bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
+        require(_nameHashToAddress[key] == address(0), "XNS: name already registered");
+
+        // Get current nonce for recipient.
+        uint256 nonce = nonces[recipient];
+
+        // Construct EIP-712 struct hash.
+        bytes32 structHash = keccak256(
+            abi.encode(
+                _REGISTER_AUTH_TYPEHASH,
+                recipient,
+                keccak256(bytes(label)),
+                nsHash,
+                nonce // @todo correct here? No salt value?
+            )
+        );
+
+        // Compute EIP-712 digest.
+        bytes32 digest = _hashTypedDataV4(structHash);
+
+        // Verify signature using OpenZeppelin's SignatureChecker (supports EOA and EIP-1271).
+        require(
+            SignatureChecker.isValidSignatureNow(recipient, digest, signature),
+            "XNS: bad authorization"
+        );
+
+        // Consume nonce to prevent replay attacks.
+        nonces[recipient] = nonce + 1; // @todo how does the user know which nonce? Also, isn't it valid only once for a recipient? How about replay during reorgs?
+
+        // Register name to recipient (not msg.sender).
+        _nameHashToAddress[key] = recipient;
+        _addressToName[recipient] = Name({label: label, namespace: namespace});
+
+        emit NameRegistered(label, namespace, recipient);
 
         // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
         _burnETHAndCreditFees(msg.value, ns.creator);
@@ -491,6 +600,7 @@ contract XNS {
         _pendingFees[namespaceCreator] += creatorFee;
         _pendingFees[OWNER] += ownerFee;
     }
+
 
     /// @dev Helper function to check if a label is valid. Used in `registerName` and `isValidLabel`.
     function _isValidLabel(string memory label) private pure returns (bool isValid) {

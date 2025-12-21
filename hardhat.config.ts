@@ -3,7 +3,7 @@ import { HardhatUserConfig, task, vars } from "hardhat/config";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
 import "@nomicfoundation/hardhat-ledger";
-import "@nomicfoundation/hardhat-foundry";
+// import "@nomicfoundation/hardhat-foundry";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-ignition-ethers";
 import "@typechain/hardhat";
@@ -98,7 +98,7 @@ const config: HardhatUserConfig = {
         enabled: true,
         runs: 999_999,
       },
-      evmVersion: "paris", // Prevent using the `PUSH0` and `cancun` opcodes
+      evmVersion: "cancun", // Prevent using the `PUSH0` and `cancun` opcodes
     },
   },
   zksolc: {
