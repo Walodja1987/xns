@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {IXNS} from "./IXNS.sol";
-import {IDETH} from "./IDETH.sol";
+import {IDETH} from "./interfaces/IDETH.sol";
 
 //////////////////////////////
 //                          //
@@ -11,239 +10,582 @@ import {IDETH} from "./IDETH.sol";
 //    \ V /|  \| | (___     //
 //     > < | . ` |\___ \    //
 //    / . \| |\  |____) |   //
-//   /_/ \_\_| \_|_____/    //                  
+//   /_/ \_\_| \_|_____/    //
 //                          //
 //////////////////////////////
 
-/**
- * @title XNS - An On-Chain Name Service
- * @author Wladimir Weinbender
- * @notice This contract provides a simple on-chain name service.
- */
-contract XNS is IXNS {
-    struct UserNames {
-        string[] names;
-        mapping(bytes32 => bool) ownsName;
-        uint256 primaryIndex;
+/// @title XNS
+/// @author Wladimir Weinbender
+/// @notice An Ethereum-native name registry that maps human-readable names to Ethereum addresses.
+/// Names are **permanent, immutable, and non-transferable**.
+/// 
+/// Name format: [label].[namespace]
+///
+/// Examples:
+/// - alice.xns
+/// - bob.yolo
+/// - vitalik.100x
+/// - garry.ape
+/// 
+/// ### Name registration
+/// - To register a name, users call `registerName(label)` and send ETH.
+/// - The amount of ETH sent determines the namespace. It must match a namespace's registered price. 
+/// - For example, if the "100x" namespace was registered with price 0.1 ETH, then calling `registerName("vitalik")` with 0.1 ETH
+///   registers "vitalik.100x".
+/// - Each address can own at most one name.
+/// - Names are always linked to the caller's address and cannot be assigned to another address,
+///   except namespace creators can assign free names (see Namespace registration section).
+///
+/// ### Bare names
+/// - A bare name is a name without a namespace (e.g., "vitalik" or "bankless").
+/// - Bare names are equivalent to names in the special "x" namespace, i.e., "vitalik" = "vitalik.x" or "bankless" = "bankless.x".
+/// - Bare names are considered premium names and cost 100 ETH per name.
+///
+/// ### Namespace registration
+/// - Anyone can register new namespaces by paying a one-time fee of 200 ETH.
+/// - Namespace creators receive two privileges:
+///     i)  The right to assign up to 200 free names to any address that does not already have a name (no time limit), and 
+///     ii) A 30-day exclusive window for registering paid names within the registered namespace.
+/// - The exclusive window is useful if a creator exhausts their 200 free names and wants to register additional names
+///   before the namespace becomes publicly available.
+/// - The XNS contract owner can register namespaces for free in the first year following contract deployment.
+/// - The XNS contract owner is set as the creator of the "x" namespace (bare names) at contract deployment.
+/// - "eth" namespace is disallowed to avoid confusion with ENS.
+///
+/// ### Ethereum-native economics
+/// - 90% of ETH sent during name / namespace registration is burnt via the DETH contract,
+///   supporting Ethereum's deflationary mechanism and ETH's value accrual.
+/// - 10% is credited as fees to the namespace creator and the XNS contract owner (5% each).
+contract XNS {
+    // -------------------------------------------------------------------------
+    // Types
+    // -------------------------------------------------------------------------
+
+    /// @dev Data structure to store namespace metadata.
+    struct NamespaceData {
+        uint256 pricePerName;
+        address creator;
+        uint64 createdAt;
+        uint16 remainingFreeNames;
     }
 
-    mapping(address => UserNames) private userToNames;
-    mapping(bytes32 => address) public nameHashToOwners;
+    /// @dev Used as input to the `assignFreeNames` function, representing a name assignment
+    /// (label and recipient address) to be made by a namespace creator within their own namespace.
+    struct Assignment {
+        string label;
+        address to;
+    }
 
-    uint256 public totalNamesRegistered;
-    uint256 public accumulatedFees;
-    uint256 public constant FEE_PERCENTAGE = 2;
-    uint256 public constant X_UNLOCK_THRESHOLD = 100_000_000;
-    uint256 public constant X_PRICE = 1000 ether;
-    bytes32 public constant X_HASH = keccak256(abi.encodePacked("X"));
-    address constant DETH = 0xE46861C9f28c46F27949fb471986d59B256500a7
+    /// @dev Data structure to store a name (label, namespace) associated with an address.
+    struct Name {
+        string label;
+        string namespace;
+    }
 
-    address public owner;
+    // -------------------------------------------------------------------------
+    // Storage (private, accessed via getters)
+    // -------------------------------------------------------------------------
 
-    event NameRegistered(address indexed user, string fullName);
-    event PrimaryNameSet(address indexed user, string name);
+    // @todo need @dev comments for all storage variables??
+    // @todo Review natspac (e.g., include return comments)
+
+    // Mapping from keccak256(label, ".", namespace) to name owner address.
+    mapping(bytes32 => address) private _nameHashToAddress;
+
+    // Mapping from keccak256(namespace) to namespace metadata.
+    mapping(bytes32 => NamespaceData) private _namespaces;
+
+    // Mapping from price-per-name to namespace string.
+    mapping(uint256 => string) private _priceToNamespace;
+
+    // Mapping from address to name (label, namespace). If label is empty, the address has no name.
+    mapping(address => Name) private _addressToName;
+
+    // Mapping from address to pending fees that can be claimed.
+    mapping(address => uint256) private _pendingFees;
+
+    // -------------------------------------------------------------------------
+    // Constants
+    // -------------------------------------------------------------------------
+
+    /// @notice XNS contract owner address (immutable, set at deployment).
+    address public immutable OWNER;
+
+    /// @notice XNS contract deployment timestamp.
+    uint64 public immutable DEPLOYED_AT;
+
+    /// @notice Fee to register a new namespace.
+    uint256 public constant NAMESPACE_REGISTRATION_FEE = 200 ether;
+
+    /// @notice Maximum number of free names the creator can mint in their namespace.
+    uint16 public constant MAX_FREE_NAMES_PER_NAMESPACE = 200;
+
+    /// @notice Duration of the exclusive namespace-creator window for paid registrations.
+    uint256 public constant NAMESPACE_CREATOR_EXCLUSIVE_PERIOD = 30 days;
+
+    /// @notice Period after contract deployment during which the owner pays no namespace registration fee.
+    uint256 public constant INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD  = 365 days;
+
+    /// @notice Unit price step (0.001 ETH).
+    uint256 public constant PRICE_STEP = 1e15; // 0.001 ether
+
+    /// @notice Special namespace used for bare labels (e.g. "nike" = "nike.x").
+    string public constant SPECIAL_NAMESPACE = "x";
+
+    /// @notice Price-per-name for the special namespace (bare names).
+    uint256 public constant SPECIAL_NAMESPACE_PRICE = 100 ether;
+
+    /// @notice Address of DETH contract used to burn ETH and credit the recipient.
+    address public constant DETH = 0xE46861C9f28c46F27949fb471986d59B256500a7;
+
+    // -------------------------------------------------------------------------
+    // Events
+    // -------------------------------------------------------------------------
+
+    /// @dev Emitted in `registerName` and `assignFreeNames` functions.
+    event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
+
+    /// @dev Emitted in constructor when "x" namespace is registered, and in `registerNamespace` function.
+    event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator);
+
+    /// @dev Emitted in `claimFees` and `claimFeesToSelf` functions.
     event FeesClaimed(address indexed recipient, uint256 amount);
 
-    constructor(address _owner) {
-        owner = _owner;
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+
+    /// @dev Initializes the contract by setting the immutable owner and deployment timestamp.
+    /// Also pre-registers the special namespace "x" (bare names) with the given owner as its creator
+    /// and a price of 100 ETH per name.
+    /// @param owner Address that will own the contract and receive protocol fees.
+    constructor(address owner) {
+        OWNER = owner;
+        DEPLOYED_AT = uint64(block.timestamp);
+
+        // Register special namespace "x" as the very first namespace.
+        // Note: namespace creator privileges are tied to the address set here, not the contract owner.
+        // Contract ownership is immutable and cannot be transferred.
+        _namespaces[keccak256(bytes(SPECIAL_NAMESPACE))] = NamespaceData({
+            pricePerName: SPECIAL_NAMESPACE_PRICE,
+            creator: owner,
+            createdAt: uint64(block.timestamp),
+            remainingFreeNames: MAX_FREE_NAMES_PER_NAMESPACE
+        });
+
+        _priceToNamespace[SPECIAL_NAMESPACE_PRICE] = SPECIAL_NAMESPACE;
+
+        emit NamespaceRegistered(SPECIAL_NAMESPACE, SPECIAL_NAMESPACE_PRICE, owner);
     }
 
-    /**
-     * @notice Initializes the XNS contract and assigns ETHPower its name for free.
-     * @param _deth Address of the DETH contract on Ethereum.
-     */
-    constructor(address _owner) {
-        owner = _owner;
+    // =========================================================================
+    // STATE-MODIFYING FUNCTIONS
+    // =========================================================================
 
-        // Assign "DETH" (100 ETH variant) as a name for the DETH contract
-        string memory dethContractName = "DETH";
-        bytes32 nameHash = keccak256(abi.encodePacked(dethContractName));
-        nameHashToOwner[nameHash] = DETH; // Assigns ownership to the DETH contract itself
+    /// @notice Function to register a paid name for `msg.sender`. Namespace is determined by `msg.value`.
+    /// Namespace creators have a 30-day exclusivity window for registering names
+    /// within their registered namespace, following namespace registration.
+    /// 
+    /// **Requirements:**
+    /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
+    /// - `msg.value` must be > 0.
+    /// - Namespace must exist.
+    /// - Caller must not already have a name.
+    /// - Name must not already be registered.
+    /// 
+    /// @param label The label part of the name to register.
+    function registerName(string calldata label) external payable {
+        require(_isValidLabel(label), "XNS: invalid label");
 
-        emit NameRegistered(DETH, dethContractName);
-    }
+        uint256 pricePerName = msg.value;
+        require(pricePerName > 0, "XNS: zero price");
 
-    // @todo a function to name this contract as "XNS" for free
+        // Determine namespace from pricePerName.
+        string memory namespace = _priceToNamespace[pricePerName];
+        require(bytes(namespace).length != 0, "XNS: non-existent namespace");
 
-    function registerName(string memory _baseName, bool setAsPrimary) external payable {
-        require(bytes(_baseName).length > 0, "Name cannot be empty.");
-        require(msg.value > 0, "ETH amount must be greater than zero.");
-        require(isValidETHAmount(msg.value), "Invalid ETH increment.");
-        require(keccak256(abi.encodePacked(_baseName)) != X_HASH, "Use claimX() for X.");
+        // Load namespace metadata.
+        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
 
-        string memory fullName = getSuffixedName(_baseName, msg.value);
-        bytes32 nameHash = keccak256(abi.encodePacked(fullName));
-
-        require(nameHashToOwners[nameHash] == address(0), "Name with this suffix already taken.");
-
-        _registerNameInternal(msg.sender, fullName, msg.value, setAsPrimary);
-    }
-
-    function claimX(bool setAsPrimary) external payable {
-        require(totalNamesRegistered >= X_UNLOCK_THRESHOLD, "X is not unlocked yet.");
-        require(msg.value == X_PRICE, "X costs exactly 1000 ETH.");
-        require(nameHashToOwners[X_HASH] == address(0), "X has already been claimed.");
-
-        _registerNameInternal(msg.sender, "X", msg.value, setAsPrimary);
-    }
-
-    function _registerNameInternal(address user, string memory fullName, uint256 amount, bool setAsPrimary) internal {
-        bytes32 nameHash = keccak256(abi.encodePacked(fullName));
-        uint256 fee = (amount * FEE_PERCENTAGE) / 100;
-        accumulatedFees += fee;
-
-        nameHashToOwners[nameHash] = user;
-        userToNames[user].names.push(fullName);
-        userToNames[user].ownsName[nameHash] = true;
-        totalNamesRegistered++;
-
-        if (setAsPrimary) {
-            userToNames[user].primaryIndex = userToNames[user].names.length - 1;
-            emit PrimaryNameForReverseLookupSet(user, fullName);
+        // Following namespace registration, the namespace creator has a 30-day exclusivity window for registering
+        // names within the registered namespace. A namespace creator would typically first assign free names via
+        // the `assignFreeNames` function before registering paid names.
+        if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
+            require(msg.sender == ns.creator, "XNS: not namespace creator during exclusive period");
         }
 
-        emit NameRegistered(user, fullName);
+        // Enforce one-name-per-address globally.
+        require(bytes(_addressToName[msg.sender].label).length == 0, "XNS: address already has a name");
+
+        bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
+        require(_nameHashToAddress[key] == address(0), "XNS: name already registered");
+
+        _nameHashToAddress[key] = msg.sender;
+        _addressToName[msg.sender] = Name({label: label, namespace: namespace});
+
+        emit NameRegistered(label, namespace, msg.sender);
+
+        // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
+        _burnETHAndCreditFees(msg.value, ns.creator);
     }
 
-    function setPrimaryNameForReverseLookup(uint256 _index) external {
-        require(_index < userToNames[msg.sender].names.length, "Invalid index.");
-        userToNames[msg.sender].primaryIndex = _index;
-        emit PrimaryNameForReverseLookupSet(msg.sender, userToNames[msg.sender].names[_index]);
+    /// @notice Function to register a new namespace and assign a price-per-name.
+    /// 
+    /// **Requirements:**
+    /// - Namespace must be valid (non-empty, length 1–4, consists only of [a-z0-9])
+    /// - `msg.value` must be 200 ETH.
+    /// - Price per name must be a multiple of 0.001 ETH.
+    /// - Price per name must not already be in use.
+    /// - Namespace must not equal "eth".
+    /// 
+    /// **Note:**
+    /// - During the initial owner namespace registration period (1 year following contract deployment), the owner pays no namespace registration fee.
+    /// - Anyone can register a namespace for a 200 ETH fee, even within the initial owner namespace registration period.
+    /// - Front-running namespace registrations by the owner during the initial owner namespace registration period provides no economic benefit: 
+    /// the owner would only receive 5% of name registration fees (vs 200 ETH upfront fee), and users can mitigate this by waiting until after the 1-year period. This is an accepted design trade-off for simplicity.
+    /// 
+    /// @param namespace The namespace to register.
+    /// @param pricePerName The price per name to assign to the namespace.
+    function registerNamespace(string calldata namespace, uint256 pricePerName) external payable {
+        require(_isValidNamespace(namespace), "XNS: invalid namespace");
+
+        // Forbid "eth" namespace to avoid confusion with ENS.
+        require(keccak256(bytes(namespace)) != keccak256(bytes("eth")), "XNS: 'eth' namespace forbidden");
+
+        require(pricePerName > 0, "XNS: pricePerName must be > 0");
+        require(pricePerName % PRICE_STEP == 0, "XNS: price must be multiple of 0.001 ETH");
+
+        // Prevent the same price from being mapped to multiple namespaces.
+        require(bytes(_priceToNamespace[pricePerName]).length == 0, "XNS: price already in use");
+
+        bytes32 nsHash = keccak256(bytes(namespace));
+        NamespaceData storage existing = _namespaces[nsHash];
+        require(existing.creator == address(0), "XNS: namespace already exists");
+
+        if (!(block.timestamp < DEPLOYED_AT + INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD && msg.sender == OWNER)) {
+            require(msg.value == NAMESPACE_REGISTRATION_FEE, "XNS: wrong namespace fee");
+        }
+
+        _namespaces[nsHash] = NamespaceData({
+            pricePerName: pricePerName,
+            creator: msg.sender,
+            createdAt: uint64(block.timestamp),
+            remainingFreeNames: MAX_FREE_NAMES_PER_NAMESPACE
+        });
+
+        _priceToNamespace[pricePerName] = namespace;
+
+        emit NamespaceRegistered(namespace, pricePerName, msg.sender);
+
+        // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
+        // `msg.value` = 0 within initial owner namespace registration period (1 year after contract deployment).
+        if (msg.value > 0) {
+            _burnETHAndCreditFees(msg.value, msg.sender);
+        }
     }
 
-    function claimAccumulatedFees(address recipient) external {
-        require(msg.sender == owner, "Caller is not the owner.");
-        _claimAccumulatedFeesInternal(recipient);
+    /// @notice Function to assign free names to arbitrary addresses.
+    ///
+    /// **Requirements:**
+    /// - Caller must be the creator of the specified namespace.
+    /// - Each recipient address must not own a name already.
+    /// - Cannot exceed the total quota of 200 free names per namespace.
+    /// 
+    /// @param namespace The namespace to assign free names to.
+    /// @param assignments An array of assignments, each containing a label and an address.
+    function assignFreeNames(string calldata namespace, Assignment[] calldata assignments) external {
+        uint256 count = assignments.length;
+        require(count > 0, "XNS: empty assignments");
+
+        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
+        require(ns.creator != address(0), "XNS: namespace not found");
+        require(msg.sender == ns.creator, "XNS: not namespace creator");
+        require(count <= ns.remainingFreeNames, "XNS: free name quota exceeded");
+
+        for (uint256 i = 0; i < count; i++) {
+            string memory label = assignments[i].label;
+            address to = assignments[i].to;
+
+            require(_isValidLabel(label), "XNS: invalid label");
+            require(to != address(0), "XNS: 0x owner");
+            require(bytes(_addressToName[to].label).length == 0, "XNS: owner already has a name");
+
+            bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
+            require(_nameHashToAddress[key] == address(0), "XNS: name already registered");
+
+            _nameHashToAddress[key] = to;
+            _addressToName[to] = Name({label: label, namespace: namespace});
+
+            emit NameRegistered(label, namespace, to);
+        }
+
+        ns.remainingFreeNames -= uint16(count);
     }
 
-    function claimAccumulatedFeesToSelf() external {
-        require(msg.sender == owner, "Caller is not the owner.");
-        _claimAccumulatedFeesInternal(owner);
+    /// @notice Function to claim accumulated fees for `msg.sender` and send to `recipient`.
+    /// Withdraws all pending fees. Partial claims are not possible.
+    /// 
+    /// **Requirements:**
+    /// - `recipient` must not be the zero address.
+    /// - `msg.sender` must have pending fees to claim.
+    /// 
+    /// @param recipient The address that will receive the claimed fees.
+    function claimFees(address recipient) external {
+        require(recipient != address(0), "XNS: zero recipient");
+        _claimFees(recipient);
     }
 
-    function _claimAccumulatedFeesInternal(address recipient) private {
-        uint256 amount = accumulatedFees; // Use accumulatedFees instead of the full balance
-        require(amount > 0, "No fees to claim.");
-        accumulatedFees = 0; // Reset the accumulated fees to zero
+    /// @notice Function to claim accumulated fees for `msg.sender` and send to `msg.sender`.
+    /// Withdraws all pending fees. Partial claims are not possible.
+    /// 
+    /// **Requirements:**
+    /// - `msg.sender` must have pending fees to claim.
+    function claimFeesToSelf() external {
+        _claimFees(msg.sender);
+    }
 
-        (bool success, ) = payable(recipient).call{value: amount}("");
-        require(success, "ETH transfer failed.");
+    /// @dev Helper function for `claimFees` and `claimFeesToSelf`.
+    function _claimFees(address recipient) private {
+        uint256 amount = _pendingFees[msg.sender];
+        require(amount > 0, "XNS: no fees to claim");
+
+        _pendingFees[msg.sender] = 0;
+
+        (bool success, ) = recipient.call{value: amount}("");
+        require(success, "XNS: fee transfer failed");
 
         emit FeesClaimed(recipient, amount);
     }
 
-    function getFeeParameter() external pure returns (uint256) {
-        return FEE_PERCENTAGE;
-    }
+    // =========================================================================
+    // GETTER / VIEW FUNCTIONS
+    // =========================================================================
 
-    function getAccumulatedFees() external view returns (uint256) {
-        return accumulatedFees;
-    }
+    /// @notice Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an address.
+    /// 
+    /// **Requirements:**
+    /// - `fullName` must not be empty.
+    /// - `fullName` must be a valid name string (label.namespace).
+    /// 
+    /// @dev Returns `address(0)` for anything not registered or malformed.
+    /// @param fullName The name string to resolve.
+    /// @return addr The address associated with the name, or `address(0)` if not registered.
+    function getAddress(string calldata fullName) external view returns (address addr) {
+        bytes memory b = bytes(fullName);
+        uint256 len = b.length;
+        if (len == 0) return address(0);
 
-    function getPrimaryNameForReverseLookup(address _user) external view returns (string memory) {
-        uint256 primaryIndex = userToNames[_user].primaryIndex;
-        return userToNames[_user].names[primaryIndex];
-    }
+        // Search for '.' from the right within the last 5 characters (".xxxx")
+        uint256 endExclusive = (len > 5) ? (len - 5) : 0;
+        int256 lastDot = -1;
 
-    function getAddress(string memory _fullName) external view returns (address) {
-        return nameHashToOwners[keccak256(abi.encodePacked(_fullName))];
-    }
-
-    function getNames(address _user) external view returns (string[] memory) {
-        return userToNames[_user].names; // ✅ Directly return the full array
-    }
-
-    function getName(address _user) external view returns (string memory) {
-        uint256 primaryIndex = userToNames[_user].primaryIndex;
-        return userToNames[_user].names[primaryIndex];
-    }
-
-    function getUserNames(address _user, uint256 from, uint256 to) public view returns (string[] memory) {
-        uint256 len = userToNames[_user].names.length;
-        require(from <= to && to <= len, "Invalid indices.");
-
-        string[] memory namesSubset = new string[](to - from);
-        for (uint256 i = from; i < to; i++) {
-            namesSubset[i - from] = userToNames[_user].names[i];
+        for (uint256 i = len - 1; i > endExclusive; i--) {
+            if (b[i] == 0x2E) { // '.'
+                lastDot = int256(i);
+                break;
+            }
         }
-        return namesSubset;
-    }
 
-    function isValidETHAmount(uint256 _amount) public pure returns (bool) {
-        if (_amount < 1 ether) return (_amount % 0.001 ether == 0);
-        if (_amount < 10 ether) return (_amount % 1 ether == 0);
-        if (_amount < 100 ether) return (_amount % 5 ether == 0);
-        return (_amount == 100 ether || _amount == 1000 ether);
-    }
-    function getSuffixedName(string memory _baseName, uint256 _amount) public pure returns (string memory) {
-        if (_amount < 1 ether) {
-            return string(abi.encodePacked(_baseName, ".", uintToString(_amount / 1e15)));
+        string memory label;
+        string memory namespace;
+
+        if (lastDot == -1) {
+            // Bare label => label.x
+            label = fullName;
+            namespace = SPECIAL_NAMESPACE;
         } else {
-            return string(abi.encodePacked(_baseName, getNamedSuffix(_amount)));
+            uint256 dotIndex = uint256(lastDot);
+
+            bytes memory bl = new bytes(dotIndex);
+            for (uint256 j = 0; j < dotIndex; j++) bl[j] = b[j];
+
+            uint256 nsLen = len - dotIndex - 1;
+            bytes memory bn = new bytes(nsLen);
+            for (uint256 j = 0; j < nsLen; j++) bn[j] = b[dotIndex + 1 + j];
+
+            label = string(bl);
+            namespace = string(bn);
         }
-    }
-    function getNamedSuffix(uint256 _amount) public pure returns (string memory) {
-        if (_amount == 1 ether) return ".eth"; // 𖢻 "I'm in it for the tech"
-        if (_amount == 2 ether) return ".gm"; // 🌞 Checks portfolio before brushing teeth
-        if (_amount == 3 ether) return ".degen"; // 🎰 Thinks sleep is a bear market strategy
-        if (_amount == 4 ether) return ".wtf"; // 🤯 Bought LUNA and FTT "just in case"
-        if (_amount == 5 ether) return ".bro"; // 🤝 Gives crypto tips at divorce hearings
-        if (_amount == 6 ether) return ".chad"; // 💪 Measures gains in lambos per minute
-        if (_amount == 7 ether) return ".og"; // 🎖 Has more failed ICO tokens than friends
-        if (_amount == 9 ether) return ".hodl"; // 💎 Married to their bags (literally, had a ceremony)
-        if (_amount == 10 ether) return ".maxi"; // Ξ🦇🔊 "Solana is a SQL database"
-        if (_amount == 15 ether) return ".bull"; // 🦬 Red candles are just discounts
-        if (_amount == 20 ether) return ".whale"; // 🐋 Causes bear markets by taking profits
-        if (_amount == 25 ether) return ".pump"; // 🚀 Thinks sell walls are conspiracy theories
-        if (_amount == 30 ether) return ".100x"; // 💯 Uses leverage to leverage leverage
-        if (_amount == 35 ether) return ".defi"; // 📱 Buidling YOLO contracts
-        if (_amount == 40 ether) return ".ape"; // 🦍 Gets liquidated just to feel something
-        if (_amount == 45 ether) return ".moon"; // 🌕 Earth's gravity can't hold these gains
-        if (_amount == 50 ether) return ".X"; // 👔 CZ's financial advisor
-        if (_amount == 100 ether) return ""; // @todo needed becaue it will return "" anyways (see next line)
-        return "";
+
+        return _getAddress(label, namespace);
     }
 
-    function uintToString(uint256 _value) internal pure returns (string memory) {
-        if (_value == 0) return "0";
-        uint256 temp = _value;
-        uint256 digits;
-        while (temp != 0) {
-            digits++;
-            temp /= 10;
-        }
-        bytes memory buffer = new bytes(digits);
-        while (_value != 0) {
-            digits -= 1;
-            buffer[digits] = bytes1(uint8(48 + uint256(_value % 10)));
-            _value /= 10;
-        }
-        return string(buffer);
+    /// @notice Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an address.
+    /// @dev This version is more gas efficient than `getAddress(string calldata fullName)` as it does not require string splitting.
+    /// Returns `address(0)` if not registered.
+    /// @param label The label part of the name.
+    /// @param namespace The namespace part of the name.
+    /// @return addr The address associated with the name, or `address(0)` if not registered.
+    function getAddress(string calldata label, string calldata namespace) external view returns (address addr) {
+        return _getAddress(label, namespace);
     }
 
+    /// @dev Helper function for `getAddress(fullName)` and `getAddress(label, namespace)`.
+    function _getAddress(string memory label, string memory namespace) private view returns (address addr) {
+        bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
 
-    // function collectReservedName(string memory baseName, string memory suffix) external {
-    //     require(bytes(baseName).length > 0, "Base name cannot be empty.");
-    //     require(bytes(suffix).length > 0, "Suffix cannot be empty.");
+        return _nameHashToAddress[key];
+    }
 
-    //     string memory fullName = string(abi.encodePacked(baseName, suffix));
-    //     bytes32 nameHash = keccak256(abi.encodePacked(fullName));
-    //     bytes32 suffixHash = keccak256(abi.encodePacked(suffix));
+    /// @notice Function to lookup the XNS name for an address.
+    /// @dev Returns an empty string if the address has no name. For bare names (namespace "x"), 
+    /// returns just the label without the ".x" suffix. For regular names, returns the full name in format "label.namespace".
+    /// @param addr The address to lookup the XNS name for.
+    /// @return name The XNS name for the address, or empty string if the address has no name.
+    function getName(address addr) external view returns (string memory) {
+        Name storage n = _addressToName[addr];
 
-    //     require(suffixActive[suffixHash], "Suffix not activated.");
-    //     address recipient = initializedNameRecipients[suffixHash][nameHash];
-    //     require(recipient != address(0), "Name not initialized.");
-    //     require(nameHashToOwners[nameHash] == address(0), "Name already claimed.");
+        if (bytes(n.label).length == 0) {
+            return "";
+        }
 
-    //     // ✅ Assign ownership ONLY to the pre-set recipient
-    //     nameHashToOwners[nameHash] = recipient;
+        if (keccak256(bytes(n.namespace)) == keccak256(bytes(SPECIAL_NAMESPACE))) {
+            // Bare name: return just the label without ".x"
+            return n.label;
+        }
 
-    //     // ✅ Remove from temporary storage
-    //     delete initializedNameRecipients[suffixHash][nameHash];
+        // Regular name: return "label.namespace"
+        return string.concat(n.label, ".", n.namespace);
+    }
 
-    //     emit NameClaimed(recipient, fullName);
-    // }
+    /// @notice Function to retrieve the namespace metadata associated with `namespace`.
+    /// @param namespace The namespace to retrieve the metadata for.
+    /// @return pricePerName The price per name for the namespace.
+    /// @return creator The creator of the namespace.
+    /// @return createdAt The timestamp when the namespace was created.
+    /// @return remainingFreeNames The remaining number of free names in the namespace
+    /// that can be assigned by the namespace creator.
+    function getNamespaceInfo(
+        string calldata namespace
+    )
+        external
+        view
+        returns (
+            uint256 pricePerName,
+            address creator,
+            uint64 createdAt,
+            uint16 remainingFreeNames
+        )
+    {
+        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
+        require(ns.creator != address(0), "XNS: namespace not found");
 
+        return (ns.pricePerName, ns.creator, ns.createdAt, ns.remainingFreeNames);
+    }
 
+    /// @notice Function to retrieve the namespace metadata associated with `price`.
+    /// @param price The price to retrieve the namespace metadata for.
+    /// @return namespace The namespace string.
+    /// @return pricePerName The price per name for the namespace.
+    /// @return creator The creator of the namespace.
+    /// @return createdAt The timestamp when the namespace was created.
+    /// @return remainingFreeNames The remaining number of free names in the namespace
+    /// that can be assigned by the namespace creator.
+    function getNamespaceInfo(
+        uint256 price
+    )
+        external
+        view
+        returns (
+            string memory namespace,
+            uint256 pricePerName,
+            address creator,
+            uint64 createdAt,
+            uint16 remainingFreeNames
+        )
+    {
+        namespace = _priceToNamespace[price];
+        require(bytes(namespace).length != 0, "XNS: price not mapped to namespace");
 
+        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
+        require(ns.creator != address(0), "XNS: namespace not found");
+
+        return (namespace, ns.pricePerName, ns.creator, ns.createdAt, ns.remainingFreeNames);
+    }
+
+    /// @notice Function to check if a label is valid (returns bool, does not revert).
+    /// 
+    /// **Requirements:**
+    /// - Label must be 1–20 characters long
+    /// - Label must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
+    /// - Label cannot start or end with '-'
+    /// @param label The label to check if is valid.
+    /// @return isValid True if the label is valid, false otherwise.
+    function isValidLabel(string memory label) external pure returns (bool isValid) {
+        return _isValidLabel(label);
+    }
+
+    /// @notice Function to check if a namespace is valid (returns bool, does not revert).
+    ///
+    /// **Requirements:**
+    /// - Namespace must be 1–4 characters long
+    /// - Namespace must consist only of [a-z0-9] (lowercase letters and digits)
+    /// @param namespace The namespace to check if is valid.
+    /// @return isValid True if the namespace is valid, false otherwise.
+    function isValidNamespace(string memory namespace) external pure returns (bool isValid) {
+        return _isValidNamespace(namespace);
+    }
+
+    /// @notice Function to retrieve the amount of pending fees that can be claimed by an address.
+    /// @param recipient The address to retrieve the pending fees for.
+    /// @return amount The amount of pending fees that can be claimed by the address.
+    function getPendingFees(address recipient) external view returns (uint256 amount) {
+        return _pendingFees[recipient];
+    }
+
+    // =========================================================================
+    // INTERNAL MULTI-USE HELPER FUNCTIONS
+    // =========================================================================
+
+    /// @dev Helper function to burn 90% of ETH sent via DETH and credit 5% to namespace creator and 5% to contract owner.
+    /// Used in `registerName` and `registerNamespace`.
+    /// @param totalAmount The total amount of ETH sent to this contract.
+    /// @param namespaceCreator The address of the namespace creator that shall receive a portion of the fees.
+    function _burnETHAndCreditFees(uint256 totalAmount, address namespaceCreator) private {
+        uint256 burnAmount = totalAmount * 90 / 100;
+        uint256 creatorFee = totalAmount * 5 / 100;
+        uint256 ownerFee = totalAmount - burnAmount - creatorFee;
+
+        // Burn 90% via DETH contract and credit `msg.sender` (buyer of the name/namespace) with DETH.
+        IDETH(DETH).burn{value: burnAmount}(msg.sender);
+
+        // Credit fees to namespace creator and contract owner.
+        _pendingFees[namespaceCreator] += creatorFee;
+        _pendingFees[OWNER] += ownerFee;
+    }
+
+    /// @dev Helper function to check if a label is valid. Used in `registerName`, `assignFreeNames` and `isValidLabel`.
+    function _isValidLabel(string memory label) private pure returns (bool isValid) {
+        bytes memory b = bytes(label);
+        uint256 len = b.length;
+        if (len == 0 || len > 20) return false;
+
+        for (uint256 i = 0; i < len; i++) {
+            bytes1 c = b[i];
+            bool isLowercaseLetter = (c >= 0x61 && c <= 0x7A); // 'a'..'z'
+            bool isDigit = (c >= 0x30 && c <= 0x39); // '0'..'9'
+            bool isHyphen = (c == 0x2D); // '-'
+            if (!(isLowercaseLetter || isDigit || isHyphen)) return false;
+        }
+
+        if (b[0] == 0x2D || b[len - 1] == 0x2D) return false; // no leading/trailing '-'
+
+        return true;
+    }
+
+    /// @dev Helper function to check if a namespace is valid. Used in `registerNamespace` and `isValidNamespace`.
+    function _isValidNamespace(string memory namespace) private pure returns (bool isValid) {
+        bytes memory b = bytes(namespace);
+        uint256 len = b.length;
+        if (len == 0 || len > 4) return false;
+
+        for (uint256 i = 0; i < len; i++) {
+            bytes1 c = b[i];
+            bool isLowercaseLetter = (c >= 0x61 && c <= 0x7A); // 'a'..'z'
+            bool isDigit = (c >= 0x30 && c <= 0x39); // '0'..'9'
+            if (!(isLowercaseLetter || isDigit)) return false;
+        }
+
+        return true;
+    }
 }

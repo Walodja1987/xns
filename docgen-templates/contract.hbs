@@ -1,0 +1,68 @@
+{{>common}}
+
+{{#if functions}}
+{{h 1}} Functions
+
+{{#each functions}}
+{{#unless (eq kind "constructor")}}
+{{#hsection}}
+{{>item}}
+{{/hsection}}
+{{/unless}}
+{{/each}}
+{{/if}}
+
+{{#if events}}
+{{h 1}} Events
+
+{{#each events}}
+{{#hsection}}
+{{>item}}
+{{/hsection}}
+
+{{/each}}
+{{/if}}
+
+{{#if modifiers}}
+{{h 1}} Modifiers
+
+{{#each modifiers}}
+{{#hsection}}
+{{>item}}
+{{/hsection}}
+
+{{/each}}
+{{/if}}
+
+{{#if errors}}
+{{h 1}} Errors
+
+{{#each errors}}
+{{#hsection}}
+{{>item}}
+{{/hsection}}
+
+{{/each}}
+{{/if}}
+
+{{#if variables}}
+{{h 1}} State Variables
+
+{{#each variables}}
+{{#hsection}}
+{{>item}}
+{{/hsection}}
+
+{{/each}}
+{{/if}}
+
+{{#if types}}
+{{h 1}} Types
+
+{{#each types}}
+{{#hsection}}
+{{>item}}
+{{/hsection}}
+
+{{/each}}
+{{/if}}

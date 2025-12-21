@@ -1,0 +1,6 @@
+[
+  "event ETHBurned(address indexed,address indexed,uint256)",
+  "function burn(address) payable",
+  "function burned(address) view returns (uint256)",
+  "function totalBurned() view returns (uint256)"
+]

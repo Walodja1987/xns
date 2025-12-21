@@ -20,6 +20,8 @@ import "hardhat-gas-reporter";
 import "hardhat-abi-exporter";
 import "solidity-coverage";
 import "hardhat-contract-sizer";
+
+import 'solidity-docgen';
 // Uncomment if you want to use the Hardhat Tenderly module
 // You must also uncomment the subsequent `tenderly` configuration in this file accordingly
 // import "@tenderly/hardhat-tenderly";
@@ -1840,6 +1842,31 @@ const config: HardhatUserConfig = {
   //   privateVerification: false,
   //   deploymentsDir: "deployments_tenderly",
   // },
+  docgen: {
+    outputDir: "./docgen-output",
+    templates: './docgen-templates', // Path to your custom templates directory
+    pages: (item, file, config) => {
+      // Only include XNS contract
+      if (item.nodeType === "ContractDefinition" && item.name !== "XNS") {
+        return undefined;
+      }
+      
+      // Exclude structs, interfaces, events, variables, and other non-function items
+      if (
+        item.nodeType === "StructDefinition" ||
+        item.nodeType === "InterfaceDefinition" ||
+        item.nodeType === "EventDefinition" ||
+        item.nodeType === "VariableDeclaration" ||
+        item.nodeType === "ErrorDefinition" ||
+        item.nodeType === "EnumDefinition" ||
+        item.nodeType === "UserDefinedValueTypeDefinition"
+      ) {
+        return undefined;
+      }
+      // Include XNS contract and its functions
+      return "docs" + config.pageExtension;
+    },
+  },
 };
 
 export default config;
