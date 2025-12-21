@@ -33,8 +33,7 @@ import {IDETH} from "./interfaces/IDETH.sol";
 /// - For example, if the "100x" namespace was registered with price 0.1 ETH, then calling `registerName("vitalik")` with 0.1 ETH
 ///   registers "vitalik.100x".
 /// - Each address can own at most one name.
-/// - Names are always linked to the caller's address and cannot be assigned to another address,
-///   except namespace creators can assign free names (see Namespace registration section).
+/// - Names are always linked to the caller's address and cannot be assigned to another address.
 ///
 /// ### Bare names
 /// - A bare name is a name without a namespace (e.g., "vitalik" or "bankless").
@@ -43,11 +42,7 @@ import {IDETH} from "./interfaces/IDETH.sol";
 ///
 /// ### Namespace registration
 /// - Anyone can register new namespaces by paying a one-time fee of 200 ETH.
-/// - Namespace creators receive two privileges:
-///     i)  The right to assign up to 200 free names to any address that does not already have a name (no time limit), and 
-///     ii) A 30-day exclusive window for registering paid names within the registered namespace.
-/// - The exclusive window is useful if a creator exhausts their 200 free names and wants to register additional names
-///   before the namespace becomes publicly available.
+/// - Namespace creators receive a 30-day exclusive window for registering paid names within the registered namespace.
 /// - The XNS contract owner can register namespaces for free in the first year following contract deployment.
 /// - The XNS contract owner is set as the creator of the "x" namespace (bare names) at contract deployment.
 /// - "eth" namespace is disallowed to avoid confusion with ENS.
@@ -66,14 +61,6 @@ contract XNS {
         uint256 pricePerName;
         address creator;
         uint64 createdAt;
-        uint16 remainingFreeNames;
-    }
-
-    /// @dev Used as input to the `assignFreeNames` function, representing a name assignment
-    /// (label and recipient address) to be made by a namespace creator within their own namespace.
-    struct Assignment {
-        string label;
-        address to;
     }
 
     /// @dev Data structure to store a name (label, namespace) associated with an address.
@@ -117,9 +104,6 @@ contract XNS {
     /// @notice Fee to register a new namespace.
     uint256 public constant NAMESPACE_REGISTRATION_FEE = 200 ether;
 
-    /// @notice Maximum number of free names the creator can mint in their namespace.
-    uint16 public constant MAX_FREE_NAMES_PER_NAMESPACE = 200;
-
     /// @notice Duration of the exclusive namespace-creator window for paid registrations.
     uint256 public constant NAMESPACE_CREATOR_EXCLUSIVE_PERIOD = 30 days;
 
@@ -142,7 +126,7 @@ contract XNS {
     // Events
     // -------------------------------------------------------------------------
 
-    /// @dev Emitted in `registerName` and `assignFreeNames` functions.
+    /// @dev Emitted in `registerName` function.
     event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
 
     /// @dev Emitted in constructor when "x" namespace is registered, and in `registerNamespace` function.
@@ -169,8 +153,7 @@ contract XNS {
         _namespaces[keccak256(bytes(SPECIAL_NAMESPACE))] = NamespaceData({
             pricePerName: SPECIAL_NAMESPACE_PRICE,
             creator: owner,
-            createdAt: uint64(block.timestamp),
-            remainingFreeNames: MAX_FREE_NAMES_PER_NAMESPACE
+            createdAt: uint64(block.timestamp)
         });
 
         _priceToNamespace[SPECIAL_NAMESPACE_PRICE] = SPECIAL_NAMESPACE;
@@ -208,8 +191,8 @@ contract XNS {
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
 
         // Following namespace registration, the namespace creator has a 30-day exclusivity window for registering
-        // names within the registered namespace. A namespace creator would typically first assign free names via
-        // the `assignFreeNames` function before registering paid names.
+        // one paid name for themselves within the registered namespace. Can register more names on behalf
+        // of others using the `registerNameWithAuthorization` function.
         if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
             require(msg.sender == ns.creator, "XNS: not namespace creator during exclusive period");
         }
@@ -269,8 +252,7 @@ contract XNS {
         _namespaces[nsHash] = NamespaceData({
             pricePerName: pricePerName,
             creator: msg.sender,
-            createdAt: uint64(block.timestamp),
-            remainingFreeNames: MAX_FREE_NAMES_PER_NAMESPACE
+            createdAt: uint64(block.timestamp)
         });
 
         _priceToNamespace[pricePerName] = namespace;
@@ -282,44 +264,6 @@ contract XNS {
         if (msg.value > 0) {
             _burnETHAndCreditFees(msg.value, msg.sender);
         }
-    }
-
-    /// @notice Function to assign free names to arbitrary addresses.
-    ///
-    /// **Requirements:**
-    /// - Caller must be the creator of the specified namespace.
-    /// - Each recipient address must not own a name already.
-    /// - Cannot exceed the total quota of 200 free names per namespace.
-    /// 
-    /// @param namespace The namespace to assign free names to.
-    /// @param assignments An array of assignments, each containing a label and an address.
-    function assignFreeNames(string calldata namespace, Assignment[] calldata assignments) external {
-        uint256 count = assignments.length;
-        require(count > 0, "XNS: empty assignments");
-
-        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
-        require(ns.creator != address(0), "XNS: namespace not found");
-        require(msg.sender == ns.creator, "XNS: not namespace creator");
-        require(count <= ns.remainingFreeNames, "XNS: free name quota exceeded");
-
-        for (uint256 i = 0; i < count; i++) {
-            string memory label = assignments[i].label;
-            address to = assignments[i].to;
-
-            require(_isValidLabel(label), "XNS: invalid label");
-            require(to != address(0), "XNS: 0x owner");
-            require(bytes(_addressToName[to].label).length == 0, "XNS: owner already has a name");
-
-            bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
-            require(_nameHashToAddress[key] == address(0), "XNS: name already registered");
-
-            _nameHashToAddress[key] = to;
-            _addressToName[to] = Name({label: label, namespace: namespace});
-
-            emit NameRegistered(label, namespace, to);
-        }
-
-        ns.remainingFreeNames -= uint16(count);
     }
 
     /// @notice Function to claim accumulated fees for `msg.sender` and send to `recipient`.
@@ -453,8 +397,6 @@ contract XNS {
     /// @return pricePerName The price per name for the namespace.
     /// @return creator The creator of the namespace.
     /// @return createdAt The timestamp when the namespace was created.
-    /// @return remainingFreeNames The remaining number of free names in the namespace
-    /// that can be assigned by the namespace creator.
     function getNamespaceInfo(
         string calldata namespace
     )
@@ -463,14 +405,13 @@ contract XNS {
         returns (
             uint256 pricePerName,
             address creator,
-            uint64 createdAt,
-            uint16 remainingFreeNames
+            uint64 createdAt
         )
     {
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
 
-        return (ns.pricePerName, ns.creator, ns.createdAt, ns.remainingFreeNames);
+        return (ns.pricePerName, ns.creator, ns.createdAt);
     }
 
     /// @notice Function to retrieve the namespace metadata associated with `price`.
@@ -479,8 +420,6 @@ contract XNS {
     /// @return pricePerName The price per name for the namespace.
     /// @return creator The creator of the namespace.
     /// @return createdAt The timestamp when the namespace was created.
-    /// @return remainingFreeNames The remaining number of free names in the namespace
-    /// that can be assigned by the namespace creator.
     function getNamespaceInfo(
         uint256 price
     )
@@ -490,8 +429,7 @@ contract XNS {
             string memory namespace,
             uint256 pricePerName,
             address creator,
-            uint64 createdAt,
-            uint16 remainingFreeNames
+            uint64 createdAt
         )
     {
         namespace = _priceToNamespace[price];
@@ -500,7 +438,7 @@ contract XNS {
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
 
-        return (namespace, ns.pricePerName, ns.creator, ns.createdAt, ns.remainingFreeNames);
+        return (namespace, ns.pricePerName, ns.creator, ns.createdAt);
     }
 
     /// @notice Function to check if a label is valid (returns bool, does not revert).
@@ -554,7 +492,7 @@ contract XNS {
         _pendingFees[OWNER] += ownerFee;
     }
 
-    /// @dev Helper function to check if a label is valid. Used in `registerName`, `assignFreeNames` and `isValidLabel`.
+    /// @dev Helper function to check if a label is valid. Used in `registerName` and `isValidLabel`.
     function _isValidLabel(string memory label) private pure returns (bool isValid) {
         bytes memory b = bytes(label);
         uint256 len = b.length;
