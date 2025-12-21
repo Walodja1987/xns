@@ -61,6 +61,7 @@ contract XNS {
     // Types
     // -------------------------------------------------------------------------
 
+    /// @dev Data structure to store namespace metadata.
     struct NamespaceData {
         uint256 pricePerName;
         address creator;
@@ -68,11 +69,14 @@ contract XNS {
         uint16 remainingFreeNames;
     }
 
+    /// @dev Used as input to the `assignFreeNames` function, representing a name assignment
+    /// (label and recipient address) to be made by a namespace creator within their own namespace.
     struct Assignment {
         string label;
         address to;
     }
 
+    /// @dev Data structure to store a name (label, namespace) associated with an address.
     struct Name {
         string label;
         string namespace;
@@ -138,10 +142,13 @@ contract XNS {
     // Events
     // -------------------------------------------------------------------------
 
+    /// @dev Emitted in `registerName` and `assignFreeNames` functions.
     event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
 
+    /// @dev Emitted in constructor when "x" namespace is registered, and in `registerNamespace` function.
     event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator);
 
+    /// @dev Emitted in `claimFees` and `claimFeesToSelf` functions.
     event FeesClaimed(address indexed recipient, uint256 amount);
 
     // -------------------------------------------------------------------------

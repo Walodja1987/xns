@@ -2,6 +2,7 @@
 
 ## XNS
 
+
 An Ethereum-native name registry that maps human-readable names to Ethereum addresses.
 Names are **permanent, immutable, and non-transferable**.
 
@@ -44,13 +45,14 @@ Examples:
 - 10% is credited as fees to the namespace creator and the XNS contract owner (5% each).
 
 
+
+
+
+
 ## Functions
 
 ### registerName
 
-```solidity
-function registerName(string label) external payable
-```
 
 Function to register a paid name for `msg.sender`. Namespace is determined by `msg.value`.
 Namespace creators have a 30-day exclusivity window for registering names
@@ -63,17 +65,20 @@ within their registered namespace, following namespace registration.
 - Caller must not already have a name.
 - Name must not already be registered.
 
+```solidity
+function registerName(string label) external payable
+```
+
+
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | label | string | The label part of the name to register. |
 
+
 ### registerNamespace
 
-```solidity
-function registerNamespace(string namespace, uint256 pricePerName) external payable
-```
 
 Function to register a new namespace and assign a price-per-name.
 
@@ -90,6 +95,11 @@ Function to register a new namespace and assign a price-per-name.
 - Front-running namespace registrations by the owner during the initial owner namespace registration period provides no economic benefit: 
 the owner would only receive 5% of name registration fees (vs 200 ETH upfront fee), and users can mitigate this by waiting until after the 1-year period. This is an accepted design trade-off for simplicity.
 
+```solidity
+function registerNamespace(string namespace, uint256 pricePerName) external payable
+```
+
+
 #### Parameters
 
 | Name | Type | Description |
@@ -97,11 +107,9 @@ the owner would only receive 5% of name registration fees (vs 200 ETH upfront fe
 | namespace | string | The namespace to register. |
 | pricePerName | uint256 | The price per name to assign to the namespace. |
 
+
 ### assignFreeNames
 
-```solidity
-function assignFreeNames(string namespace, struct XNS.Assignment[] assignments) external
-```
 
 Function to assign free names to arbitrary addresses.
 
@@ -110,6 +118,11 @@ Function to assign free names to arbitrary addresses.
 - Each recipient address must not own a name already.
 - Cannot exceed the total quota of 200 free names per namespace.
 
+```solidity
+function assignFreeNames(string namespace, struct XNS.Assignment[] assignments) external
+```
+
+
 #### Parameters
 
 | Name | Type | Description |
@@ -117,11 +130,9 @@ Function to assign free names to arbitrary addresses.
 | namespace | string | The namespace to assign free names to. |
 | assignments | struct XNS.Assignment[] | An array of assignments, each containing a label and an address. |
 
+
 ### claimFees
 
-```solidity
-function claimFees(address recipient) external
-```
 
 Function to claim accumulated fees for `msg.sender` and send to recipient.
 Withdraws all pending fees credited to `msg.sender` and transfers them to `recipient`.
@@ -130,34 +141,45 @@ Withdraws all pending fees credited to `msg.sender` and transfers them to `recip
 - `recipient` must not be the zero address.
 - `msg.sender` must have pending fees to claim.
 
+```solidity
+function claimFees(address recipient) external
+```
+
+
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | recipient | address | The address that will receive the claimed fees. |
 
+
 ### claimFeesToSelf
 
-```solidity
-function claimFeesToSelf() external
-```
 
 Function to claim accumulated fees for `msg.sender` and send to `msg.sender`.
 
 **Requirements:**
 - `msg.sender` must have pending fees to claim.
 
+```solidity
+function claimFeesToSelf() external
+```
+
+
+
+
 ### getAddress
 
-```solidity
-function getAddress(string fullName) external view returns (address addr)
-```
 
 Resolves a name string like "nike", "nike.x", "vitalik.001" to an address.
 
 **Requirements:**
 - `fullName` must not be empty.
 - `fullName` must be a valid name string (label.namespace).
+
+```solidity
+function getAddress(string fullName) external view returns (address addr)
+```
 
 _Returns `address(0)` for anything not registered or malformed._
 
@@ -175,11 +197,12 @@ _Returns `address(0)` for anything not registered or malformed._
 
 ### getAddress
 
+
+More gas efficient variant of `getAddress(string calldata fullName)`.
+
 ```solidity
 function getAddress(string label, string namespace) external view returns (address addr)
 ```
-
-More gas efficient variant of `getAddress(string calldata fullName)`.
 
 _Returns `address(0)` if not registered._
 
@@ -198,78 +221,122 @@ _Returns `address(0)` if not registered._
 
 ### getName
 
+
+Reverse lookup: get the XNS name for an address.
+
 ```solidity
 function getName(address addr) external view returns (string)
 ```
-
-Reverse lookup: get the XNS name for an address.
 
 _Returns empty string if the address has no name.
 For bare names (namespace "x"), returns just the label without the ".x" suffix.
 For regular names, returns the full name in format "label.namespace"._
 
+
+
 ### getNamespaceInfo
+
+
+Get namespace metadata by namespace string.
 
 ```solidity
 function getNamespaceInfo(string namespace) external view returns (uint256 pricePerName, address creator, uint64 createdAt, uint16 remainingFreeNames)
 ```
 
-Get namespace metadata by namespace string.
+
+
 
 ### getNamespaceInfo
+
+
+Get namespace metadata by price (and also return the namespace string).
 
 ```solidity
 function getNamespaceInfo(uint256 price) external view returns (string namespace, uint256 pricePerName, address creator, uint64 createdAt, uint16 remainingFreeNames)
 ```
 
-Get namespace metadata by price (and also return the namespace string).
+
+
 
 ### isValidLabel
+
+
+Check if a label is valid.
 
 ```solidity
 function isValidLabel(string label) external pure returns (bool)
 ```
 
-Check if a label is valid.
+
+
 
 ### isValidNamespace
+
+
+Check if a namespace is valid.
 
 ```solidity
 function isValidNamespace(string namespace) external pure returns (bool)
 ```
 
-Check if a namespace is valid.
+
+
 
 ### getPendingFees
+
+
+Get the amount of pending fees that can be claimed by an address.
 
 ```solidity
 function getPendingFees(address recipient) external view returns (uint256)
 ```
 
-Get the amount of pending fees that can be claimed by an address.
+
+
 
 
 ## Events
 
 ### NameRegistered
 
+
+
+
 ```solidity
 event NameRegistered(string label, string namespace, address owner)
 ```
 
+_Emitted in `registerName` and `assignFreeNames` functions._
+
+
+
 
 ### NamespaceRegistered
+
+
+
 
 ```solidity
 event NamespaceRegistered(string namespace, uint256 pricePerName, address creator)
 ```
 
+_Emitted in constructor when "x" namespace is registered, and in `registerNamespace` function._
+
+
+
 
 ### FeesClaimed
+
+
+
 
 ```solidity
 event FeesClaimed(address recipient, uint256 amount)
 ```
+
+_Emitted in `claimFees` and `claimFeesToSelf` functions._
+
+
 
 
 
@@ -279,92 +346,132 @@ event FeesClaimed(address recipient, uint256 amount)
 
 ### OWNER
 
+
+XNS contract owner address (immutable, set at deployment).
+
 ```solidity
 address OWNER
 ```
 
-XNS contract owner address (immutable, set at deployment).
+
+
 
 
 ### DEPLOYED_AT
+
+
+XNS contract deployment timestamp.
 
 ```solidity
 uint64 DEPLOYED_AT
 ```
 
-XNS contract deployment timestamp.
+
+
 
 
 ### NAMESPACE_REGISTRATION_FEE
+
+
+Fee to register a new namespace.
 
 ```solidity
 uint256 NAMESPACE_REGISTRATION_FEE
 ```
 
-Fee to register a new namespace.
+
+
 
 
 ### MAX_FREE_NAMES_PER_NAMESPACE
+
+
+Maximum number of free names the creator can mint in their namespace.
 
 ```solidity
 uint16 MAX_FREE_NAMES_PER_NAMESPACE
 ```
 
-Maximum number of free names the creator can mint in their namespace.
+
+
 
 
 ### NAMESPACE_CREATOR_EXCLUSIVE_PERIOD
+
+
+Duration of the exclusive namespace-creator window for paid registrations.
 
 ```solidity
 uint256 NAMESPACE_CREATOR_EXCLUSIVE_PERIOD
 ```
 
-Duration of the exclusive namespace-creator window for paid registrations.
+
+
 
 
 ### INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+
+
+Period after contract deployment during which the owner pays no namespace registration fee.
 
 ```solidity
 uint256 INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
 ```
 
-Period after contract deployment during which the owner pays no namespace registration fee.
+
+
 
 
 ### PRICE_STEP
+
+
+Unit price step (0.001 ETH).
 
 ```solidity
 uint256 PRICE_STEP
 ```
 
-Unit price step (0.001 ETH).
+
+
 
 
 ### SPECIAL_NAMESPACE
+
+
+Special namespace used for bare labels (e.g. "nike" = "nike.x").
 
 ```solidity
 string SPECIAL_NAMESPACE
 ```
 
-Special namespace used for bare labels (e.g. "nike" = "nike.x").
+
+
 
 
 ### SPECIAL_NAMESPACE_PRICE
+
+
+Price-per-name for the special namespace (bare names).
 
 ```solidity
 uint256 SPECIAL_NAMESPACE_PRICE
 ```
 
-Price-per-name for the special namespace (bare names).
+
+
 
 
 ### DETH
+
+
+Address of DETH contract used to burn ETH and credit the recipient.
 
 ```solidity
 address DETH
 ```
 
-Address of DETH contract used to burn ETH and credit the recipient.
+
+
 
 
 
@@ -378,8 +485,15 @@ struct NamespaceData {
   address creator;
   uint64 createdAt;
   uint16 remainingFreeNames;
-}
 ```
+
+
+
+
+_Data structure to store namespace metadata._
+
+
+
 
 ### Assignment
 
@@ -387,8 +501,16 @@ struct NamespaceData {
 struct Assignment {
   string label;
   address to;
-}
 ```
+
+
+
+
+_Used as input to the `assignFreeNames` function, representing a name assignment
+(label and recipient address) to be made by a namespace creator within their own namespace._
+
+
+
 
 ### Name
 
@@ -396,7 +518,14 @@ struct Assignment {
 struct Name {
   string label;
   string namespace;
-}
 ```
+
+
+
+
+_Data structure to store a name (label, namespace) associated with an address._
+
+
+
 
 
