@@ -411,8 +411,8 @@ contract XNS {
     }
 
     /// @notice Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an address.
-    /// More gas efficient variant of `getAddress(string calldata fullName)`.
-    /// @dev Returns `address(0)` if not registered.
+    /// @dev This version is more gas efficient than `getAddress(string calldata fullName)` as it does not require string splitting.
+    /// Returns `address(0)` if not registered.
     /// @param label The label part of the name.
     /// @param namespace The namespace part of the name.
     /// @return addr The address associated with the name, or `address(0)` if not registered.
