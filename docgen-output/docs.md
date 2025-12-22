@@ -365,7 +365,7 @@ function isValidNamespace(string namespace) external pure returns (bool isValid)
 Function to check if a signature, to be used in `registerNameWithAuthorization`, is valid.
 
 ```solidity
-function isValidSignature(address recipient, bytes32 structHash, bytes signature) external view returns (bool isValid)
+function isValidSignature(struct XNS.RegisterNameAuth registerNameAuth, bytes signature) external view returns (bool isValid)
 ```
 
 
@@ -373,8 +373,7 @@ function isValidSignature(address recipient, bytes32 structHash, bytes signature
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| recipient | address | The creator of the signature and recipient of the name. |
-| structHash | bytes32 | The struct hash to check the signature against. |
+| registerNameAuth | struct XNS.RegisterNameAuth | The struct containing recipient, label, and namespace. |
 | signature | bytes | The signature to check. |
 
 #### Return Values

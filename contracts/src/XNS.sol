@@ -5,6 +5,11 @@ import {IDETH} from "./interfaces/IDETH.sol";
 import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
+// @todo add max width in code to 87 -> Ask chatGPT how to do it.
+// @todo need @dev comments for all storage variables??
+// @todo Review natspac (e.g., include return comments)
+// @todo Update errors -> use custom errors? OZ is also using them. Bu then you have so many additional errors to define.
+
 //////////////////////////////
 //                          //
 //    __   ___   _  _____   //
@@ -38,7 +43,7 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - Names are always linked to the caller's address and cannot be assigned to another address.
 ///
 /// ### Sponsorship via authorization (EIP-712 + EIP-1271)
-/// - `registerNameWithAuthorization` allows a sponsor (tx sender) to pay and register a name for a recipient
+/// - `registerNameWithAuthorization` allows a sponsor (`msg.sender`) to pay and register a name for a recipient
 ///   who explicitly authorized it via signature.
 /// - During the namespace creator exclusivity window, only the namespace creator may sponsor registrations
 ///   in that namespace (public `registerName` is disabled for non-creators).
@@ -83,7 +88,7 @@ contract XNS is EIP712 {
 
     /// @dev Argument for `registerNameWithAuthorization` function (EIP-712 based).
     struct RegisterNameAuth {
-        address recipient; // name recipient and signer of the EIP-712 message
+        address recipient; // Name recipient and signer of the EIP-712 message
         string label;
         string namespace;
     }
@@ -91,10 +96,6 @@ contract XNS is EIP712 {
     // -------------------------------------------------------------------------
     // Storage (private, accessed via getters)
     // -------------------------------------------------------------------------
-
-    // @todo need @dev comments for all storage variables??
-    // @todo Review natspac (e.g., include return comments)
-    // @todo Update errors -> use custom errors? OZ is also using them. Bu then you have so many additional errors to define.
 
     // Mapping from keccak256(label, ".", namespace) to name owner address.
     mapping(bytes32 => address) private _nameHashToAddress;
@@ -177,8 +178,6 @@ contract XNS is EIP712 {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-
-    // Do I need IERC5267? See EIP-712 in Openzeppelin
 
     /// @dev Initializes the contract by setting the immutable owner and deployment timestamp.
     /// Also pre-registers the special namespace "x" (bare names) with the given owner as its creator
@@ -587,7 +586,7 @@ contract XNS is EIP712 {
     // =========================================================================
 
     /// @dev Helper function to burn 90% of ETH sent via DETH and credit 5% to namespace creator and 5% to contract owner.
-    /// Used in `registerName` and `registerNamespace`.
+    /// Used in `registerName`, `registerNameWithAuthorization` and `registerNamespace`.
     /// @param totalAmount The total amount of ETH sent to this contract.
     /// @param namespaceCreator The address of the namespace creator that shall receive a portion of the fees.
     function _burnETHAndCreditFees(uint256 totalAmount, address namespaceCreator) private {
@@ -595,7 +594,7 @@ contract XNS is EIP712 {
         uint256 creatorFee = totalAmount * 5 / 100;
         uint256 ownerFee = totalAmount - burnAmount - creatorFee;
 
-        // Burn 90% via DETH contract and credit `msg.sender` (buyer of the name/namespace) with DETH.
+        // Burn 90% via DETH contract and credit `msg.sender` (payer/sponsor) with DETH.
         IDETH(DETH).burn{value: burnAmount}(msg.sender);
 
         // Credit fees to namespace creator and contract owner.

@@ -12,7 +12,6 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should set `deployedAt` to current block timestamp.
 - Should register special namespace "x" with correct price (100 ETH).
 - Should set special namespace creator to owner.
-- Should initialize special namespace with 200 free names.
 - Should emit `NamespaceRegistered` event for special namespace.
 - Should map SPECIAL_NAMESPACE_PRICE to "x" namespace.
 
@@ -23,8 +22,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 #### Functionality
 
 - Should have correct `NAMESPACE_REGISTRATION_FEE` (200 ether).
-- Should have correct `MAX_FREE_NAMES_PER_NAMESPACE` (200).
-- Should have correct `NS_CREATOR_EXCLUSIVE_PERIOD` (30 days).
+- Should have correct `NAMESPACE_CREATOR_EXCLUSIVE_PERIOD` (30 days).
 - Should have correct `INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD` (1 year).
 - Should have correct `PRICE_STEP` (0.001 ether / 1e15).
 - Should have correct `SPECIAL_NAMESPACE` ("x").
@@ -85,7 +83,6 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should register a new namespace correctly.
 - Should set namespace creator to `msg.sender`.
 - Should set `createdAt` to current block timestamp.
-- Should initialize namespace with 200 free names.
 - Should map price to namespace correctly.
 - Should allow owner to register namespace without fee (msg.value = 0) during initial period (1 year).
 - Should allow owner to register namespace with fees during initial period (optional payment).
@@ -137,38 +134,64 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: invalid label` error for invalid label.
 - Should revert with `XNS: zero price` error when msg.value is zero.
 - Should revert with `XNS: non-existent namespace` error when price doesn't map to a namespace.
-- Should revert with `XNS: namespace in exclusive period` error when non-creator tries to register during exclusive period.
+- Should revert with `XNS: not namespace creator during exclusive period` error when non-creator tries to register during exclusive period.
 - Should revert with `XNS: address already has a name` error when address already owns a name.
 - Should revert with `XNS: name already registered` error when name is already registered.
 
 ---
 
-### assignFreeNames
+### registerNameWithAuthorization
 
 #### Functionality
 
-- Should assign free names to specified addresses.
-- Should set name owners correctly.
-- Should map names to addresses correctly.
-- Should map addresses to names correctly (reverse lookup).
-- Should decrease `remainingFreeNames` counter correctly.
-- Should allow multiple assignments in one transaction.
-- Should emit `NameRegistered` event for each free name.
-- Should allow assigning names to different addresses in one call.
-- Should allow namespace creator to assign free names at any time (even after exclusive period).
-- Should correctly handle multiple free name assignments up to the limit (200).
+- Should register a name for recipient when sponsor pays and recipient authorizes via signature.
+- Should set name owner to recipient (not msg.sender).
+- Should map name to recipient address correctly.
+- Should map recipient address to name correctly (reverse lookup).
+- Should prevent recipient from having multiple names (one name per address).
+- Should prevent duplicate name registration.
+- Should emit `NameRegistered` event with recipient as owner.
+- Should distribute fees correctly (90% burnt via DETH, 5% to namespace creator, 5% to contract owner).
+- Should credit pending fees to namespace creator (5%).
+- Should credit pending fees to contract owner (5%).
+- Should allow namespace creator to sponsor registrations during exclusive period (30 days).
+- Should allow anyone to sponsor registrations after exclusive period (30 days).
+- Should burn ETH correctly via DETH contract (sponsor gets DETH credit).
+- Should work correctly with EOA signatures.
+- Should work correctly with EIP-1271 contract wallet signatures (Safe, Argent, etc.).
+- Should work correctly with special namespace "x" (100 ETH).
+- Should validate EIP-712 signature correctly.
 
 #### Reverts
 
-- Should revert with `XNS: no ETH for free registration` error when msg.value > 0.
-- Should revert with `XNS: empty assignments` error when assignments array is empty.
+- Should revert with `XNS: invalid label` error for invalid label.
+- Should revert with `XNS: 0x recipient` error when recipient is address(0).
+- Should revert with `XNS: zero price` error when msg.value is zero.
 - Should revert with `XNS: namespace not found` error for non-existent namespace.
-- Should revert with `XNS: not namespace creator` error when called by non-creator.
-- Should revert with `XNS: free name quota exceeded` error when assigning more than remaining free names.
-- Should revert with `XNS: invalid label` error for invalid label in assignments.
-- Should revert with `XNS: 0x owner` error when owner address is zero.
-- Should revert with `XNS: owner already has a name` error when target owner already has a name.
+- Should revert with `XNS: price mismatch` error when msg.value doesn't match namespace price.
+- Should revert with `XNS: only creator can sponsor during exclusivity` error when non-creator tries to sponsor during exclusive period.
+- Should revert with `XNS: recipient already has a name` error when recipient already owns a name.
 - Should revert with `XNS: name already registered` error when name is already registered.
+- Should revert with `XNS: bad authorization` error for invalid signature.
+- Should revert with `XNS: bad authorization` error when signature is from wrong recipient.
+
+---
+
+### isValidSignature
+
+#### Functionality
+
+- Should return `true` for valid EOA signature.
+- Should return `true` for valid EIP-1271 contract wallet signature.
+- Should return `false` for invalid signature.
+- Should return `false` for signature from wrong recipient.
+- Should return `false` for signature with wrong label.
+- Should return `false` for signature with wrong namespace.
+- Should correctly validate EIP-712 typed data signature.
+
+#### Reverts
+
+- (This is a view function, so no reverts expected)
 
 ---
 
@@ -179,7 +202,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should return correct owner address for registered name.
 - Should return `address(0)` for unregistered name.
 - Should return correct address for names registered via `registerName`.
-- Should return correct address for names registered via `assignFreeNames`.
+- Should return correct address for names registered via `registerNameWithAuthorization`.
 - Should handle special namespace "x" correctly.
 
 ---
@@ -205,7 +228,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should return correct full name string for registered address.
 - Should return empty string for address without a name.
 - Should return correct name for addresses registered via `registerName`.
-- Should return correct name for addresses registered via `assignFreeNames`.
+- Should return correct name for addresses registered via `registerNameWithAuthorization`.
 - Should return bare name without ".x" suffix for names in the "x" namespace (e.g., returns "vitalik" not "vitalik.x").
 - Should return full name with namespace for regular names (e.g., returns "alice.001").
 
@@ -218,7 +241,6 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should return correct `pricePerName` for namespace.
 - Should return correct `creator` address for namespace.
 - Should return correct `createdAt` timestamp for namespace.
-- Should return correct `remainingFreeNames` count for namespace.
 - Should return correct values for special namespace "x".
 
 #### Reverts
@@ -235,7 +257,6 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should return correct `pricePerName` for price.
 - Should return correct `creator` address for price.
 - Should return correct `createdAt` timestamp for price.
-- Should return correct `remainingFreeNames` count for price.
 - Should return correct values for SPECIAL_NAMESPACE_PRICE.
 
 #### Reverts
@@ -301,11 +322,13 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 #### Functionality
 
 - Should distribute 90% to DETH burn when registering namespace with fee.
-- Should distribute 90% to DETH burn when registering name.
+- Should distribute 90% to DETH burn when registering name via `registerName`.
+- Should distribute 90% to DETH burn when registering name via `registerNameWithAuthorization`.
 - Should credit 5% to namespace creator when registering name.
 - Should credit 5% to contract owner when registering name.
 - Should credit 5% to namespace creator when registering namespace with fee.
 - Should credit 5% to contract owner when registering namespace with fee.
+- Should credit DETH to payer/sponsor (msg.sender) when burning ETH.
 - Should handle exact division correctly (no rounding issues).
 - Should correctly handle fee distribution for multiple registrations.
 
@@ -315,10 +338,12 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should allow only namespace creator to register paid names during first 30 days.
-- Should allow anyone to register paid names after 30 days.
+- Should allow only namespace creator to register paid names via `registerName` during first 30 days.
+- Should allow only namespace creator to sponsor registrations via `registerNameWithAuthorization` during first 30 days.
+- Should allow anyone to register paid names via `registerName` after 30 days.
+- Should allow anyone to sponsor registrations via `registerNameWithAuthorization` after 30 days.
 - Should correctly calculate exclusive period from namespace creation time.
-- Should not affect free name claiming (can be done at any time by creator).
+- Should disable public `registerName` for non-creators during exclusive period.
 
 #### Reverts
 
@@ -346,13 +371,13 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 #### Functionality
 
 - Should prevent address from registering second name.
-- Should prevent address from receiving second name via `assignFreeNames`.
+- Should prevent address from receiving second name via `registerNameWithAuthorization`.
 - Should allow address to have one name only.
 
 #### Reverts
 
-- Should revert with `XNS: address already has a name` when trying to register second name.
-- Should revert with `XNS: owner already has a name` when trying to assign second name via `assignFreeNames`.
+- Should revert with `XNS: address already has a name` when trying to register second name via `registerName`.
+- Should revert with `XNS: recipient already has a name` when trying to register second name via `registerNameWithAuthorization`.
 
 ---
 
@@ -361,8 +386,8 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 #### Functionality
 
 - Should preserve namespace creator privileges forever (immutable).
-- Should allow original creator to claim free names at any time.
-- Should allow original creator to register paid names during exclusive period.
+- Should allow original creator to register paid names via `registerName` during exclusive period.
+- Should allow original creator to sponsor registrations via `registerNameWithAuthorization` during exclusive period.
 - Should ensure namespace creator privileges cannot be transferred or revoked.
 
 ---
@@ -373,8 +398,9 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 - Should handle names with maximum length (20 characters for labels, 4 for namespaces).
 - Should handle names with minimum length (1 character for both labels and namespaces).
-- Should handle registering exactly 200 free names (maximum).
 - Should handle price at PRICE_STEP boundaries (0.001 ETH, 0.002 ETH, etc.).
 - Should handle multiple namespaces with different prices.
 - Should handle registering names in different namespaces from same address (not allowed).
 - Should handle name resolution for names with multiple dots in full name format.
+- Should handle EIP-712 signature validation for various wallet types (EOA, Safe, Argent, etc.).
+- Should handle batch sponsorship scenarios (collect signatures off-chain, execute multiple registrations).

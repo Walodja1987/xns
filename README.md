@@ -1,6 +1,3 @@
-# TODO
-* Register ".defi" namespace and then assign free protocol names (coordinate with protocol owners). Use a rather higher value for that domain (e.g., 50 ETH) for naming
-
 ---
 
 # XNS – The On-Chain Name Service
@@ -197,41 +194,17 @@ The ETH amount uniquely determines the namespace.
 
 ---
 
-## 👥 Namespace Creators & Free Names
-
-When a new namespace is created:
-
-* The creator receives **200 free name registrations**
-* Free names can be assigned to **any addresses**
-* Free registrations:
-
-  * Require **no ETH**
-  * Are limited by a **remaining counter**
-  * Can be used **at any time**
-
-### Remaining Free Names
-
-Each namespace tracks:
-
-```
-remainingFreeNames
-```
-
-* Starts at **200**
-* Decreases with each free assignment
-* Cannot go below zero
-
-### Namespace Creator Immutability
+## 👥 Namespace Creators
 
 **Important:** The namespace creator address is set at namespace creation time and **never changes**.
 
 * Creator privileges are tied to the specific address that created the namespace
 * These privileges are **immutable** and cannot be transferred
-* Only the original namespace creator can:
-  * Claim free names (up to 200 per namespace, at any time)
-  * Register paid names during the 30-day exclusive period
+* During the 30-day exclusivity period, only the creator can:
+  * Register paid names for themselves via `registerName`
+  * Sponsor paid name registrations for others via `registerNameWithAuthorization`
 
-This ensures that namespace creators maintain full control over their namespaces forever.
+This ensures that namespace creators maintain full control over their namespaces during the exclusivity period.
 
 ---
 
@@ -239,12 +212,16 @@ This ensures that namespace creators maintain full control over their namespaces
 
 For the first **30 days** after a namespace is created:
 
-* **Only the namespace creator** may register **paid** names under that namespace
+* **Only the namespace creator** may register paid names under that namespace
+* The creator can:
+  * Register a name for themselves using `registerName`
+  * Sponsor name registrations for others using `registerNameWithAuthorization` (requires recipient's EIP-712 signature)
+* Public `registerName` is **disabled** for non-creators during this period
 
 After 30 days:
 
-* Anyone may register paid names
-* The creator may still use any remaining free names
+* Anyone may register paid names via `registerName`
+* Anyone may sponsor name registrations via `registerNameWithAuthorization`
 
 ---
 
@@ -259,12 +236,42 @@ registerName(string label) payable
 * Burns `msg.value` ETH
 * Namespace is derived from `msg.value`
 * Registers `label.namespace` for `msg.sender`
+* During the 30-day exclusivity period, only the namespace creator can use this function
 
 Example:
 
 ```solidity
 xns.registerName{value: 0.001 ether}("alice");
 ```
+
+---
+
+### Register a Name with Authorization (Sponsorship)
+
+```solidity
+registerNameWithAuthorization(
+    RegisterNameAuth calldata registerNameAuth,
+    bytes calldata signature
+) payable
+```
+
+* Allows a sponsor (tx sender) to pay and register a name for a recipient
+* Recipient must explicitly authorize via EIP-712 signature
+* Supports both EOA signatures and EIP-1271 contract wallet signatures (Safe, Argent, etc.)
+* During the 30-day exclusivity period, only the namespace creator can sponsor registrations
+* Burns `msg.value` ETH (must match namespace price)
+* Registers name to `recipient`, not `msg.sender`
+
+The `RegisterNameAuth` struct contains:
+* `recipient`: Address that will receive the name (must sign the EIP-712 message)
+* `label`: The label part of the name
+* `namespace`: The namespace part of the name
+
+Use cases:
+* Community onboarding: Users sign once, sponsor covers gas and fees
+* Gasless registration: Recipient doesn't need ETH
+* Batch registrations: Collect signatures off-chain, execute in one tx
+* Front-running protection: Creator can atomically register reserved names
 
 ---
 
@@ -276,21 +283,8 @@ registerNamespace(string namespace, uint256 pricePerName) payable
 
 * Registers a new namespace
 * Binds it to `pricePerName`
-* Grants the creator 200 free names
 * During the initial 1-year period, the contract owner can register namespaces for free
 * All others must pay the namespace registration fee (200 ETH)
-
----
-
-### Assign Free Names (Namespace Creator)
-
-```solidity
-assignFreeNames(string namespace, Assignment[] assignments)
-```
-
-* Creator-only
-* Assigns free names to arbitrary addresses
-* No ETH required
 
 ---
 
@@ -298,8 +292,9 @@ assignFreeNames(string namespace, Assignment[] assignments)
 
 ### Fee Distribution
 
-When names are registered (via `registerName`) or namespaces are created with fees:
+When names are registered (via `registerName` or `registerNameWithAuthorization`) or namespaces are created with fees:
 * **90%** of ETH is burned via DETH contract
+* The payer/sponsor is credited DETH 1:1 for the burned amount
 * **5%** is credited to the namespace creator
 * **5%** is credited to the contract owner
 
@@ -335,6 +330,21 @@ getPendingFees(address recipient)
 
 * Returns the amount of pending fees that can be claimed by an address
 * Returns zero if the address has no pending fees
+
+---
+
+### Validate Signature
+
+```solidity
+isValidSignature(
+    RegisterNameAuth calldata registerNameAuth,
+    bytes calldata signature
+) view returns (bool)
+```
+
+* Checks if a signature is valid for a `RegisterNameAuth` struct
+* Useful for off-chain validation before submitting transactions
+* Supports both EOA signatures and EIP-1271 contract wallet signatures
 
 ---
 
@@ -392,7 +402,6 @@ Returns:
 * `pricePerName`
 * `creator`
 * `createdAt`
-* `remainingFreeNames`
 
 ---
 
@@ -408,7 +417,6 @@ Returns:
 * `pricePerName`
 * `creator`
 * `createdAt`
-* `remainingFreeNames`
 
 ---
 

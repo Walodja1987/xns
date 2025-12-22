@@ -26,7 +26,7 @@
   "function getPendingFees(address) view returns (uint256)",
   "function isValidLabel(string) pure returns (bool)",
   "function isValidNamespace(string) pure returns (bool)",
-  "function isValidSignature(address,bytes32,bytes) view returns (bool)",
+  "function isValidSignature(tuple(address,string,string),bytes) view returns (bool)",
   "function registerName(string) payable",
   "function registerNameWithAuthorization(tuple(address,string,string),bytes) payable",
   "function registerNamespace(string,uint256) payable"
