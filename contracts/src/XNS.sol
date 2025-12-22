@@ -103,9 +103,6 @@ contract XNS is EIP712 {
     // Mapping from address to pending fees that can be claimed.
     mapping(address => uint256) private _pendingFees;
 
-    // Mapping from address to nonce (for EIP-712 signature replay protection).
-    mapping(address => uint256) public nonces;
-
     // -------------------------------------------------------------------------
     // Constants
     // -------------------------------------------------------------------------
@@ -143,7 +140,7 @@ contract XNS is EIP712 {
 
     /// @dev EIP-712 struct type hash for RegisterNameAuth.
     bytes32 private constant _REGISTER_AUTH_TYPEHASH =
-        keccak256("RegisterNameAuth(address recipient,bytes32 labelHash,bytes32 namespaceHash,uint256 nonce)"); // @todo consider doing it like in voucher example
+        keccak256("RegisterNameAuth(address recipient,bytes32 labelHash,bytes32 namespaceHash)");
 
     // -------------------------------------------------------------------------
     // Events
@@ -161,6 +158,8 @@ contract XNS is EIP712 {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
+
+    // Do I need IERC5267? See EIP-712 in Openzeppelin
 
     /// @dev Initializes the contract by setting the immutable owner and deployment timestamp.
     /// Also pre-registers the special namespace "x" (bare names) with the given owner as its creator
@@ -271,7 +270,7 @@ contract XNS is EIP712 {
         NamespaceData storage ns = _namespaces[nsHash];
         require(ns.creator != address(0), "XNS: namespace not found");
 
-        // Verify msg.value matches namespace price.
+        // Verify `msg.value` matches namespace price.
         require(pricePerName == ns.pricePerName, "XNS: price mismatch");
 
         // During exclusivity, only namespace creator may sponsor registrations.
@@ -285,17 +284,13 @@ contract XNS is EIP712 {
         bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
         require(_nameHashToAddress[key] == address(0), "XNS: name already registered");
 
-        // Get current nonce for recipient.
-        uint256 nonce = nonces[recipient];
-
         // Construct EIP-712 struct hash.
         bytes32 structHash = keccak256(
             abi.encode(
                 _REGISTER_AUTH_TYPEHASH,
                 recipient,
                 keccak256(bytes(label)),
-                nsHash,
-                nonce // @todo correct here? No salt value?
+                nsHash
             )
         );
 
@@ -307,9 +302,6 @@ contract XNS is EIP712 {
             SignatureChecker.isValidSignatureNow(recipient, digest, signature),
             "XNS: bad authorization"
         );
-
-        // Consume nonce to prevent replay attacks.
-        nonces[recipient] = nonce + 1; // @todo how does the user know which nonce? Also, isn't it valid only once for a recipient? How about replay during reorgs?
 
         // Register name to recipient (not msg.sender).
         _nameHashToAddress[key] = recipient;
@@ -636,4 +628,20 @@ contract XNS is EIP712 {
 
         return true;
     }
+
+    /// @notice Function to check if a signature, to be used in `registerNameWithAuthorization`, is valid.
+    /// @param recipient The creator of the signature and recipient of the name.
+    /// @param structHash The struct hash to check the signature against.
+    /// @param signature The signature to check.
+    /// @return isValid True if the signature is valid, false otherwise.
+    function isValidSignature(
+        address recipient,
+        bytes32 structHash,
+        bytes memory signature
+    ) external view returns (bool isValid) {
+        // Compute EIP-712 digest.
+        bytes32 digest = _hashTypedDataV4(structHash);
+
+        return SignatureChecker.isValidSignatureNow(recipient, digest, signature);
+    } // @todo do we need to have a version without structHash but the plain data?
 }

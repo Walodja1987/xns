@@ -383,6 +383,30 @@ function getPendingFees(address recipient) external view returns (uint256 amount
 | ---- | ---- | ----------- |
 | amount | uint256 | The amount of pending fees that can be claimed by the address. |
 
+### isValidSignature
+
+
+Function to check if a signature, to be used in `registerNameWithAuthorization`, is valid.
+
+```solidity
+function isValidSignature(address recipient, bytes32 structHash, bytes signature) external view returns (bool isValid)
+```
+
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| recipient | address | The creator of the signature and recipient of the name. |
+| structHash | bytes32 | The struct hash to check the signature against. |
+| signature | bytes | The signature to check. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| isValid | bool | True if the signature is valid, false otherwise. |
+
 
 ## Events
 
