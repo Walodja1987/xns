@@ -1,3 +1,1 @@
-[
-  "function verify(bytes,bytes32,bytes) view returns (bytes4)"
-]
+["function verify(bytes,bytes32,bytes) view returns (bytes4)"]

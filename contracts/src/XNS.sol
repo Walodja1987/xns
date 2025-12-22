@@ -5,9 +5,6 @@ import {IDETH} from "./interfaces/IDETH.sol";
 import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
-// @todo add max width in code to 87 -> Ask chatGPT how to do it.
-// @todo need @dev comments for all storage variables??
-// @todo Review natspac (e.g., include return comments)
 // @todo Update errors -> use custom errors? OZ is also using them.
 // But then you have so many additional errors to define.
 
@@ -256,8 +253,8 @@ contract XNS is EIP712 {
     }
 
     // @todo Question: How to batch this function with msg.value?
-    /// @notice Function to sponsor a paid name registration for `recipient` who explicitly authorized it via signature.
-    /// Allows a third party (relayer) to pay gas and registration fees while the recipient explicitly
+    /// @notice Function to sponsor a paid name registration for `recipient` who explicitly authorized it via.
+    /// signature. Allows a third party (relayer) to pay gas and registration fees while the recipient explicitly
     /// approves via EIP-712 signature. During the namespace creator exclusivity period, only the namespace creator
     /// may sponsor registrations in that namespace.
     ///
