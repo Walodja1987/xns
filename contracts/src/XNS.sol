@@ -81,12 +81,20 @@ contract XNS is EIP712 {
         string namespace;
     }
 
+    /// @dev Argument for `registerNameWithAuthorization` function (EIP-712 based).
+    struct RegisterNameAuth {
+        address recipient; // name recipient and signer of the EIP-712 message
+        string label;
+        string namespace;
+    }
+
     // -------------------------------------------------------------------------
     // Storage (private, accessed via getters)
     // -------------------------------------------------------------------------
 
     // @todo need @dev comments for all storage variables??
     // @todo Review natspac (e.g., include return comments)
+    // @todo Update errors -> use custom errors? OZ is also using them. Bu then you have so many additional errors to define.
 
     // Mapping from keccak256(label, ".", namespace) to name owner address.
     mapping(bytes32 => address) private _nameHashToAddress;
@@ -138,9 +146,20 @@ contract XNS is EIP712 {
     // EIP-712 Constants
     // -------------------------------------------------------------------------
 
-    /// @dev EIP-712 struct type hash for RegisterNameAuth.
-    bytes32 private constant _REGISTER_AUTH_TYPEHASH =
-        keccak256("RegisterNameAuth(address recipient,bytes32 labelHash,bytes32 namespaceHash)");
+    // EIP-712 struct type hash for RegisterNameAuth:
+    //
+    // keccak256(
+    //     abi.encodePacked(
+    //         "RegisterNameAuth(",
+    //         "address recipient,",
+    //         "bytes32 labelHash,",
+    //         "bytes32 namespaceHash)"
+    //     )
+    // )
+    bytes32 private constant _REGISTER_NAME_AUTH_TYPEHASH = 0xfed68b8c50be9d8c7775136bcef61eefc74849472c4e4e5c861277fbcbdcebd7;
+
+    // Bit mask to mask dirty bits in the voucher hash calculation (`_getVoucherHash`).
+    uint256 private constant ADDRESS_MASK = (1 << 160) - 1;
 
     // -------------------------------------------------------------------------
     // Events
@@ -249,24 +268,20 @@ contract XNS is EIP712 {
     /// - Name must not already be registered.
     /// - Signature must be valid EIP-712 signature from `recipient`.
     /// 
-    /// @param label The label part of the name to register.
-    /// @param namespace The namespace part of the name.
-    /// @param recipient The address that will receive the name (must match the signature signer).
+    /// @param registerNameAuth The argument for the function, including label, namespace, and recipient.
     /// @param signature EIP-712 signature by `recipient` (EOA) or EIP-1271 contract signature.
     function registerNameWithAuthorization(
-        string calldata label,
-        string calldata namespace,
-        address recipient,
+        RegisterNameAuth calldata registerNameAuth,
         bytes calldata signature
     ) external payable {
-        require(_isValidLabel(label), "XNS: invalid label");
-        require(recipient != address(0), "XNS: 0x recipient");
+        require(_isValidLabel(registerNameAuth.label), "XNS: invalid label");
+        require(registerNameAuth.recipient != address(0), "XNS: 0x recipient");
 
         uint256 pricePerName = msg.value;
         require(pricePerName > 0, "XNS: zero price");
 
         // Verify namespace exists.
-        bytes32 nsHash = keccak256(bytes(namespace));
+        bytes32 nsHash = keccak256(bytes(registerNameAuth.namespace));
         NamespaceData storage ns = _namespaces[nsHash];
         require(ns.creator != address(0), "XNS: namespace not found");
 
@@ -279,17 +294,17 @@ contract XNS is EIP712 {
         }
 
         // Enforce one-name-per-address globally.
-        require(bytes(_addressToName[recipient].label).length == 0, "XNS: recipient already has a name");
+        require(bytes(_addressToName[registerNameAuth.recipient].label).length == 0, "XNS: recipient already has a name");
 
-        bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
+        bytes32 key = keccak256(abi.encodePacked(registerNameAuth.label, ".", registerNameAuth.namespace));
         require(_nameHashToAddress[key] == address(0), "XNS: name already registered");
 
         // Construct EIP-712 struct hash.
         bytes32 structHash = keccak256(
             abi.encode(
-                _REGISTER_AUTH_TYPEHASH,
-                recipient,
-                keccak256(bytes(label)),
+                _REGISTER_NAME_AUTH_TYPEHASH,
+                registerNameAuth.recipient,
+                keccak256(bytes(registerNameAuth.label)),
                 nsHash
             )
         );
@@ -299,15 +314,15 @@ contract XNS is EIP712 {
 
         // Verify signature using OpenZeppelin's SignatureChecker (supports EOA and EIP-1271).
         require(
-            SignatureChecker.isValidSignatureNow(recipient, digest, signature),
+            SignatureChecker.isValidSignatureNow(registerNameAuth.recipient, digest, signature),
             "XNS: bad authorization"
         );
 
         // Register name to recipient (not msg.sender).
-        _nameHashToAddress[key] = recipient;
-        _addressToName[recipient] = Name({label: label, namespace: namespace});
+        _nameHashToAddress[key] = registerNameAuth.recipient;
+        _addressToName[registerNameAuth.recipient] = Name({label: registerNameAuth.label, namespace: registerNameAuth.namespace});
 
-        emit NameRegistered(label, namespace, recipient);
+        emit NameRegistered(registerNameAuth.label, registerNameAuth.namespace, registerNameAuth.recipient);
 
         // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
         _burnETHAndCreditFees(msg.value, ns.creator);
@@ -565,6 +580,22 @@ contract XNS is EIP712 {
         return _isValidNamespace(namespace);
     }
 
+    /// @notice Function to check if a signature, to be used in `registerNameWithAuthorization`, is valid.
+    /// @param recipient The creator of the signature and recipient of the name.
+    /// @param structHash The struct hash to check the signature against.
+    /// @param signature The signature to check.
+    /// @return isValid True if the signature is valid, false otherwise.
+    function isValidSignature(
+        address recipient,
+        bytes32 structHash,
+        bytes memory signature
+    ) external view returns (bool isValid) {
+        // Compute EIP-712 digest.
+        bytes32 digest = _hashTypedDataV4(structHash);
+
+        return SignatureChecker.isValidSignatureNow(recipient, digest, signature);
+    } // @todo do we need to have a version without structHash but the plain data?
+
     /// @notice Function to retrieve the amount of pending fees that can be claimed by an address.
     /// @param recipient The address to retrieve the pending fees for.
     /// @return amount The amount of pending fees that can be claimed by the address.
@@ -629,19 +660,37 @@ contract XNS is EIP712 {
         return true;
     }
 
-    /// @notice Function to check if a signature, to be used in `registerNameWithAuthorization`, is valid.
-    /// @param recipient The creator of the signature and recipient of the name.
-    /// @param structHash The struct hash to check the signature against.
-    /// @param signature The signature to check.
-    /// @return isValid True if the signature is valid, false otherwise.
-    function isValidSignature(
-        address recipient,
-        bytes32 structHash,
-        bytes memory signature
-    ) external view returns (bool isValid) {
-        // Compute EIP-712 digest.
-        bytes32 digest = _hashTypedDataV4(structHash);
+    // Return hash of voucher details.
+    function _getRegisterNameAuthHash(RegisterNameAuth memory registerNameAuth) private pure returns (bytes32 registerNameAuthHash) {
+        // Assembly for more efficient computing:
+        // Inspired by https://github.com/0xProject/protocol/blob/1fa093be6490cac52dfc17c31cd9fe9ff47ccc5e/contracts/zero-ex/contracts/src/features/libs/LibNativeOrder.sol#L179
+        // keccak256(
+        //     abi.encode(
+        //         _REGISTER_NAME_AUTH_TYPEHASH,
+        //         registerNameAuth.recipient,
+        //         keccak256(bytes(registerNameAuth.label)),
+        //         keccak256(bytes(registerNameAuth.namespace))
+        //     )
+        // )
+        assembly {
+            let mem := mload(0x40)
+            mstore(mem, _REGISTER_NAME_AUTH_TYPEHASH)
+            // registerNameAuth.recipient;
+            mstore(add(mem, 0x20), and(ADDRESS_MASK, mload(registerNameAuth)))
+            // registerNameAuth.label;
+            let label := mload(add(registerNameAuth, 0x20)) // pointer to the label string
+            mstore(
+                add(mem, 0x40),
+                keccak256(add(label, 0x20), mload(label)) // keccak256(start of string data, length of string)
+            )
+            // registerNameAuth.namespace;
+            let namespace := mload(add(registerNameAuth, 0x40))
+            mstore(
+                add(mem, 0x60),
+                keccak256(add(namespace, 0x20), mload(namespace))
+            )
 
-        return SignatureChecker.isValidSignatureNow(recipient, digest, signature);
-    } // @todo do we need to have a version without structHash but the plain data?
+            registerNameAuthHash := keccak256(mem, 0x80)
+        }
+    }
 }

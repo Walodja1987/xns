@@ -100,7 +100,7 @@ During the namespace creator exclusivity period, only the namespace creator may 
 - Signature must be valid EIP-712 signature from `recipient`.
 
 ```solidity
-function registerNameWithAuthorization(string label, string namespace, address recipient, bytes signature) external payable
+function registerNameWithAuthorization(struct XNS.RegisterNameAuth registerNameAuth, bytes signature) external payable
 ```
 
 
@@ -108,9 +108,7 @@ function registerNameWithAuthorization(string label, string namespace, address r
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| label | string | The label part of the name to register. |
-| namespace | string | The namespace part of the name. |
-| recipient | address | The address that will receive the name (must match the signature signer). |
+| registerNameAuth | struct XNS.RegisterNameAuth | The argument for the function, including label, namespace, and recipient. |
 | signature | bytes | EIP-712 signature by `recipient` (EOA) or EIP-1271 contract signature. |
 
 
@@ -361,28 +359,6 @@ function isValidNamespace(string namespace) external pure returns (bool isValid)
 | ---- | ---- | ----------- |
 | isValid | bool | True if the namespace is valid, false otherwise. |
 
-### getPendingFees
-
-
-Function to retrieve the amount of pending fees that can be claimed by an address.
-
-```solidity
-function getPendingFees(address recipient) external view returns (uint256 amount)
-```
-
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| recipient | address | The address to retrieve the pending fees for. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| amount | uint256 | The amount of pending fees that can be claimed by the address. |
-
 ### isValidSignature
 
 
@@ -406,6 +382,28 @@ function isValidSignature(address recipient, bytes32 structHash, bytes signature
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | isValid | bool | True if the signature is valid, false otherwise. |
+
+### getPendingFees
+
+
+Function to retrieve the amount of pending fees that can be claimed by an address.
+
+```solidity
+function getPendingFees(address recipient) external view returns (uint256 amount)
+```
+
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| recipient | address | The address to retrieve the pending fees for. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| amount | uint256 | The amount of pending fees that can be claimed by the address. |
 
 
 ## Events
@@ -456,19 +454,6 @@ _Emitted in `claimFees` and `claimFeesToSelf` functions._
 
 
 ## State Variables
-
-### nonces
-
-
-
-
-```solidity
-mapping(address => uint256) nonces
-```
-
-
-
-
 
 ### OWNER
 
@@ -619,6 +604,23 @@ struct Name {
 
 
 _Data structure to store a name (label, namespace) associated with an address._
+
+
+
+
+### RegisterNameAuth
+
+```solidity
+struct RegisterNameAuth {
+  address recipient;
+  string label;
+  string namespace;
+```
+
+
+
+
+_Argument for `registerNameWithAuthorization` function (EIP-712 based)._
 
 
 
