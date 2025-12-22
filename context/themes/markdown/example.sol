@@ -67,12 +67,12 @@ contract XNS {
     // Storage
     // -------------------------------------------------------------------------
 
-    mapping(bytes32 => address) private _nameHashToAddress;      // keccak256(label,".",namespace) -> owner
-    mapping(bytes32 => NamespaceData) private _namespaces;        // keccak256(namespace) -> data
-    mapping(uint256 => string) private _priceToNamespace;         // pricePerName -> namespace
-    mapping(address => Name) private _addressToName;              // address -> (label, namespace)
-    mapping(address => uint256) private _pendingFees;             // address -> fees
-    mapping(address => uint256) public nonces;                    // recipient -> nonce (for auth)
+    mapping(bytes32 => address) private _nameHashToAddress; // keccak256(label,".",namespace) -> owner
+    mapping(bytes32 => NamespaceData) private _namespaces; // keccak256(namespace) -> data
+    mapping(uint256 => string) private _priceToNamespace; // pricePerName -> namespace
+    mapping(address => Name) private _addressToName; // address -> (label, namespace)
+    mapping(address => uint256) private _pendingFees; // address -> fees
+    mapping(address => uint256) public nonces; // recipient -> nonce (for auth)
 
     // -------------------------------------------------------------------------
     // Constants
@@ -101,13 +101,14 @@ contract XNS {
 
     // Recipient authorizes sponsorship of a paid registration at a specific pricePerName
     bytes32 private constant _REGISTER_AUTH_TYPEHASH =
-        keccak256("RegisterNameAuth(address recipient,bytes32 labelHash,bytes32 namespaceHash,uint256 pricePerName,uint256 nonce,uint256 deadline)");
+        keccak256(
+            "RegisterNameAuth(address recipient,bytes32 labelHash,bytes32 namespaceHash,uint256 pricePerName,uint256 nonce,uint256 deadline)"
+        );
 
     bytes4 private constant _EIP1271_MAGICVALUE = 0x1626ba7e;
 
     // secp256k1n/2 for malleability check on 's'
-    uint256 private constant _SECP256K1N_HALF =
-        0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0;
+    uint256 private constant _SECP256K1N_HALF = 0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0;
 
     // -------------------------------------------------------------------------
     // Events
@@ -405,11 +406,7 @@ contract XNS {
 
     function getNamespaceInfo(
         string calldata namespace
-    )
-        external
-        view
-        returns (uint256 pricePerName, address creator, uint64 createdAt)
-    {
+    ) external view returns (uint256 pricePerName, address creator, uint64 createdAt) {
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
         return (ns.pricePerName, ns.creator, ns.createdAt);
@@ -417,11 +414,7 @@ contract XNS {
 
     function getNamespaceInfo(
         uint256 price
-    )
-        external
-        view
-        returns (string memory namespace, uint256 pricePerName, address creator, uint64 createdAt)
-    {
+    ) external view returns (string memory namespace, uint256 pricePerName, address creator, uint64 createdAt) {
         namespace = _priceToNamespace[price];
         require(bytes(namespace).length != 0, "XNS: price not mapped to namespace");
 
@@ -448,8 +441,8 @@ contract XNS {
     // =========================================================================
 
     function _burnETHAndCreditFees(uint256 totalAmount, address namespaceCreator) private {
-        uint256 burnAmount = totalAmount * 90 / 100;
-        uint256 creatorFee = totalAmount * 5 / 100;
+        uint256 burnAmount = (totalAmount * 90) / 100;
+        uint256 creatorFee = (totalAmount * 5) / 100;
         uint256 ownerFee = totalAmount - burnAmount - creatorFee;
 
         IDETH(DETH).burn{value: burnAmount}(msg.sender);
@@ -492,15 +485,7 @@ contract XNS {
     }
 
     function _domainSeparator() private view returns (bytes32) {
-        return keccak256(
-            abi.encode(
-                _EIP712_DOMAIN_TYPEHASH,
-                _NAME_HASH,
-                _VERSION_HASH,
-                block.chainid,
-                address(this)
-            )
-        );
+        return keccak256(abi.encode(_EIP712_DOMAIN_TYPEHASH, _NAME_HASH, _VERSION_HASH, block.chainid, address(this)));
     }
 
     function _isValidSignature(address signer, bytes32 digest, bytes calldata sig) private view returns (bool) {

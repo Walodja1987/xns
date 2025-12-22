@@ -39,9 +39,9 @@ Once a name is registered, it is **forever** linked to the owner’s address.
 
 XNS names never expire.
 
-* No renewals
-* No grace periods
-* No risk of losing your name
+- No renewals
+- No grace periods
+- No risk of losing your name
 
 If you register a name, it is yours **forever**.
 
@@ -51,10 +51,9 @@ If you register a name, it is yours **forever**.
 
 Names are registered by burning ETH. The amount of ETH burned determines the namespace.
 
-* 90% of ETH sent is burned via the [DETH contract](https://github.com/Walodja1987/deth)
-* The sender is credited DETH 1:1
-* Burned ETH is permanently removed from circulation, contributing Ethereum's deflationary mechanism and ETH's value accrual
-
+- 90% of ETH sent is burned via the [DETH contract](https://github.com/Walodja1987/deth)
+- The sender is credited DETH 1:1
+- Burned ETH is permanently removed from circulation, contributing Ethereum's deflationary mechanism and ETH's value accrual
 
 There is no secondary market and no resale incentive.
 
@@ -66,9 +65,9 @@ Each Ethereum address may own **at most one XNS name**.
 
 This guarantees:
 
-* Clear identity mapping
-* No name farming
-* Simple reverse lookup (`address → name`)
+- Clear identity mapping
+- No name farming
+- Simple reverse lookup (`address → name`)
 
 ---
 
@@ -76,8 +75,8 @@ This guarantees:
 
 XNS supports:
 
-* **Forward lookup:** name → address
-* **Reverse lookup:** address → name
+- **Forward lookup:** name → address
+- **Reverse lookup:** address → name
 
 All resolution is done via on-chain view functions and can be queried directly via **Etherscan** — no indexers required.
 
@@ -107,20 +106,20 @@ The label is the user-chosen part of the name.
 
 Rules:
 
-* Length: **1–20 characters**
-* Allowed characters:
+- Length: **1–20 characters**
+- Allowed characters:
+  - `a–z`
+  - `0–9`
+  - `-` (hyphen)
 
-  * `a–z`
-  * `0–9`
-  * `-` (hyphen)
-* Hyphen **cannot** be the first or last character
+- Hyphen **cannot** be the first or last character
 
 Examples:
 
-* ✅ `vitalik`
-* ✅ `my-name`
-* ❌ `-name`
-* ❌ `name-`
+- ✅ `vitalik`
+- ✅ `my-name`
+- ❌ `-name`
+- ❌ `name-`
 
 ---
 
@@ -128,15 +127,15 @@ Examples:
 
 Namespaces are determined **entirely by the ETH amount burned** during registration.
 
-* Namespaces are **permissionless**
-* Anyone can create a namespace by paying a one-time fee
-* Each namespace has a **fixed price per name**
+- Namespaces are **permissionless**
+- Anyone can create a namespace by paying a one-time fee
+- Each namespace has a **fixed price per name**
 
 Namespace rules:
 
-* Length: **1–4 characters**
-* Allowed characters: `a–z`, `0–9`
-* The namespace `"eth"` is **forbidden** to avoid confusion with ENS
+- Length: **1–4 characters**
+- Allowed characters: `a–z`, `0–9`
+- The namespace `"eth"` is **forbidden** to avoid confusion with ENS
 
 ---
 
@@ -152,13 +151,13 @@ This namespace represents **suffix-free names**.
 
 ### How it works
 
-* Registering a label **without a dot** implicitly registers:
+- Registering a label **without a dot** implicitly registers:
 
   ```
   label.x
   ```
 
-* Resolution treats both forms as equivalent:
+- Resolution treats both forms as equivalent:
 
   ```
   getAddress("nike")  == getAddress("nike.x")
@@ -166,8 +165,8 @@ This namespace represents **suffix-free names**.
 
 ### Pricing
 
-* `.x` names cost **100 ETH**
-* Example:
+- `.x` names cost **100 ETH**
+- Example:
 
   ```
   nike.x  → displayed simply as "nike"
@@ -198,11 +197,11 @@ The ETH amount uniquely determines the namespace.
 
 **Important:** The namespace creator address is set at namespace creation time and **never changes**.
 
-* Creator privileges are tied to the specific address that created the namespace
-* These privileges are **immutable** and cannot be transferred
-* During the 30-day exclusivity period, only the creator can:
-  * Register paid names for themselves via `registerName`
-  * Sponsor paid name registrations for others via `registerNameWithAuthorization`
+- Creator privileges are tied to the specific address that created the namespace
+- These privileges are **immutable** and cannot be transferred
+- During the 30-day exclusivity period, only the creator can:
+  - Register paid names for themselves via `registerName`
+  - Sponsor paid name registrations for others via `registerNameWithAuthorization`
 
 This ensures that namespace creators maintain full control over their namespaces during the exclusivity period.
 
@@ -212,16 +211,16 @@ This ensures that namespace creators maintain full control over their namespaces
 
 For the first **30 days** after a namespace is created:
 
-* **Only the namespace creator** may register paid names under that namespace
-* The creator can:
-  * Register a name for themselves using `registerName`
-  * Sponsor name registrations for others using `registerNameWithAuthorization` (requires recipient's EIP-712 signature)
-* Public `registerName` is **disabled** for non-creators during this period
+- **Only the namespace creator** may register paid names under that namespace
+- The creator can:
+  - Register a name for themselves using `registerName`
+  - Sponsor name registrations for others using `registerNameWithAuthorization` (requires recipient's EIP-712 signature)
+- Public `registerName` is **disabled** for non-creators during this period
 
 After 30 days:
 
-* Anyone may register paid names via `registerName`
-* Anyone may sponsor name registrations via `registerNameWithAuthorization`
+- Anyone may register paid names via `registerName`
+- Anyone may sponsor name registrations via `registerNameWithAuthorization`
 
 ---
 
@@ -233,10 +232,10 @@ After 30 days:
 registerName(string label) payable
 ```
 
-* Burns `msg.value` ETH
-* Namespace is derived from `msg.value`
-* Registers `label.namespace` for `msg.sender`
-* During the 30-day exclusivity period, only the namespace creator can use this function
+- Burns `msg.value` ETH
+- Namespace is derived from `msg.value`
+- Registers `label.namespace` for `msg.sender`
+- During the 30-day exclusivity period, only the namespace creator can use this function
 
 Example:
 
@@ -255,23 +254,25 @@ registerNameWithAuthorization(
 ) payable
 ```
 
-* Allows a sponsor (tx sender) to pay and register a name for a recipient
-* Recipient must explicitly authorize via EIP-712 signature
-* Supports both EOA signatures and EIP-1271 contract wallet signatures (Safe, Argent, etc.)
-* During the 30-day exclusivity period, only the namespace creator can sponsor registrations
-* Burns `msg.value` ETH (must match namespace price)
-* Registers name to `recipient`, not `msg.sender`
+- Allows a sponsor (tx sender) to pay and register a name for a recipient
+- Recipient must explicitly authorize via EIP-712 signature
+- Supports both EOA signatures and EIP-1271 contract wallet signatures (Safe, Argent, etc.)
+- During the 30-day exclusivity period, only the namespace creator can sponsor registrations
+- Burns `msg.value` ETH (must match namespace price)
+- Registers name to `recipient`, not `msg.sender`
 
 The `RegisterNameAuth` struct contains:
-* `recipient`: Address that will receive the name (must sign the EIP-712 message)
-* `label`: The label part of the name
-* `namespace`: The namespace part of the name
+
+- `recipient`: Address that will receive the name (must sign the EIP-712 message)
+- `label`: The label part of the name
+- `namespace`: The namespace part of the name
 
 Use cases:
-* Community onboarding: Users sign once, sponsor covers gas and fees
-* Gasless registration: Recipient doesn't need ETH
-* Batch registrations: Collect signatures off-chain, execute in one tx
-* Front-running protection: Creator can atomically register reserved names
+
+- Community onboarding: Users sign once, sponsor covers gas and fees
+- Gasless registration: Recipient doesn't need ETH
+- Batch registrations: Collect signatures off-chain, execute in one tx
+- Front-running protection: Creator can atomically register reserved names
 
 ---
 
@@ -281,10 +282,10 @@ Use cases:
 registerNamespace(string namespace, uint256 pricePerName) payable
 ```
 
-* Registers a new namespace
-* Binds it to `pricePerName`
-* During the initial 1-year period, the contract owner can register namespaces for free
-* All others must pay the namespace registration fee (200 ETH)
+- Registers a new namespace
+- Binds it to `pricePerName`
+- During the initial 1-year period, the contract owner can register namespaces for free
+- All others must pay the namespace registration fee (200 ETH)
 
 ---
 
@@ -293,10 +294,11 @@ registerNamespace(string namespace, uint256 pricePerName) payable
 ### Fee Distribution
 
 When names are registered (via `registerName` or `registerNameWithAuthorization`) or namespaces are created with fees:
-* **90%** of ETH is burned via DETH contract
-* The payer/sponsor is credited DETH 1:1 for the burned amount
-* **5%** is credited to the namespace creator
-* **5%** is credited to the contract owner
+
+- **90%** of ETH is burned via DETH contract
+- The payer/sponsor is credited DETH 1:1 for the burned amount
+- **5%** is credited to the namespace creator
+- **5%** is credited to the contract owner
 
 Fees accumulate and must be explicitly claimed.
 
@@ -308,17 +310,17 @@ Fees accumulate and must be explicitly claimed.
 claimFees(address recipient)
 ```
 
-* Claims all accumulated fees for `msg.sender`
-* Transfers fees to the specified `recipient` address
-* Resets pending fees to zero
-* Emits `FeesClaimed` event
+- Claims all accumulated fees for `msg.sender`
+- Transfers fees to the specified `recipient` address
+- Resets pending fees to zero
+- Emits `FeesClaimed` event
 
 ```solidity
 claimFeesToSelf()
 ```
 
-* Convenience function that claims fees for `msg.sender` and sends them to `msg.sender`
-* Equivalent to `claimFees(msg.sender)`
+- Convenience function that claims fees for `msg.sender` and sends them to `msg.sender`
+- Equivalent to `claimFees(msg.sender)`
 
 ---
 
@@ -328,8 +330,8 @@ claimFeesToSelf()
 getPendingFees(address recipient)
 ```
 
-* Returns the amount of pending fees that can be claimed by an address
-* Returns zero if the address has no pending fees
+- Returns the amount of pending fees that can be claimed by an address
+- Returns zero if the address has no pending fees
 
 ---
 
@@ -342,9 +344,9 @@ isValidSignature(
 ) view returns (bool)
 ```
 
-* Checks if a signature is valid for a `RegisterNameAuth` struct
-* Useful for off-chain validation before submitting transactions
-* Supports both EOA signatures and EIP-1271 contract wallet signatures
+- Checks if a signature is valid for a `RegisterNameAuth` struct
+- Useful for off-chain validation before submitting transactions
+- Supports both EOA signatures and EIP-1271 contract wallet signatures
 
 ---
 
@@ -375,9 +377,9 @@ getName(address addr)
 
 Returns the full XNS name as a string:
 
-* For bare names (registered in the "x" namespace): returns just the label (e.g., `"vitalik"`)
-* For regular names: returns the full name in format `"label.namespace"` (e.g., `"alice.001"`)
-* If the address has no name: returns an empty string `""`
+- For bare names (registered in the "x" namespace): returns just the label (e.g., `"vitalik"`)
+- For regular names: returns the full name in format `"label.namespace"` (e.g., `"alice.001"`)
+- If the address has no name: returns an empty string `""`
 
 Examples:
 
@@ -399,9 +401,9 @@ getNamespaceInfo(string namespace)
 
 Returns:
 
-* `pricePerName`
-* `creator`
-* `createdAt`
+- `pricePerName`
+- `creator`
+- `createdAt`
 
 ---
 
@@ -413,10 +415,10 @@ getNamespaceInfo(uint256 price)
 
 Returns:
 
-* `namespace`
-* `pricePerName`
-* `creator`
-* `createdAt`
+- `namespace`
+- `pricePerName`
+- `creator`
+- `createdAt`
 
 ---
 
@@ -426,9 +428,9 @@ XNS **does not** use a commit–reveal pattern.
 
 Why?
 
-* On a public blockchain, **reveals are still front-runnable**
-* Commit–reveal hides intent but does **not** prevent motivated actors from racing the final transaction
-* Including commit–reveal would add complexity without providing real guarantees
+- On a public blockchain, **reveals are still front-runnable**
+- Commit–reveal hides intent but does **not** prevent motivated actors from racing the final transaction
+- Including commit–reveal would add complexity without providing real guarantees
 
 **Design choice:**
 XNS embraces simplicity and economic deterrence.
@@ -442,11 +444,7 @@ For high-value registrations, users may optionally use **private transaction sub
 ### `NameRegistered`
 
 ```solidity
-event NameRegistered(
-    string label,
-    string namespace,
-    address owner
-);
+event NameRegistered(string label, string namespace, address owner);
 ```
 
 Emitted on paid or free registration.
@@ -457,9 +455,9 @@ Emitted on paid or free registration.
 
 ```solidity
 event NamespaceRegistered(
-    string namespace,
-    uint256 pricePerName,
-    address creator
+  string namespace,
+  uint256 pricePerName,
+  address creator
 );
 ```
 
@@ -480,23 +478,23 @@ Emitted when a namespace is created.
 
 XNS is intentionally minimal:
 
-* Immutable mappings
-* Immutable ownership (set at deployment)
-* No admin keys
-* No upgrades
-* No tokenization
-* No off-chain trust
+- Immutable mappings
+- Immutable ownership (set at deployment)
+- No admin keys
+- No upgrades
+- No tokenization
+- No off-chain trust
 
 It is designed to be:
 
-* Easy to reason about
-* Easy to integrate
-* Hard to abuse
+- Easy to reason about
+- Easy to integrate
+- Hard to abuse
 
 ---
 
 If you want next, we can:
 
-* Add a **“How to use XNS via Etherscan”** walkthrough
-* Write a **short protocol integration guide**
-* Or tighten the tone further (more playful vs more formal)
+- Add a **“How to use XNS via Etherscan”** walkthrough
+- Write a **short protocol integration guide**
+- Or tighten the tone further (more playful vs more formal)

@@ -68,7 +68,6 @@ contract DIVAVoucher is IDIVAVoucher, EIP712Upgradeable, ReentrancyGuard {
 
     /// @inheritdoc IDIVAVoucher
     function initialize(address _issuer) external override initializer {
-
         __EIP712_init("DIVAVoucher", "1");
 
         if (_issuer == address(0)) revert Address0Error();

@@ -16,14 +16,14 @@ Examples:
 
 ### Name registration
 - To register a name, users call `registerName(label)` and send ETH.
-- The amount of ETH sent determines the namespace. It must match a namespace's registered price. 
-- For example, if the "100x" namespace was registered with price 0.1 ETH, then calling `registerName("vitalik")` with 0.1 ETH
-  registers "vitalik.100x".
+- The amount of ETH sent determines the namespace. It must match a namespace's registered price.
+- For example, if the "100x" namespace was registered with price 0.1 ETH, then calling
+  `registerName("vitalik")` with 0.1 ETH registers "vitalik.100x".
 - Each address can own at most one name.
 - Names are always linked to the caller's address and cannot be assigned to another address.
 
 ### Sponsorship via authorization (EIP-712 + EIP-1271)
-- `registerNameWithAuthorization` allows a sponsor (tx sender) to pay and register a name for a recipient
+- `registerNameWithAuthorization` allows a sponsor (`msg.sender`) to pay and register a name for a recipient
   who explicitly authorized it via signature.
 - During the namespace creator exclusivity window, only the namespace creator may sponsor registrations
   in that namespace (public `registerName` is disabled for non-creators).
@@ -32,7 +32,8 @@ Examples:
 
 ### Bare names
 - A bare name is a name without a namespace (e.g., "vitalik" or "bankless").
-- Bare names are equivalent to names in the special "x" namespace, i.e., "vitalik" = "vitalik.x" or "bankless" = "bankless.x".
+- Bare names are equivalent to names in the special "x" namespace, i.e., "vitalik" = "vitalik.x"
+  or "bankless" = "bankless.x".
 - Bare names are considered premium names and cost 100 ETH per name.
 
 ### Namespace registration
@@ -86,8 +87,9 @@ function registerName(string label) external payable
 
 
 Function to sponsor a paid name registration for `recipient` who explicitly authorized it via signature.
-Allows a third party (relayer) to pay gas and registration fees while the recipient explicitly approves via EIP-712 signature.
-During the namespace creator exclusivity period, only the namespace creator may sponsor registrations in that namespace.
+Allows a third party (relayer) to pay gas and registration fees while the recipient explicitly
+approves via EIP-712 signature. During the namespace creator exclusivity period, only the namespace creator
+may sponsor registrations in that namespace.
 
 **Requirements:**
 - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
@@ -125,10 +127,14 @@ Function to register a new namespace and assign a price-per-name.
 - Namespace must not equal "eth".
 
 **Note:**
-- During the initial owner namespace registration period (1 year following contract deployment), the owner pays no namespace registration fee.
-- Anyone can register a namespace for a 200 ETH fee, even within the initial owner namespace registration period.
-- Front-running namespace registrations by the owner during the initial owner namespace registration period provides no economic benefit: 
-the owner would only receive 5% of name registration fees (vs 200 ETH upfront fee), and users can mitigate this by waiting until after the 1-year period. This is an accepted design trade-off for simplicity.
+- During the initial owner namespace registration period (1 year following contract deployment),
+  the owner pays no namespace registration fee.
+- Anyone can register a namespace for a 200 ETH fee, even within the initial owner
+  namespace registration period.
+- Front-running namespace registrations by the owner during the initial owner namespace
+  registration period provides no economic benefit: the owner would only receive 5% of name
+  registration fees (vs 200 ETH upfront fee), and users can mitigate this by waiting until
+  after the 1-year period. This is an accepted design trade-off for simplicity.
 
 ```solidity
 function registerNamespace(string namespace, uint256 pricePerName) external payable
@@ -217,8 +223,8 @@ Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an add
 function getAddress(string label, string namespace) external view returns (address addr)
 ```
 
-_This version is more gas efficient than `getAddress(string calldata fullName)` as it does not require string splitting.
-Returns `address(0)` if not registered._
+_This version is more gas efficient than `getAddress(string calldata fullName)` as it does not
+require string splitting. Returns `address(0)` if not registered._
 
 #### Parameters
 
@@ -242,8 +248,9 @@ Function to lookup the XNS name for an address.
 function getName(address addr) external view returns (string)
 ```
 
-_Returns an empty string if the address has no name. For bare names (namespace "x"), 
-returns just the label without the ".x" suffix. For regular names, returns the full name in format "label.namespace"._
+_Returns an empty string if the address has no name. For bare names (namespace "x"),
+returns just the label without the ".x" suffix. For regular names, returns the full name
+in format "label.namespace"._
 
 #### Parameters
 
