@@ -158,7 +158,7 @@ contract XNS is EIP712 {
     // )
     bytes32 private constant _REGISTER_NAME_AUTH_TYPEHASH = 0xfed68b8c50be9d8c7775136bcef61eefc74849472c4e4e5c861277fbcbdcebd7;
 
-    // Bit mask to mask dirty bits in the voucher hash calculation (`_getVoucherHash`).
+    // Bit mask to mask dirty bits in the registerNameAuth hash calculation (`_getRegisterNameAuthHash`).
     uint256 private constant ADDRESS_MASK = (1 << 160) - 1;
 
     // -------------------------------------------------------------------------
@@ -299,24 +299,8 @@ contract XNS is EIP712 {
         bytes32 key = keccak256(abi.encodePacked(registerNameAuth.label, ".", registerNameAuth.namespace));
         require(_nameHashToAddress[key] == address(0), "XNS: name already registered");
 
-        // Construct EIP-712 struct hash.
-        bytes32 structHash = keccak256(
-            abi.encode(
-                _REGISTER_NAME_AUTH_TYPEHASH,
-                registerNameAuth.recipient,
-                keccak256(bytes(registerNameAuth.label)),
-                nsHash
-            )
-        );
-
-        // Compute EIP-712 digest.
-        bytes32 digest = _hashTypedDataV4(structHash);
-
-        // Verify signature using OpenZeppelin's SignatureChecker (supports EOA and EIP-1271).
-        require(
-            SignatureChecker.isValidSignatureNow(registerNameAuth.recipient, digest, signature),
-            "XNS: bad authorization"
-        );
+        // Verify that the signature is valid.
+        require(_isValidSignature(registerNameAuth, signature), "XNS: bad authorization");
 
         // Register name to recipient (not msg.sender).
         _nameHashToAddress[key] = registerNameAuth.recipient;
@@ -581,20 +565,15 @@ contract XNS is EIP712 {
     }
 
     /// @notice Function to check if a signature, to be used in `registerNameWithAuthorization`, is valid.
-    /// @param recipient The creator of the signature and recipient of the name.
-    /// @param structHash The struct hash to check the signature against.
+    /// @param registerNameAuth The struct containing recipient, label, and namespace.
     /// @param signature The signature to check.
     /// @return isValid True if the signature is valid, false otherwise.
     function isValidSignature(
-        address recipient,
-        bytes32 structHash,
-        bytes memory signature
+        RegisterNameAuth calldata registerNameAuth,
+        bytes calldata signature
     ) external view returns (bool isValid) {
-        // Compute EIP-712 digest.
-        bytes32 digest = _hashTypedDataV4(structHash);
-
-        return SignatureChecker.isValidSignatureNow(recipient, digest, signature);
-    } // @todo do we need to have a version without structHash but the plain data?
+        return _isValidSignature(registerNameAuth, signature);
+    }
 
     /// @notice Function to retrieve the amount of pending fees that can be claimed by an address.
     /// @param recipient The address to retrieve the pending fees for.
@@ -660,7 +639,22 @@ contract XNS is EIP712 {
         return true;
     }
 
-    // Return hash of voucher details.
+    /// @dev Internal function to verify EIP-712 signature for RegisterNameAuth.
+    /// @param registerNameAuth The struct containing recipient, label, and namespace.
+    /// @param signature The signature to verify.
+    /// @return isValid True if the signature is valid, false otherwise.
+    function _isValidSignature(
+        RegisterNameAuth calldata registerNameAuth,
+        bytes calldata signature
+    ) private view returns (bool isValid) {
+        // Compute EIP-712 digest.
+        bytes32 digest = _hashTypedDataV4(_getRegisterNameAuthHash(registerNameAuth));
+
+        // Verify signature using OpenZeppelin's SignatureChecker (supports EOA and EIP-1271).
+        return SignatureChecker.isValidSignatureNow(registerNameAuth.recipient, digest, signature);
+    }
+
+    /// @dev Helper function to return hash of registerNameAuth details.
     function _getRegisterNameAuthHash(RegisterNameAuth memory registerNameAuth) private pure returns (bytes32 registerNameAuthHash) {
         // Assembly for more efficient computing:
         // Inspired by https://github.com/0xProject/protocol/blob/1fa093be6490cac52dfc17c31cd9fe9ff47ccc5e/contracts/zero-ex/contracts/src/features/libs/LibNativeOrder.sol#L179
