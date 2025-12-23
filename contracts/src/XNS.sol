@@ -7,6 +7,8 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
 // @todo Update errors -> use custom errors? OZ is also using them.
 // But then you have so many additional errors to define.
+// @todo Add batch function for registerNameWithAuthorization
+
 
 //////////////////////////////
 //                          //
@@ -96,6 +98,9 @@ contract XNS is EIP712 {
     // Storage (private, accessed via getters)
     // -------------------------------------------------------------------------
 
+    // Mapping from address to name (label, namespace). If label is empty, the address has no name.
+    mapping(address => Name) private _addressToName;
+
     // Mapping from keccak256(label, ".", namespace) to name owner address.
     mapping(bytes32 => address) private _nameHashToAddress;
 
@@ -104,9 +109,6 @@ contract XNS is EIP712 {
 
     // Mapping from price-per-name to namespace string.
     mapping(uint256 => string) private _priceToNamespace;
-
-    // Mapping from address to name (label, namespace). If label is empty, the address has no name.
-    mapping(address => Name) private _addressToName;
 
     // Mapping from address to pending fees that can be claimed.
     mapping(address => uint256) private _pendingFees;
@@ -160,7 +162,7 @@ contract XNS is EIP712 {
         0xfed68b8c50be9d8c7775136bcef61eefc74849472c4e4e5c861277fbcbdcebd7;
 
     // Bit mask to mask dirty bits in the registerNameAuth hash calculation (`_getRegisterNameAuthHash`).
-    uint256 private constant ADDRESS_MASK = (1 << 160) - 1;
+    uint256 private constant _ADDRESS_MASK = (1 << 160) - 1;
 
     // -------------------------------------------------------------------------
     // Events
@@ -206,13 +208,15 @@ contract XNS is EIP712 {
     // =========================================================================
 
     /// @notice Function to register a paid name for `msg.sender`. Namespace is determined by `msg.value`.
-    /// Namespace creators have a 30-day exclusivity window for registering names
-    /// within their registered namespace, following namespace registration.
+    /// Namespace creators have a 30-day exclusivity window to register a name for themselves
+    /// within their registered namespace, following namespace registration. Registrations are
+    /// opened to the public after the 30-day exclusivity period.
     ///
     /// **Requirements:**
     /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
     /// - `msg.value` must be > 0.
     /// - Namespace must exist.
+    /// - Caller must be namespace creator if called during the 30-day exclusivity period.
     /// - Caller must not already have a name.
     /// - Name must not already be registered.
     ///
@@ -252,8 +256,7 @@ contract XNS is EIP712 {
         _burnETHAndCreditFees(msg.value, ns.creator);
     }
 
-    // @todo Question: How to batch this function with msg.value?
-    /// @notice Function to sponsor a paid name registration for `recipient` who explicitly authorized it via.
+    /// @notice Function to sponsor a paid name registration for `recipient` who explicitly authorized it via
     /// signature. Allows a third party (relayer) to pay gas and registration fees while the recipient explicitly
     /// approves via EIP-712 signature. During the namespace creator exclusivity period, only the namespace creator
     /// may sponsor registrations in that namespace.
@@ -666,7 +669,7 @@ contract XNS is EIP712 {
             let mem := mload(0x40)
             mstore(mem, _REGISTER_NAME_AUTH_TYPEHASH)
             // registerNameAuth.recipient;
-            mstore(add(mem, 0x20), and(ADDRESS_MASK, mload(registerNameAuth)))
+            mstore(add(mem, 0x20), and(_ADDRESS_MASK, mload(registerNameAuth)))
             // registerNameAuth.label;
             let label := mload(add(registerNameAuth, 0x20)) // pointer to the label string
             mstore(
