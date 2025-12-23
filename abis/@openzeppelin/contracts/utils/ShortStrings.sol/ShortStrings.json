@@ -1,1 +1,4 @@
-["error InvalidShortString()", "error StringTooLong(string)"]
+[
+  "error InvalidShortString()",
+  "error StringTooLong(string)"
+]

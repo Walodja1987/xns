@@ -15,6 +15,7 @@
   "function PRICE_STEP() view returns (uint256)",
   "function SPECIAL_NAMESPACE() view returns (string)",
   "function SPECIAL_NAMESPACE_PRICE() view returns (uint256)",
+  "function batchRegisterNameWithAuthorization(tuple(address,string,string)[],bytes[]) payable",
   "function claimFees(address)",
   "function claimFeesToSelf()",
   "function eip712Domain() view returns (bytes1, string, string, uint256, address, bytes32, uint256[])",

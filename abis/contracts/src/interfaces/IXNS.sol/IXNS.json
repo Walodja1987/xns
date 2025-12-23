@@ -15,5 +15,6 @@
   "function isValidSignature(tuple(address,string,string),bytes) view returns (bool)",
   "function registerName(string) payable",
   "function registerNameWithAuthorization(tuple(address,string,string),bytes) payable",
+  "function registerNamesWithAuthorization(tuple(address,string,string)[],bytes[]) payable",
   "function registerNamespace(string,uint256) payable"
 ]
