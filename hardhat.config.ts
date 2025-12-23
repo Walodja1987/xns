@@ -3,7 +3,7 @@ import { HardhatUserConfig, task, vars } from "hardhat/config";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
 import "@nomicfoundation/hardhat-ledger";
-import "@nomicfoundation/hardhat-foundry";
+// import "@nomicfoundation/hardhat-foundry";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-ignition-ethers";
 import "@typechain/hardhat";
@@ -21,7 +21,7 @@ import "hardhat-abi-exporter";
 import "solidity-coverage";
 import "hardhat-contract-sizer";
 
-import 'solidity-docgen';
+import "solidity-docgen";
 // Uncomment if you want to use the Hardhat Tenderly module
 // You must also uncomment the subsequent `tenderly` configuration in this file accordingly
 // import "@tenderly/hardhat-tenderly";
@@ -40,7 +40,7 @@ const accounts = {
   mnemonic: vars.get(
     "MNEMONIC",
     // Default mnemonic if none provided
-    "test test test test test test test test test test test junk"
+    "test test test test test test test test test test test junk",
   ),
   path: "m/44'/60'/0'/0",
   initialIndex: 0,
@@ -98,7 +98,7 @@ const config: HardhatUserConfig = {
         enabled: true,
         runs: 999_999,
       },
-      evmVersion: "paris", // Prevent using the `PUSH0` and `cancun` opcodes
+      evmVersion: "cancun", // Prevent using the `PUSH0` and `cancun` opcodes
     },
   },
   zksolc: {
@@ -1844,13 +1844,13 @@ const config: HardhatUserConfig = {
   // },
   docgen: {
     outputDir: "./docgen-output",
-    templates: './docgen-templates', // Path to your custom templates directory
+    templates: "./docgen-templates", // Path to your custom templates directory
     pages: (item, file, config) => {
       // Only include XNS contract
       if (item.nodeType === "ContractDefinition" && item.name !== "XNS") {
         return undefined;
       }
-      
+
       // Exclude structs, interfaces, events, variables, and other non-function items
       if (
         item.nodeType === "StructDefinition" ||

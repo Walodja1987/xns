@@ -51,14 +51,14 @@ describe("DETH", function () {
       });
 
       it("Should allow burning 0 ETH", async () => {
-        await expect(s.deth.burn(s.user1.address, { value: 0 }))
-          .to.not.be.reverted;
+        await expect(s.deth.burn(s.user1.address, { value: 0 })).to.not.be
+          .reverted;
       });
 
       it("Should allow multiple burns to same recipient", async () => {
         const burn1 = ethers.parseEther("1.0");
         const burn2 = ethers.parseEther("2.0");
-        
+
         await s.deth.burn(s.user1.address, { value: burn1 });
         await s.deth.burn(s.user1.address, { value: burn2 });
 
@@ -90,7 +90,7 @@ describe("DETH", function () {
           s.user1.sendTransaction({
             to: await s.deth.target,
             value: 0,
-          })
+          }),
         ).to.not.be.reverted;
       });
 
@@ -100,7 +100,7 @@ describe("DETH", function () {
           s.user1.sendTransaction({
             to: await s.deth.target,
             value: burnAmount,
-          })
+          }),
         )
           .to.emit(s.deth, "ETHBurned")
           .withArgs(s.user1.address, s.user1.address, burnAmount);
@@ -112,7 +112,7 @@ describe("DETH", function () {
             to: await s.deth.target,
             value: 0,
             data: ethers.randomBytes(32),
-          })
+          }),
         ).to.be.reverted;
       });
     });
