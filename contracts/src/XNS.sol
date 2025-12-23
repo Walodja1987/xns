@@ -7,7 +7,6 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
 // @todo Update errors -> use custom errors? OZ is also using them.
 // But then you have so many additional errors to define.
-// @todo Add batch function for registerNameWithAuthorization
 
 
 //////////////////////////////
@@ -318,6 +317,73 @@ contract XNS is EIP712 {
         emit NameRegistered(registerNameAuth.label, registerNameAuth.namespace, registerNameAuth.recipient);
 
         // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
+        _burnETHAndCreditFees(msg.value, ns.creator);
+    }
+
+    /// @notice Batch version of `registerNameWithAuthorization` to register multiple names with a single transaction.
+    ///
+    /// **Requirements:**
+    /// - All registrations must be in the same namespace.
+    /// - Array arguments must have equal length and be non-empty.
+    /// - `msg.value` must equal `pricePerName * registerNameAuths.length`.
+    /// - All individual requirements from `registerNameWithAuthorization` apply to each registration.
+    ///
+    /// @param registerNameAuths Array of `RegisterNameAuth` structs, each including label, namespace, and recipient.
+    /// @param signatures Array of EIP-712 signatures by recipients (EOA) or EIP-1271 contract signatures.
+    function batchRegisterNameWithAuthorization(
+        RegisterNameAuth[] calldata registerNameAuths,
+        bytes[] calldata signatures
+    ) external payable {
+        require(registerNameAuths.length == signatures.length, "XNS: length mismatch");
+        require(registerNameAuths.length > 0, "XNS: empty array");
+
+        // Verify all are same namespace and compute expected total.
+        bytes32 firstNsHash = keccak256(bytes(registerNameAuths[0].namespace));
+        NamespaceData storage ns = _namespaces[firstNsHash];
+        require(ns.creator != address(0), "XNS: namespace not found");
+
+        uint256 expectedTotal = ns.pricePerName * registerNameAuths.length;
+        require(msg.value == expectedTotal, "XNS: incorrect total value");
+
+        // Check exclusivity once (all same namespace).
+        if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
+            require(msg.sender == ns.creator, "XNS: only creator can sponsor during exclusivity");
+        }
+
+        // Validate and register all names.
+        for (uint256 i = 0; i < registerNameAuths.length; i++) {
+            RegisterNameAuth calldata auth = registerNameAuths[i];
+
+            require(_isValidLabel(auth.label), "XNS: invalid label");
+            require(auth.recipient != address(0), "XNS: 0x recipient");
+
+            // Verify all are same namespace.
+            bytes32 nsHash = keccak256(bytes(auth.namespace));
+            require(nsHash == firstNsHash, "XNS: namespace mismatch");
+
+            // Enforce one-name-per-address globally.
+            require(
+                bytes(_addressToName[auth.recipient].label).length == 0,
+                "XNS: recipient already has a name"
+            );
+
+            bytes32 key = keccak256(abi.encodePacked(auth.label, ".", auth.namespace)); // @todo can we use string.concat here?
+            require(_nameHashToAddress[key] == address(0), "XNS: name already registered");
+
+            // Verify that the signature is valid.
+            require(_isValidSignature(auth, signatures[i]), "XNS: bad authorization");
+
+            // Register name to recipient (not msg.sender).
+            _nameHashToAddress[key] = auth.recipient;
+            _addressToName[auth.recipient] = Name({
+                label: auth.label,
+                namespace: auth.namespace
+            });
+
+            emit NameRegistered(auth.label, auth.namespace, auth.recipient);
+        }
+
+        // Distribute fees once: 90% burnt, 5% to namespace creator, 5% to contract owner.
         _burnETHAndCreditFees(msg.value, ns.creator);
     }
 
