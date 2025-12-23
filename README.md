@@ -276,6 +276,31 @@ Use cases:
 
 ---
 
+### Batch Register Names with Authorization
+
+```solidity
+batchRegisterNameWithAuthorization(
+    RegisterNameAuth[] calldata registerNameAuths,
+    bytes[] calldata signatures
+) payable
+```
+
+- Batch version of `registerNameWithAuthorization` to register multiple names in a single transaction
+- All registrations must be in the same namespace
+- Requires `msg.value` equal to `pricePerName * registerNameAuths.length`
+- More gas efficient than calling `registerNameWithAuthorization` multiple times
+- During the 30-day exclusivity period, only the namespace creator can sponsor batch registrations
+- Burns `msg.value` ETH (must match namespace price * count)
+- Registers names to recipients, not `msg.sender`
+- Distributes fees once for all registrations (90% burnt, 5% to namespace creator, 5% to contract owner)
+
+Use cases:
+- Community onboarding: Batch register multiple community members at once
+- Launch campaigns: Register reserved names atomically before public launch
+- Gas efficiency: Save gas by batching multiple registrations
+
+---
+
 ### Register a Namespace
 
 ```solidity

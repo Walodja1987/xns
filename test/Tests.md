@@ -177,6 +177,47 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
+### batchRegisterNameWithAuthorization
+
+#### Functionality
+
+- Should register multiple names in a single transaction.
+- Should require all registrations to be in the same namespace.
+- Should set name owners to recipients (not msg.sender).
+- Should map names to recipient addresses correctly.
+- Should map recipient addresses to names correctly (reverse lookup).
+- Should prevent recipients from having multiple names (one name per address).
+- Should prevent duplicate name registration.
+- Should emit `NameRegistered` event for each registration.
+- Should distribute fees correctly (90% burnt via DETH, 5% to namespace creator, 5% to contract owner) once for all registrations.
+- Should credit pending fees to namespace creator (5%).
+- Should credit pending fees to contract owner (5%).
+- Should allow namespace creator to sponsor batch registrations during exclusive period (30 days).
+- Should allow anyone to sponsor batch registrations after exclusive period (30 days).
+- Should burn ETH correctly via DETH contract (sponsor gets DETH credit).
+- Should work correctly with EOA signatures.
+- Should work correctly with EIP-1271 contract wallet signatures (Safe, Argent, etc.).
+- Should work correctly with special namespace "x" (100 ETH).
+- Should validate EIP-712 signatures correctly for all registrations.
+- Should be more gas efficient than calling `registerNameWithAuthorization` multiple times.
+
+#### Reverts
+
+- Should revert with `XNS: length mismatch` error when arrays have different lengths.
+- Should revert with `XNS: empty array` error when arrays are empty.
+- Should revert with `XNS: namespace not found` error for non-existent namespace.
+- Should revert with `XNS: incorrect total value` error when msg.value doesn't equal pricePerName * count.
+- Should revert with `XNS: only creator can sponsor during exclusivity` error when non-creator tries to sponsor during exclusive period.
+- Should revert with `XNS: namespace mismatch` error when registrations are in different namespaces.
+- Should revert with `XNS: invalid label` error for invalid label in any registration.
+- Should revert with `XNS: 0x recipient` error when any recipient is address(0).
+- Should revert with `XNS: recipient already has a name` error when any recipient already owns a name.
+- Should revert with `XNS: name already registered` error when any name is already registered.
+- Should revert with `XNS: bad authorization` error for invalid signature in any registration.
+- Should revert with `XNS: bad authorization` error when any signature is from wrong recipient.
+
+---
+
 ### isValidSignature
 
 #### Functionality

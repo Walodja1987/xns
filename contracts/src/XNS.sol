@@ -5,10 +5,6 @@ import {IDETH} from "./interfaces/IDETH.sol";
 import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
-// @todo Update errors -> use custom errors? OZ is also using them.
-// But then you have so many additional errors to define.
-
-
 //////////////////////////////
 //                          //
 //    __   ___   _  _____   //
@@ -39,7 +35,8 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - For example, if the "100x" namespace was registered with price 0.1 ETH, then calling
 ///   `registerName("vitalik")` with 0.1 ETH registers "vitalik.100x".
 /// - Each address can own at most one name.
-/// - Names are always linked to the caller's address and cannot be assigned to another address.
+/// - With `registerName(label)`, names are always linked to the caller's address and cannot
+///   be assigned to another address.
 ///
 /// ### Sponsorship via authorization (EIP-712 + EIP-1271)
 /// - `registerNameWithAuthorization` allows a sponsor (`msg.sender`) to pay and register a name for a recipient
@@ -167,7 +164,8 @@ contract XNS is EIP712 {
     // Events
     // -------------------------------------------------------------------------
 
-    /// @dev Emitted in `registerName` and `registerNameWithAuthorization` functions.
+    /// @dev Emitted in `registerName`, `registerNameWithAuthorization`,
+    /// and `batchRegisterNameWithAuthorization` functions.
     event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
 
     /// @dev Emitted in constructor when "x" namespace is registered, and in `registerNamespace` function.
@@ -235,7 +233,7 @@ contract XNS is EIP712 {
 
         // Following namespace registration, the namespace creator has a 30-day exclusivity window for registering
         // one paid name for themselves within the registered namespace. Can register more names on behalf
-        // of others using the `registerNameWithAuthorization` function.
+        // of others using the `registerNameWithAuthorization` / `batchRegisterNameWithAuthorization` function.
         if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
             require(msg.sender == ns.creator, "XNS: not namespace creator");
         }
@@ -367,7 +365,7 @@ contract XNS is EIP712 {
                 "XNS: recipient already has a name"
             );
 
-            bytes32 key = keccak256(abi.encodePacked(auth.label, ".", auth.namespace)); // @todo can we use string.concat here?
+            bytes32 key = keccak256(abi.encodePacked(auth.label, ".", auth.namespace));
             require(_nameHashToAddress[key] == address(0), "XNS: name already registered");
 
             // Verify that the signature is valid.
@@ -628,7 +626,8 @@ contract XNS is EIP712 {
         return _isValidNamespace(namespace);
     }
 
-    /// @notice Function to check if a signature, to be used in `registerNameWithAuthorization`, is valid.
+    /// @notice Function to check if a signature, to be used in `registerNameWithAuthorization`
+    /// or `batchRegisterNameWithAuthorization`, is valid.
     /// @param registerNameAuth The struct containing recipient, label, and namespace.
     /// @param signature The signature to check.
     /// @return isValid True if the signature is valid, false otherwise.
@@ -703,6 +702,7 @@ contract XNS is EIP712 {
     }
 
     /// @dev Internal function to verify EIP-712 signature for RegisterNameAuth.
+    /// Used in `registerNameWithAuthorization` and `batchRegisterNameWithAuthorization`.
     /// @param registerNameAuth The struct containing recipient, label, and namespace.
     /// @param signature The signature to verify.
     /// @return isValid True if the signature is valid, false otherwise.
@@ -717,7 +717,7 @@ contract XNS is EIP712 {
         return SignatureChecker.isValidSignatureNow(registerNameAuth.recipient, digest, signature);
     }
 
-    /// @dev Helper function to return hash of registerNameAuth details.
+    /// @dev Helper function to return hash of registerNameAuth details. Used in `_isValidSignature`.
     function _getRegisterNameAuthHash(
         RegisterNameAuth memory registerNameAuth
     ) private pure returns (bytes32 registerNameAuthHash) {
