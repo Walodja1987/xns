@@ -20,7 +20,8 @@ Examples:
 - For example, if the "100x" namespace was registered with price 0.1 ETH, then calling
   `registerName("vitalik")` with 0.1 ETH registers "vitalik.100x".
 - Each address can own at most one name.
-- Names are always linked to the caller's address and cannot be assigned to another address.
+- With `registerName(label)`, names are always linked to the caller's address and cannot
+  be assigned to another address.
 
 ### Sponsorship via authorization (EIP-712 + EIP-1271)
 - `registerNameWithAuthorization` allows a sponsor (`msg.sender`) to pay and register a name for a recipient
@@ -395,7 +396,8 @@ function isValidNamespace(string namespace) external pure returns (bool isValid)
 ### isValidSignature
 
 
-Function to check if a signature, to be used in `registerNameWithAuthorization`, is valid.
+Function to check if a signature, to be used in `registerNameWithAuthorization`
+or `batchRegisterNameWithAuthorization`, is valid.
 
 ```solidity
 function isValidSignature(struct XNS.RegisterNameAuth registerNameAuth, bytes signature) external view returns (bool isValid)
@@ -449,7 +451,8 @@ function getPendingFees(address recipient) external view returns (uint256 amount
 event NameRegistered(string label, string namespace, address owner)
 ```
 
-_Emitted in `registerName` and `registerNameWithAuthorization` functions._
+_Emitted in `registerName`, `registerNameWithAuthorization`,
+and `batchRegisterNameWithAuthorization` functions._
 
 
 
