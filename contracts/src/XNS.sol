@@ -157,9 +157,6 @@ contract XNS is EIP712 {
     bytes32 private constant _REGISTER_NAME_AUTH_TYPEHASH =
         0xfed68b8c50be9d8c7775136bcef61eefc74849472c4e4e5c861277fbcbdcebd7;
 
-    // Bit mask to mask dirty bits in the registerNameAuth hash calculation (`_getRegisterNameAuthHash`).
-    uint256 private constant _ADDRESS_MASK = (1 << 160) - 1;
-
     // -------------------------------------------------------------------------
     // Events
     // -------------------------------------------------------------------------
@@ -187,8 +184,6 @@ contract XNS is EIP712 {
         DEPLOYED_AT = uint64(block.timestamp);
 
         // Register special namespace "x" as the very first namespace.
-        // Note: namespace creator privileges are tied to the address set here, not the contract owner.
-        // Contract ownership is immutable and cannot be transferred.
         _namespaces[keccak256(bytes(SPECIAL_NAMESPACE))] = NamespaceData({
             pricePerName: SPECIAL_NAMESPACE_PRICE,
             creator: owner,
@@ -223,8 +218,7 @@ contract XNS is EIP712 {
         require(_isValidLabel(label), "XNS: invalid label");
 
         // Verify namespace exists.
-        bytes32 nsHash = keccak256(bytes(namespace));
-        NamespaceData storage ns = _namespaces[nsHash]; // @todo inline nsHash
+        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
 
         // Verify `msg.value` is sufficient (excess will be refunded).
@@ -733,32 +727,13 @@ contract XNS is EIP712 {
     function _getRegisterNameAuthHash(
         RegisterNameAuth memory registerNameAuth
     ) private pure returns (bytes32 registerNameAuthHash) {
-        // Assembly for more efficient computing:
-        // Inspired by https://github.com/0xProject/protocol/blob/1fa093be6490cac52dfc17c31cd9fe9ff47ccc5e/contracts/zero-ex/contracts/src/features/libs/LibNativeOrder.sol#L179
-        // keccak256(
-        //     abi.encode(
-        //         _REGISTER_NAME_AUTH_TYPEHASH,
-        //         registerNameAuth.recipient,
-        //         keccak256(bytes(registerNameAuth.label)),
-        //         keccak256(bytes(registerNameAuth.namespace))
-        //     )
-        // )
-        assembly {
-            let mem := mload(0x40)
-            mstore(mem, _REGISTER_NAME_AUTH_TYPEHASH)
-            // registerNameAuth.recipient;
-            mstore(add(mem, 0x20), and(_ADDRESS_MASK, mload(registerNameAuth)))
-            // registerNameAuth.label;
-            let label := mload(add(registerNameAuth, 0x20)) // pointer to the label string
-            mstore(
-                add(mem, 0x40),
-                keccak256(add(label, 0x20), mload(label)) // keccak256(start of string data, length of string)
+        registerNameAuthHash = keccak256(
+            abi.encode(
+                _REGISTER_NAME_AUTH_TYPEHASH,
+                registerNameAuth.recipient,
+                keccak256(bytes(registerNameAuth.label)),
+                keccak256(bytes(registerNameAuth.namespace))
             )
-            // registerNameAuth.namespace;
-            let namespace := mload(add(registerNameAuth, 0x40))
-            mstore(add(mem, 0x60), keccak256(add(namespace, 0x20), mload(namespace)))
-
-            registerNameAuthHash := keccak256(mem, 0x80)
-        }
+        );
     }
 }

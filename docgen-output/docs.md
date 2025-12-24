@@ -61,21 +61,21 @@ Examples:
 ### registerName
 
 
-Function to register a paid name for `msg.sender`. Namespace is determined by `msg.value`.
+Function to register a paid name for `msg.sender`.
 Namespace creators have a 30-day exclusivity window to register a name for themselves
 within their registered namespace, following namespace registration. Registrations are
 opened to the public after the 30-day exclusivity period.
 
 **Requirements:**
 - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
-- `msg.value` must be > 0.
-- Namespace must exist.
+- Namespace must be valid and exist.
+- `msg.value` must be >= the namespace's registered price (excess will be refunded).
 - Caller must be namespace creator if called during the 30-day exclusivity period.
 - Caller must not already have a name.
 - Name must not already be registered.
 
 ```solidity
-function registerName(string label) external payable
+function registerName(string label, string namespace) external payable
 ```
 
 
@@ -84,6 +84,7 @@ function registerName(string label) external payable
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | label | string | The label part of the name to register. |
+| namespace | string | The namespace part of the name to register. |
 
 
 ### registerNameWithAuthorization
@@ -97,7 +98,7 @@ may sponsor registrations in that namespace.
 **Requirements:**
 - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
 - `recipient` must not be the zero address.
-- `msg.value` must be > 0 and must match the namespace's registered price.
+- `msg.value` must be >= the namespace's registered price (excess will be refunded).
 - Namespace must exist.
 - During exclusivity: only namespace creator can call this function.
 - Recipient must not already have a name.
@@ -125,7 +126,7 @@ Batch version of `registerNameWithAuthorization` to register multiple names with
 **Requirements:**
 - All registrations must be in the same namespace.
 - Array arguments must have equal length and be non-empty.
-- `msg.value` must equal `pricePerName * registerNameAuths.length`.
+- `msg.value` must be >= `pricePerName * registerNameAuths.length` (excess will be refunded).
 - All individual requirements from `registerNameWithAuthorization` apply to each registration.
 
 ```solidity
@@ -148,7 +149,7 @@ Function to register a new namespace and assign a price-per-name.
 
 **Requirements:**
 - Namespace must be valid (non-empty, length 1–4, consists only of [a-z0-9])
-- `msg.value` must be 200 ETH.
+- `msg.value` must be >= 200 ETH (excess will be refunded). Owner pays 0 ETH during initial period.
 - Price per name must be a multiple of 0.001 ETH.
 - Price per name must not already be in use.
 - Namespace must not equal "eth".

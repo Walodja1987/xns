@@ -28,7 +28,7 @@
   "function isValidLabel(string) pure returns (bool)",
   "function isValidNamespace(string) pure returns (bool)",
   "function isValidSignature(tuple(address,string,string),bytes) view returns (bool)",
-  "function registerName(string) payable",
+  "function registerName(string,string) payable",
   "function registerNameWithAuthorization(tuple(address,string,string),bytes) payable",
   "function registerNamespace(string,uint256) payable"
 ]
