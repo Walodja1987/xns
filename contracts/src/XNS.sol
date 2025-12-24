@@ -204,32 +204,31 @@ contract XNS is EIP712 {
     // STATE-MODIFYING FUNCTIONS
     // =========================================================================
 
-    /// @notice Function to register a paid name for `msg.sender`. Namespace is determined by `msg.value`.
+    /// @notice Function to register a paid name for `msg.sender`.
     /// Namespace creators have a 30-day exclusivity window to register a name for themselves
     /// within their registered namespace, following namespace registration. Registrations are
     /// opened to the public after the 30-day exclusivity period.
     ///
     /// **Requirements:**
     /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
-    /// - `msg.value` must be > 0.
-    /// - Namespace must exist.
+    /// - Namespace must be valid and exist.
+    /// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
     /// - Caller must be namespace creator if called during the 30-day exclusivity period.
     /// - Caller must not already have a name.
     /// - Name must not already be registered.
     ///
     /// @param label The label part of the name to register.
-    function registerName(string calldata label) external payable {
+    /// @param namespace The namespace part of the name to register.
+    function registerName(string calldata label, string calldata namespace) external payable {
         require(_isValidLabel(label), "XNS: invalid label");
 
-        uint256 pricePerName = msg.value;
-        require(pricePerName > 0, "XNS: zero price");
+        // Verify namespace exists.
+        bytes32 nsHash = keccak256(bytes(namespace));
+        NamespaceData storage ns = _namespaces[nsHash]; // @todo inline nsHash
+        require(ns.creator != address(0), "XNS: namespace not found");
 
-        // Determine namespace from pricePerName.
-        string memory namespace = _priceToNamespace[pricePerName];
-        require(bytes(namespace).length != 0, "XNS: non-existent namespace");
-
-        // Load namespace metadata.
-        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
+        // Verify `msg.value` is sufficient (excess will be refunded).
+        require(msg.value >= ns.pricePerName, "XNS: insufficient payment");
 
         // Following namespace registration, the namespace creator has a 30-day exclusivity window for registering
         // one paid name for themselves within the registered namespace. Can register more names on behalf
@@ -249,8 +248,8 @@ contract XNS is EIP712 {
 
         emit NameRegistered(label, namespace, msg.sender);
 
-        // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
-        _burnETHAndCreditFees(msg.value, ns.creator);
+        // Process payment: burn 90%, credit fees, and refund excess.
+        _processETHPayment(ns.pricePerName, ns.creator);
     }
 
     /// @notice Function to sponsor a paid name registration for `recipient` who explicitly authorized it via
@@ -261,7 +260,7 @@ contract XNS is EIP712 {
     /// **Requirements:**
     /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
     /// - `recipient` must not be the zero address.
-    /// - `msg.value` must be > 0 and must match the namespace's registered price.
+    /// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
     /// - Namespace must exist.
     /// - During exclusivity: only namespace creator can call this function.
     /// - Recipient must not already have a name.
@@ -277,16 +276,13 @@ contract XNS is EIP712 {
         require(_isValidLabel(registerNameAuth.label), "XNS: invalid label");
         require(registerNameAuth.recipient != address(0), "XNS: 0x recipient");
 
-        uint256 pricePerName = msg.value;
-        require(pricePerName > 0, "XNS: zero price");
-
         // Verify namespace exists.
         bytes32 nsHash = keccak256(bytes(registerNameAuth.namespace));
         NamespaceData storage ns = _namespaces[nsHash];
         require(ns.creator != address(0), "XNS: namespace not found");
 
-        // Verify `msg.value` matches namespace price.
-        require(pricePerName == ns.pricePerName, "XNS: price mismatch");
+        // Verify `msg.value` is sufficient (excess will be refunded).
+        require(msg.value >= ns.pricePerName, "XNS: insufficient payment");
 
         // During exclusivity, only namespace creator may sponsor registrations.
         if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
@@ -314,16 +310,17 @@ contract XNS is EIP712 {
 
         emit NameRegistered(registerNameAuth.label, registerNameAuth.namespace, registerNameAuth.recipient);
 
-        // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
-        _burnETHAndCreditFees(msg.value, ns.creator);
+        // Process payment: burn 90%, credit fees, and refund excess.
+        _processETHPayment(ns.pricePerName, ns.creator);
     }
 
+    // @todo DOS risk if one of the addresses registers themselves prior to batch execution -> solve that
     /// @notice Batch version of `registerNameWithAuthorization` to register multiple names with a single transaction.
     ///
     /// **Requirements:**
     /// - All registrations must be in the same namespace.
     /// - Array arguments must have equal length and be non-empty.
-    /// - `msg.value` must equal `pricePerName * registerNameAuths.length`.
+    /// - `msg.value` must be >= `pricePerName * registerNameAuths.length` (excess will be refunded).
     /// - All individual requirements from `registerNameWithAuthorization` apply to each registration.
     ///
     /// @param registerNameAuths Array of `RegisterNameAuth` structs, each including label, namespace, and recipient.
@@ -341,7 +338,7 @@ contract XNS is EIP712 {
         require(ns.creator != address(0), "XNS: namespace not found");
 
         uint256 expectedTotal = ns.pricePerName * registerNameAuths.length;
-        require(msg.value == expectedTotal, "XNS: incorrect total value");
+        require(msg.value >= expectedTotal, "XNS: insufficient payment");
 
         // Check exclusivity once (all same namespace).
         if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
@@ -381,15 +378,15 @@ contract XNS is EIP712 {
             emit NameRegistered(auth.label, auth.namespace, auth.recipient);
         }
 
-        // Distribute fees once: 90% burnt, 5% to namespace creator, 5% to contract owner.
-        _burnETHAndCreditFees(msg.value, ns.creator);
+        // Process payment: burn 90%, credit fees, and refund excess.
+        _processETHPayment(expectedTotal, ns.creator);
     }
 
     /// @notice Function to register a new namespace and assign a price-per-name.
     ///
     /// **Requirements:**
     /// - Namespace must be valid (non-empty, length 1–4, consists only of [a-z0-9])
-    /// - `msg.value` must be 200 ETH.
+    /// - `msg.value` must be >= 200 ETH (excess will be refunded). Owner pays 0 ETH during initial period.
     /// - Price per name must be a multiple of 0.001 ETH.
     /// - Price per name must not already be in use.
     /// - Namespace must not equal "eth".
@@ -422,8 +419,11 @@ contract XNS is EIP712 {
         NamespaceData storage existing = _namespaces[nsHash];
         require(existing.creator == address(0), "XNS: namespace already exists");
 
+        // Determine required payment amount.
+        uint256 requiredAmount = 0;
         if (!(block.timestamp < DEPLOYED_AT + INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD && msg.sender == OWNER)) {
-            require(msg.value == NAMESPACE_REGISTRATION_FEE, "XNS: wrong namespace fee");
+            requiredAmount = NAMESPACE_REGISTRATION_FEE;
+            require(msg.value >= requiredAmount, "XNS: insufficient namespace fee");
         }
 
         _namespaces[nsHash] = NamespaceData({
@@ -436,10 +436,14 @@ contract XNS is EIP712 {
 
         emit NamespaceRegistered(namespace, pricePerName, msg.sender);
 
-        // Distribute fees: 90% burnt, 5% to namespace creator, 5% to contract owner.
-        // `msg.value` = 0 within initial owner namespace registration period (1 year after contract deployment).
-        if (msg.value > 0) {
-            _burnETHAndCreditFees(msg.value, msg.sender);
+        // Process payment: burn 90%, credit fees, and refund excess (if any).
+        // `requiredAmount` = 0 within initial owner namespace registration period (1 year after contract deployment).
+        if (requiredAmount > 0) {
+            _processETHPayment(requiredAmount, msg.sender);
+        } else if (msg.value > 0) {
+            // Refund if owner sent ETH during free period.
+            (bool success, ) = msg.sender.call{value: msg.value}("");
+            require(success, "XNS: refund failed");
         }
     }
 
@@ -649,14 +653,15 @@ contract XNS is EIP712 {
     // INTERNAL MULTI-USE HELPER FUNCTIONS
     // =========================================================================
 
-    /// @dev Helper function to burn 90% of ETH sent via DETH and credit 5% to namespace creator and 5% to
-    /// contract owner. Used in `registerName`, `registerNameWithAuthorization` and `registerNamespace`.
-    /// @param totalAmount The total amount of ETH sent to this contract.
+    /// @dev Helper function to process ETH payment: burn 90% via DETH, credit 5% to namespace creator and 5% to
+    /// contract owner, and refund any excess payment. Used in `registerName`, `registerNameWithAuthorization`,
+    /// `batchRegisterNameWithAuthorization`, and `registerNamespace`.
+    /// @param requiredAmount The required amount of ETH for the operation (excess will be refunded).
     /// @param namespaceCreator The address of the namespace creator that shall receive a portion of the fees.
-    function _burnETHAndCreditFees(uint256 totalAmount, address namespaceCreator) private {
-        uint256 burnAmount = (totalAmount * 90) / 100;
-        uint256 creatorFee = (totalAmount * 5) / 100;
-        uint256 ownerFee = totalAmount - burnAmount - creatorFee;
+    function _processETHPayment(uint256 requiredAmount, address namespaceCreator) private {
+        uint256 burnAmount = (requiredAmount * 90) / 100;
+        uint256 creatorFee = (requiredAmount * 5) / 100;
+        uint256 ownerFee = requiredAmount - burnAmount - creatorFee;
 
         // Burn 90% via DETH contract and credit `msg.sender` (payer/sponsor) with DETH.
         IDETH(DETH).burn{value: burnAmount}(msg.sender);
@@ -664,6 +669,13 @@ contract XNS is EIP712 {
         // Credit fees to namespace creator and contract owner.
         _pendingFees[namespaceCreator] += creatorFee;
         _pendingFees[OWNER] += ownerFee;
+
+        // Refund excess payment.
+        uint256 excess = msg.value - requiredAmount;
+        if (excess > 0) {
+            (bool success, ) = msg.sender.call{value: excess}("");
+            require(success, "XNS: refund failed");
+        }
     }
 
     /// @dev Helper function to check if a label is valid. Used in `registerName` and `isValidLabel`.
