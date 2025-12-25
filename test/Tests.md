@@ -80,12 +80,12 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should register a new namespace correctly.
-- Should set namespace creator to `msg.sender`.
-- Should set `createdAt` to current block timestamp.
-- Should map price to namespace correctly.
-- Should allow owner to register namespace without fee (msg.value = 0) during initial period (1 year).
-- Should allow owner to register namespace with fees during initial period (optional payment).
+- Should register a new namespace correctly:
+   - Should set namespace creator to `msg.sender`.
+   - Should set `createdAt` to current block timestamp.
+   - Should map price to namespace correctly.
+- Should allow owner to register namespace without fee (`msg.value = 0`) during initial period (1 year).
+- ??Should allow owner to register namespace with fees during initial period (optional payment).
 - Should distribute fees correctly when owner chooses to pay fees during initial period.
 - Should allow anyone to register namespace with correct fee after initial period.
 - Should allow anyone to register namespace with correct fee even during initial period (non-owner).
