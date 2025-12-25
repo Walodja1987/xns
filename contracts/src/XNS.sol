@@ -109,6 +109,19 @@ contract XNS is EIP712 {
     // Mapping from address to pending fees that can be claimed.
     mapping(address => uint256) private _pendingFees;
 
+    // EIP-712 struct type hash for RegisterNameAuth:
+    //
+    // keccak256(
+    //     abi.encodePacked(
+    //         "RegisterNameAuth(",
+    //         "address recipient,",
+    //         "bytes32 labelHash,",
+    //         "bytes32 namespaceHash)"
+    //     )
+    // )
+    bytes32 private constant _REGISTER_NAME_AUTH_TYPEHASH =
+        0xfed68b8c50be9d8c7775136bcef61eefc74849472c4e4e5c861277fbcbdcebd7;
+
     // -------------------------------------------------------------------------
     // Constants
     // -------------------------------------------------------------------------
@@ -139,23 +152,6 @@ contract XNS is EIP712 {
 
     /// @notice Address of DETH contract used to burn ETH and credit the recipient.
     address public constant DETH = 0xE46861C9f28c46F27949fb471986d59B256500a7;
-
-    // -------------------------------------------------------------------------
-    // EIP-712 Constants
-    // -------------------------------------------------------------------------
-
-    // EIP-712 struct type hash for RegisterNameAuth:
-    //
-    // keccak256(
-    //     abi.encodePacked(
-    //         "RegisterNameAuth(",
-    //         "address recipient,",
-    //         "bytes32 labelHash,",
-    //         "bytes32 namespaceHash)"
-    //     )
-    // )
-    bytes32 private constant _REGISTER_NAME_AUTH_TYPEHASH =
-        0xfed68b8c50be9d8c7775136bcef61eefc74849472c4e4e5c861277fbcbdcebd7;
 
     // -------------------------------------------------------------------------
     // Events
