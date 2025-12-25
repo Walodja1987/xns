@@ -397,8 +397,6 @@ contract XNS is EIP712 {
         return successful;
     }
 
-    // @todo Add convenience function to check validity of items used as arg in batchRegisterNameWithAuthorization?
-
     /// @notice Function to register a new namespace and assign a price-per-name.
     ///
     /// **Requirements:**
