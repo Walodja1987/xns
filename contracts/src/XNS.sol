@@ -344,10 +344,11 @@ contract XNS is EIP712 {
             require(msg.sender == ns.creator, "XNS: only creator can sponsor during exclusivity");
         }
 
-        // Validate and register all names, skipping invalid ones.
+        // Validate and register all names, skipping where the recipient already has a name
+       // or the name is already registered.
         uint256 successful = 0;
         for (uint256 i = 0; i < registerNameAuths.length; i++) {
-            RegisterNameAuth calldata auth = registerNameAuths[i]; // @todo why calldata here?
+            RegisterNameAuth calldata auth = registerNameAuths[i];
 
             // Validations that should revert (invalid input).
             require(_isValidLabel(auth.label), "XNS: invalid label");
@@ -383,7 +384,10 @@ contract XNS is EIP712 {
             successful++;
         }
 
-        require(successful > 0, "XNS: no successful registrations"); // @todo why needed?
+        // Revert with a clear message on no successful registrations instead of failing silently
+        // by returning 0. By reverting, we avoid the need to handle refunds separately
+        // for zero-success cases.
+        require(successful > 0, "XNS: no successful registrations");
 
         // Process payment only for successful registrations: burn 90%, credit fees, and refund excess.
         uint256 actualTotal = ns.pricePerName * successful;
@@ -392,6 +396,8 @@ contract XNS is EIP712 {
 
         return successful;
     }
+
+    // @todo Add convenience function to check validity of items used as arg in batchRegisterNameWithAuthorization?
 
     /// @notice Function to register a new namespace and assign a price-per-name.
     ///
