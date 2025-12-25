@@ -229,18 +229,18 @@ After 30 days:
 ### Register a Name
 
 ```solidity
-registerName(string label) payable
+registerName(string label, string namespace) payable
 ```
 
-- Burns `msg.value` ETH
-- Namespace is derived from `msg.value`
+- Burns `msg.value` ETH (must be >= the namespace's registered price)
 - Registers `label.namespace` for `msg.sender`
+- Excess payment is refunded
 - During the 30-day exclusivity period, only the namespace creator can use this function
 
 Example:
 
 ```solidity
-xns.registerName{value: 0.001 ether}("alice");
+xns.registerName{value: 0.001 ether}("alice", "001");
 ```
 
 ---
@@ -287,7 +287,9 @@ batchRegisterNameWithAuthorization(
 
 - Batch version of `registerNameWithAuthorization` to register multiple names in a single transaction
 - All registrations must be in the same namespace
-- Requires `msg.value >= pricePerName * registerNameAuths.length` (excess will be refunded)
+- Requires `msg.value >= pricePerName * successfulCount` (the number of names actually registered)
+- Payment is only processed for successful registrations; skipped items are not charged
+- Excess payment is refunded
 - Returns the number of successfully registered names
 - Skips registrations where recipient already has a name or name is already registered (griefing resistance)
 - Only charges for successful registrations (refunds excess payment)

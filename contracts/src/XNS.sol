@@ -30,10 +30,10 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - garry.ape
 ///
 /// ### Name registration
-/// - To register a name, users call `registerName(label)` and send ETH.
-/// - The amount of ETH sent determines the namespace. It must match a namespace's registered price.
+// - To register a name, users call `registerName(label, namespace)` and send ETH.
+/// - The amount of ETH sent must be >= the namespace's registered price (excess will be refunded).
 /// - For example, if the "100x" namespace was registered with price 0.1 ETH, then calling
-///   `registerName("vitalik")` with 0.1 ETH registers "vitalik.100x".
+///   `registerName("vitalik", "100x")` with 0.1 ETH registers "vitalik.100x".
 /// - Each address can own at most one name.
 /// - With `registerName(label)`, names are always linked to the caller's address and cannot
 ///   be assigned to another address.
@@ -315,7 +315,7 @@ contract XNS is EIP712 {
     /// **Requirements:**
     /// - All registrations must be in the same namespace.
     /// - Array arguments must have equal length and be non-empty.
-    /// - `msg.value` must be >= `pricePerName * registerNameAuths.length` (excess will be refunded).
+    /// - `msg.value` must be >= `pricePerName * successfulCount` (excess will be refunded).
     /// - At least one registration must succeed.
     /// - All individual requirements from `registerNameWithAuthorization` apply to each registration.
     ///
@@ -551,7 +551,7 @@ contract XNS is EIP712 {
         return _getAddress(label, namespace);
     }
 
-    /// @notice Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an address.
+    /// @notice Function to resolve a name to an address taking separate label and namespace parameters.
     /// @dev This version is more gas efficient than `getAddress(string calldata fullName)` as it does not
     /// require string splitting. Returns `address(0)` if not registered.
     /// @param label The label part of the name.
