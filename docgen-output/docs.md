@@ -123,7 +123,7 @@ function registerNameWithAuthorization(struct XNS.RegisterNameAuth registerNameA
 
 Batch version of `registerNameWithAuthorization` to register multiple names with a single transaction.
 All registrations must be in the same namespace. Skips registrations where the recipient already has a name
-or the name is already registered.
+or the name is already registered. Skipped items are not charged; excess payment is refunded.
 
 **Requirements:**
 - All registrations must be in the same namespace.

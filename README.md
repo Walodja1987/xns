@@ -282,17 +282,21 @@ Use cases:
 batchRegisterNameWithAuthorization(
     RegisterNameAuth[] calldata registerNameAuths,
     bytes[] calldata signatures
-) payable
+) payable returns (uint256 successfulCount)
 ```
 
 - Batch version of `registerNameWithAuthorization` to register multiple names in a single transaction
 - All registrations must be in the same namespace
-- Requires `msg.value` equal to `pricePerName * registerNameAuths.length`
+- Requires `msg.value >= pricePerName * registerNameAuths.length` (excess will be refunded)
+- Returns the number of successfully registered names
+- Skips registrations where recipient already has a name or name is already registered (griefing resistance)
+- Only charges for successful registrations (refunds excess payment)
+- Requires at least one successful registration
 - More gas efficient than calling `registerNameWithAuthorization` multiple times
 - During the 30-day exclusivity period, only the namespace creator can sponsor batch registrations
-- Burns `msg.value` ETH (must match namespace price * count)
+- Burns ETH only for successful registrations (90% burnt, 5% to namespace creator, 5% to contract owner)
 - Registers names to recipients, not `msg.sender`
-- Distributes fees once for all registrations (90% burnt, 5% to namespace creator, 5% to contract owner)
+- Resistant to griefing attacks: if someone front-runs and registers a name for one recipient, that registration is skipped and others proceed
 
 Use cases:
 - Community onboarding: Batch register multiple community members at once
