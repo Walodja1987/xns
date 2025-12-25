@@ -122,17 +122,23 @@ function registerNameWithAuthorization(struct XNS.RegisterNameAuth registerNameA
 
 
 Batch version of `registerNameWithAuthorization` to register multiple names with a single transaction.
+All registrations must be in the same namespace. Skips registrations where the recipient already has a name
+or the name is already registered.
 
 **Requirements:**
 - All registrations must be in the same namespace.
 - Array arguments must have equal length and be non-empty.
 - `msg.value` must be >= `pricePerName * registerNameAuths.length` (excess will be refunded).
+- At least one registration must succeed.
 - All individual requirements from `registerNameWithAuthorization` apply to each registration.
 
 ```solidity
-function batchRegisterNameWithAuthorization(struct XNS.RegisterNameAuth[] registerNameAuths, bytes[] signatures) external payable
+function batchRegisterNameWithAuthorization(struct XNS.RegisterNameAuth[] registerNameAuths, bytes[] signatures) external payable returns (uint256 successfulCount)
 ```
 
+_**Note:** Input validation errors (invalid label, zero recipient, namespace mismatch, invalid signature)
+cause the entire batch to revert. Errors that could occur due to front-running the batch tx (recipient already
+has a name, or name already registered) are skipped to provide griefing protection._
 
 #### Parameters
 
@@ -141,6 +147,11 @@ function batchRegisterNameWithAuthorization(struct XNS.RegisterNameAuth[] regist
 | registerNameAuths | struct XNS.RegisterNameAuth[] | Array of `RegisterNameAuth` structs, each including label, namespace, and recipient. |
 | signatures | bytes[] | Array of EIP-712 signatures by recipients (EOA) or EIP-1271 contract signatures. |
 
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| successfulCount | uint256 | The number of names successfully registered. |
 
 ### registerNamespace
 

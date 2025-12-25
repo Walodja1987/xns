@@ -20,7 +20,7 @@ interface IXNS {
     function batchRegisterNameWithAuthorization(
         RegisterNameAuth[] calldata registerNameAuths,
         bytes[] calldata signatures
-    ) external payable;
+    ) external payable returns (uint256 successfulCount);
     function registerNamespace(string calldata namespace, uint256 pricePerName) external payable;
     function claimFees(address recipient) external;
     function claimFeesToSelf() external;

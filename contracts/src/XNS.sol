@@ -308,41 +308,48 @@ contract XNS is EIP712 {
         _processETHPayment(ns.pricePerName, ns.creator);
     }
 
-    // @todo DOS risk if one of the addresses registers themselves prior to batch execution -> solve that
     /// @notice Batch version of `registerNameWithAuthorization` to register multiple names with a single transaction.
+    /// All registrations must be in the same namespace. Skips registrations where the recipient already has a name
+    /// or the name is already registered.
     ///
     /// **Requirements:**
     /// - All registrations must be in the same namespace.
     /// - Array arguments must have equal length and be non-empty.
     /// - `msg.value` must be >= `pricePerName * registerNameAuths.length` (excess will be refunded).
+    /// - At least one registration must succeed.
     /// - All individual requirements from `registerNameWithAuthorization` apply to each registration.
+    ///
+    /// @dev **Note:** Input validation errors (invalid label, zero recipient, namespace mismatch, invalid signature)
+    /// cause the entire batch to revert. Errors that could occur due to front-running the batch tx (recipient already
+    /// has a name, or name already registered) are skipped to provide griefing protection.
     ///
     /// @param registerNameAuths Array of `RegisterNameAuth` structs, each including label, namespace, and recipient.
     /// @param signatures Array of EIP-712 signatures by recipients (EOA) or EIP-1271 contract signatures.
+    /// @return successfulCount The number of names successfully registered.
     function batchRegisterNameWithAuthorization(
         RegisterNameAuth[] calldata registerNameAuths,
         bytes[] calldata signatures
-    ) external payable {
+    ) external payable returns (uint256 successfulCount) {
         require(registerNameAuths.length == signatures.length, "XNS: length mismatch");
         require(registerNameAuths.length > 0, "XNS: empty array");
 
-        // Verify all are same namespace and compute expected total.
+        // Cache the namespace of the first registration (used to verify that all
+        // other items reference the same namespace).
         bytes32 firstNsHash = keccak256(bytes(registerNameAuths[0].namespace));
         NamespaceData storage ns = _namespaces[firstNsHash];
         require(ns.creator != address(0), "XNS: namespace not found");
 
-        uint256 expectedTotal = ns.pricePerName * registerNameAuths.length;
-        require(msg.value >= expectedTotal, "XNS: insufficient payment");
-
-        // Check exclusivity once (all same namespace).
+        // Check whether within exclusivity period.
         if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
             require(msg.sender == ns.creator, "XNS: only creator can sponsor during exclusivity");
         }
 
-        // Validate and register all names.
+        // Validate and register all names, skipping invalid ones.
+        uint256 successful = 0;
         for (uint256 i = 0; i < registerNameAuths.length; i++) {
-            RegisterNameAuth calldata auth = registerNameAuths[i];
+            RegisterNameAuth calldata auth = registerNameAuths[i]; // @todo why calldata here?
 
+            // Validations that should revert (invalid input).
             require(_isValidLabel(auth.label), "XNS: invalid label");
             require(auth.recipient != address(0), "XNS: 0x recipient");
 
@@ -350,17 +357,20 @@ contract XNS is EIP712 {
             bytes32 nsHash = keccak256(bytes(auth.namespace));
             require(nsHash == firstNsHash, "XNS: namespace mismatch");
 
-            // Enforce one-name-per-address globally.
-            require(
-                bytes(_addressToName[auth.recipient].label).length == 0,
-                "XNS: recipient already has a name"
-            );
-
-            bytes32 key = keccak256(abi.encodePacked(auth.label, ".", auth.namespace));
-            require(_nameHashToAddress[key] == address(0), "XNS: name already registered");
-
             // Verify that the signature is valid.
             require(_isValidSignature(auth, signatures[i]), "XNS: bad authorization");
+
+            // Skip if recipient already has a name (resistant to griefing attacks).
+            if (bytes(_addressToName[auth.recipient].label).length > 0) {
+                continue;
+            }
+
+            bytes32 key = keccak256(abi.encodePacked(auth.label, ".", auth.namespace));
+            
+            // Skip if name is already registered (resistant to griefing attacks).
+            if (_nameHashToAddress[key] != address(0)) {
+                continue;
+            }
 
             // Register name to recipient (not msg.sender).
             _nameHashToAddress[key] = auth.recipient;
@@ -370,10 +380,17 @@ contract XNS is EIP712 {
             });
 
             emit NameRegistered(auth.label, auth.namespace, auth.recipient);
+            successful++;
         }
 
-        // Process payment: burn 90%, credit fees, and refund excess.
-        _processETHPayment(expectedTotal, ns.creator);
+        require(successful > 0, "XNS: no successful registrations"); // @todo why needed?
+
+        // Process payment only for successful registrations: burn 90%, credit fees, and refund excess.
+        uint256 actualTotal = ns.pricePerName * successful;
+        require(msg.value >= actualTotal, "XNS: insufficient payment");
+        _processETHPayment(actualTotal, ns.creator);
+
+        return successful;
     }
 
     /// @notice Function to register a new namespace and assign a price-per-name.
