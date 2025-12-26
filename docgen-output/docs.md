@@ -3,22 +3,9 @@
 ## XNS
 
 
-An Ethereum-native name registry that maps human-readable names to Ethereum addresses.
-Names are **permanent, immutable, and non-transferable**.
-
-Name format: [label].[namespace]
-
-Examples:
-- alice.xns
-- bob.yolo
-- vitalik.100x
-- garry.ape
-
-### Name registration
-- To register a name, users call `registerName(label)` and send ETH.
-- The amount of ETH sent determines the namespace. It must match a namespace's registered price.
+- The amount of ETH sent must be >= the namespace's registered price (excess will be refunded).
 - For example, if the "100x" namespace was registered with price 0.1 ETH, then calling
-  `registerName("vitalik")` with 0.1 ETH registers "vitalik.100x".
+  `registerName("vitalik", "100x")` with 0.1 ETH registers "vitalik.100x".
 - Each address can own at most one name.
 - With `registerName(label)`, names are always linked to the caller's address and cannot
   be assigned to another address.
@@ -128,8 +115,7 @@ or the name is already registered. Skipped items are not charged; excess payment
 **Requirements:**
 - All registrations must be in the same namespace.
 - Array arguments must have equal length and be non-empty.
-- `msg.value` must be >= `pricePerName * registerNameAuths.length` (excess will be refunded).
-- At least one registration must succeed.
+- `msg.value` must be >= `pricePerName * successfulCount` (excess will be refunded).
 - All individual requirements from `registerNameWithAuthorization` apply to each registration.
 
 ```solidity
@@ -151,7 +137,7 @@ has a name, or name already registered) are skipped to provide griefing protecti
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| successfulCount | uint256 | The number of names successfully registered. |
+| successfulCount | uint256 | The number of names successfully registered (may be 0 if all registrations were skipped). |
 
 ### registerNamespace
 
@@ -256,7 +242,7 @@ _Returns `address(0)` for anything not registered or malformed._
 ### getAddress
 
 
-Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an address.
+Function to resolve a name to an address taking separate label and namespace parameters.
 
 ```solidity
 function getAddress(string label, string namespace) external view returns (address addr)
