@@ -8,11 +8,12 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should initialize owner correctly.
-- Should set `deployedAt` to current block timestamp.
-- Should register special namespace "x" with correct price (100 ETH).
-- Should set special namespace creator to owner.
-- Should map SPECIAL_NAMESPACE_PRICE to "x" namespace.
+- Should initialize the contract correctly
+  - Should initialize owner correctly.
+  - Should set `deployedAt` to current block timestamp.
+  - Should register special namespace "x" with correct price (100 ETH).
+  - Should set special namespace creator to owner.
+  - Should map SPECIAL_NAMESPACE_PRICE to "x" namespace.
 
 #### Events
 
