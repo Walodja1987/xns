@@ -201,7 +201,7 @@ contract XNS is EIP712 {
     /// opened to the public after the 30-day exclusivity period.
     ///
     /// **Requirements:**
-    /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
+    /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-', cannot contain consecutive hyphens)
     /// - Namespace must be valid and exist.
     /// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
     /// - Caller must be namespace creator if called during the 30-day exclusivity period.
@@ -626,6 +626,7 @@ contract XNS is EIP712 {
     /// - Label must be 1–20 characters long
     /// - Label must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
     /// - Label cannot start or end with '-'
+    /// - Label cannot contain consecutive hyphens ('--')
     /// @param label The label to check if is valid.
     /// @return isValid True if the label is valid, false otherwise.
     function isValidLabel(string memory label) external pure returns (bool isValid) {
@@ -691,7 +692,6 @@ contract XNS is EIP712 {
         }
     }
 
-    // @todo Should we disallow labels with two following hyphens?
     /// @dev Helper function to check if a label is valid. Used in `registerName` and `isValidLabel`.
     function _isValidLabel(string memory label) private pure returns (bool isValid) {
         bytes memory b = bytes(label);
@@ -704,6 +704,9 @@ contract XNS is EIP712 {
             bool isDigit = (c >= 0x30 && c <= 0x39); // '0'..'9'
             bool isHyphen = (c == 0x2D); // '-'
             if (!(isLowercaseLetter || isDigit || isHyphen)) return false;
+            
+            // Disallow consecutive hyphens
+            if (isHyphen && i > 0 && b[i - 1] == 0x2D) return false;
         }
 
         if (b[0] == 0x2D || b[len - 1] == 0x2D) return false; // no leading/trailing '-'

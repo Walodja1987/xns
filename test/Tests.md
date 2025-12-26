@@ -50,6 +50,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should return `false` for labels containing spaces.
 - Should return `false` for labels containing special characters (except hyphen).
 - Should return `false` for labels containing underscores.
+- Should return `false` for labels containing consecutive hyphens.
 
 ---
 

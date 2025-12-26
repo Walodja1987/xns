@@ -207,6 +207,13 @@ describe("XNS", function () {
         expect(await s.xns.isValidLabel("user_name_123")).to.be.false;
     });
 
+    it("Should return `false` for labels containing consecutive hyphens", async () => {
+        expect(await s.xns.isValidLabel("alice--bob")).to.be.false;
+        expect(await s.xns.isValidLabel("test--label")).to.be.false;
+        expect(await s.xns.isValidLabel("my---name")).to.be.false;
+        expect(await s.xns.isValidLabel("a--b")).to.be.false;
+    });
+
     
   });
 });

@@ -113,13 +113,15 @@ Rules:
   - `-` (hyphen)
 
 - Hyphen **cannot** be the first or last character
+- Hyphen **cannot** appear consecutively (e.g., `--`)
 
 Examples:
 
 - ✅ `vitalik`
 - ✅ `my-name`
-- ❌ `-name`
-- ❌ `name-`
+- ❌ `-name` (starts with hyphen)
+- ❌ `name-` (ends with hyphen)
+- ❌ `my--name` (consecutive hyphens)
 
 ---
 
