@@ -395,9 +395,11 @@ describe("XNS", function () {
         // ---------
         // Assert: Verify namespace was registered correctly
         // ---------
+        // Retrieve namespace information
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
         const [returnedPrice, creator, returnedCreatedAt] = await getNamespaceInfoByString(namespace);
 
+        // Verify namespace information
         expect(returnedPrice).to.equal(pricePerName);
         expect(creator).to.equal(s.owner.address);
         expect(returnedCreatedAt).to.equal(createdAt);
@@ -438,9 +440,11 @@ describe("XNS", function () {
         // ---------
         // Assert: Verify namespace was registered correctly
         // ---------
+        // Retrieve namespace information
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
         const [returnedPrice, creator, returnedCreatedAt] = await getNamespaceInfoByString(namespace);
 
+        // Verify namespace information
         expect(returnedPrice).to.equal(pricePerName);
         expect(creator).to.equal(s.owner.address);
         expect(returnedCreatedAt).to.equal(createdAt);
@@ -449,6 +453,57 @@ describe("XNS", function () {
         const getNamespaceInfoByPrice = s.xns.getFunction("getNamespaceInfo(uint256)");
         const [returnedNamespace] = await getNamespaceInfoByPrice(pricePerName);
         expect(returnedNamespace).to.equal(namespace);
+    });
+
+    it("Should refund all ETH to owner if owner sends ETH during initial period", async () => {
+        // ---------
+        // Arrange: Prepare parameters and verify we're within the initial period
+        // ---------
+        const namespace = "bro";
+        const pricePerName = ethers.parseEther("0.003");
+        const ethToSend = ethers.parseEther("200"); // Owner sends ETH even though it's free
+        
+        // Confirm that this registration is within the INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+        const latestBlock = await ethers.provider.getBlock("latest");
+        const now = latestBlock.timestamp;
+        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const deployedAt = await s.xns.DEPLOYED_AT();
+        expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
+
+        // Get owner balance before transaction
+        const balanceBefore = await ethers.provider.getBalance(s.owner.address);
+
+        // ---------
+        // Act: Owner registers namespace with ETH during initial period
+        // ---------
+        const tx = await s.xns.connect(s.owner).registerNamespace(namespace, pricePerName, { value: ethToSend });
+        const receipt = await tx.wait();
+        
+        // Calculate gas cost
+        const gasUsed = receipt!.gasUsed;
+        const gasPrice = receipt!.gasPrice || tx.gasPrice || 0n;
+        const gasCost = gasUsed * gasPrice;
+
+        // Get owner balance after transaction
+        const balanceAfter = await ethers.provider.getBalance(s.owner.address);
+
+        // ---------
+        // Assert: Verify namespace was registered and ETH was refunded
+        // ---------
+        // Retrieve namespace information
+        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
+        const [returnedPrice, creator, returnedCreatedAt] = await getNamespaceInfoByString(namespace);
+        const block = await ethers.provider.getBlock(receipt!.blockNumber);
+
+        // Verify namespace information
+        expect(returnedPrice).to.equal(pricePerName);
+        expect(creator).to.equal(s.owner.address);
+        expect(returnedCreatedAt).to.equal(block!.timestamp);
+
+        // Verify refund: balance should only decrease by gas costs (not by ethToSend)
+        // balanceAfter should equal balanceBefore - gasCost (because ethToSend was refunded)
+        const expectedBalanceAfter = balanceBefore - gasCost;
+        expect(balanceAfter).to.equal(expectedBalanceAfter);
     });
     
   });
