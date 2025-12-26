@@ -229,18 +229,18 @@ After 30 days:
 ### Register a Name
 
 ```solidity
-registerName(string label) payable
+registerName(string label, string namespace) payable
 ```
 
-- Burns `msg.value` ETH
-- Namespace is derived from `msg.value`
+- Burns `msg.value` ETH (must be >= the namespace's registered price)
 - Registers `label.namespace` for `msg.sender`
+- Excess payment is refunded
 - During the 30-day exclusivity period, only the namespace creator can use this function
 
 Example:
 
 ```solidity
-xns.registerName{value: 0.001 ether}("alice");
+xns.registerName{value: 0.001 ether}("alice", "001");
 ```
 
 ---
@@ -282,17 +282,22 @@ Use cases:
 batchRegisterNameWithAuthorization(
     RegisterNameAuth[] calldata registerNameAuths,
     bytes[] calldata signatures
-) payable
+) payable returns (uint256 successfulCount)
 ```
 
 - Batch version of `registerNameWithAuthorization` to register multiple names in a single transaction
 - All registrations must be in the same namespace
-- Requires `msg.value` equal to `pricePerName * registerNameAuths.length`
+- Requires `msg.value >= pricePerName * successfulCount` (where `successfulCount` is the number of names actually registered)
+- Payment is only processed for successful registrations; skipped items are not charged
+- Excess payment is refunded
+- Returns the number of successfully registered names (may be 0 if all registrations were skipped)
+- If no registrations succeed, refunds all payment and returns 0
+- Skips registrations where recipient already has a name or name is already registered (griefing resistance)
 - More gas efficient than calling `registerNameWithAuthorization` multiple times
 - During the 30-day exclusivity period, only the namespace creator can sponsor batch registrations
-- Burns `msg.value` ETH (must match namespace price * count)
+- Burns ETH only for successful registrations (90% burnt, 5% to namespace creator, 5% to contract owner)
 - Registers names to recipients, not `msg.sender`
-- Distributes fees once for all registrations (90% burnt, 5% to namespace creator, 5% to contract owner)
+- Resistant to griefing attacks: if someone front-runs and registers a name for one recipient, that registration is skipped and others proceed
 
 Use cases:
 - Community onboarding: Batch register multiple community members at once

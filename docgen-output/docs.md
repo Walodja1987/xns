@@ -3,22 +3,9 @@
 ## XNS
 
 
-An Ethereum-native name registry that maps human-readable names to Ethereum addresses.
-Names are **permanent, immutable, and non-transferable**.
-
-Name format: [label].[namespace]
-
-Examples:
-- alice.xns
-- bob.yolo
-- vitalik.100x
-- garry.ape
-
-### Name registration
-- To register a name, users call `registerName(label)` and send ETH.
-- The amount of ETH sent determines the namespace. It must match a namespace's registered price.
+- The amount of ETH sent must be >= the namespace's registered price (excess will be refunded).
 - For example, if the "100x" namespace was registered with price 0.1 ETH, then calling
-  `registerName("vitalik")` with 0.1 ETH registers "vitalik.100x".
+  `registerName("vitalik", "100x")` with 0.1 ETH registers "vitalik.100x".
 - Each address can own at most one name.
 - With `registerName(label)`, names are always linked to the caller's address and cannot
   be assigned to another address.
@@ -61,21 +48,21 @@ Examples:
 ### registerName
 
 
-Function to register a paid name for `msg.sender`. Namespace is determined by `msg.value`.
+Function to register a paid name for `msg.sender`.
 Namespace creators have a 30-day exclusivity window to register a name for themselves
 within their registered namespace, following namespace registration. Registrations are
 opened to the public after the 30-day exclusivity period.
 
 **Requirements:**
 - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
-- `msg.value` must be > 0.
-- Namespace must exist.
+- Namespace must be valid and exist.
+- `msg.value` must be >= the namespace's registered price (excess will be refunded).
 - Caller must be namespace creator if called during the 30-day exclusivity period.
 - Caller must not already have a name.
 - Name must not already be registered.
 
 ```solidity
-function registerName(string label) external payable
+function registerName(string label, string namespace) external payable
 ```
 
 
@@ -84,6 +71,7 @@ function registerName(string label) external payable
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | label | string | The label part of the name to register. |
+| namespace | string | The namespace part of the name to register. |
 
 
 ### registerNameWithAuthorization
@@ -97,7 +85,7 @@ may sponsor registrations in that namespace.
 **Requirements:**
 - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
 - `recipient` must not be the zero address.
-- `msg.value` must be > 0 and must match the namespace's registered price.
+- `msg.value` must be >= the namespace's registered price (excess will be refunded).
 - Namespace must exist.
 - During exclusivity: only namespace creator can call this function.
 - Recipient must not already have a name.
@@ -121,17 +109,22 @@ function registerNameWithAuthorization(struct XNS.RegisterNameAuth registerNameA
 
 
 Batch version of `registerNameWithAuthorization` to register multiple names with a single transaction.
+All registrations must be in the same namespace. Skips registrations where the recipient already has a name
+or the name is already registered. Skipped items are not charged; excess payment is refunded.
 
 **Requirements:**
 - All registrations must be in the same namespace.
 - Array arguments must have equal length and be non-empty.
-- `msg.value` must equal `pricePerName * registerNameAuths.length`.
+- `msg.value` must be >= `pricePerName * successfulCount` (excess will be refunded).
 - All individual requirements from `registerNameWithAuthorization` apply to each registration.
 
 ```solidity
-function batchRegisterNameWithAuthorization(struct XNS.RegisterNameAuth[] registerNameAuths, bytes[] signatures) external payable
+function batchRegisterNameWithAuthorization(struct XNS.RegisterNameAuth[] registerNameAuths, bytes[] signatures) external payable returns (uint256 successfulCount)
 ```
 
+_**Note:** Input validation errors (invalid label, zero recipient, namespace mismatch, invalid signature)
+cause the entire batch to revert. Errors that could occur due to front-running the batch tx (recipient already
+has a name, or name already registered) are skipped to provide griefing protection._
 
 #### Parameters
 
@@ -140,6 +133,11 @@ function batchRegisterNameWithAuthorization(struct XNS.RegisterNameAuth[] regist
 | registerNameAuths | struct XNS.RegisterNameAuth[] | Array of `RegisterNameAuth` structs, each including label, namespace, and recipient. |
 | signatures | bytes[] | Array of EIP-712 signatures by recipients (EOA) or EIP-1271 contract signatures. |
 
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| successfulCount | uint256 | The number of names successfully registered (may be 0 if all registrations were skipped). |
 
 ### registerNamespace
 
@@ -148,7 +146,7 @@ Function to register a new namespace and assign a price-per-name.
 
 **Requirements:**
 - Namespace must be valid (non-empty, length 1–4, consists only of [a-z0-9])
-- `msg.value` must be 200 ETH.
+- `msg.value` must be >= 200 ETH (excess will be refunded). Owner pays 0 ETH during initial period.
 - Price per name must be a multiple of 0.001 ETH.
 - Price per name must not already be in use.
 - Namespace must not equal "eth".
@@ -244,7 +242,7 @@ _Returns `address(0)` for anything not registered or malformed._
 ### getAddress
 
 
-Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an address.
+Function to resolve a name to an address taking separate label and namespace parameters.
 
 ```solidity
 function getAddress(string label, string namespace) external view returns (address addr)

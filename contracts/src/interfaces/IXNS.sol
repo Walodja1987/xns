@@ -12,15 +12,15 @@ interface IXNS {
     event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator);
     event FeesClaimed(address indexed recipient, uint256 amount);
 
-    function registerName(string calldata label) external payable;
+    function registerName(string calldata label, string calldata namespace) external payable;
     function registerNameWithAuthorization(
         RegisterNameAuth calldata registerNameAuth,
         bytes calldata signature
     ) external payable;
-    function registerNamesWithAuthorization(
+    function batchRegisterNameWithAuthorization(
         RegisterNameAuth[] calldata registerNameAuths,
         bytes[] calldata signatures
-    ) external payable;
+    ) external payable returns (uint256 successfulCount);
     function registerNamespace(string calldata namespace, uint256 pricePerName) external payable;
     function claimFees(address recipient) external;
     function claimFeesToSelf() external;
