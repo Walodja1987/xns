@@ -35,7 +35,7 @@ describe("XNS", function () {
     };
   }
 
-  describe("Constructor", function () {
+  describe("Contract initialization", function () {
     let s: SetupOutput;
 
     beforeEach(async () => {
@@ -67,6 +67,29 @@ describe("XNS", function () {
         const getNamespaceInfoByPrice = s.xns.getFunction("getNamespaceInfo(uint256)");
         const [namespace] = await getNamespaceInfoByPrice(ethers.parseEther("100"));
         expect(namespace).to.equal("x");
+    });
+
+    it("Should have correct constants", async () => {
+        // Should have correct NAMESPACE_REGISTRATION_FEE (200 ether)
+        expect(await s.xns.NAMESPACE_REGISTRATION_FEE()).to.equal(ethers.parseEther("200"));
+
+        // Should have correct NAMESPACE_CREATOR_EXCLUSIVE_PERIOD (30 days)
+        expect(await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD()).to.equal(30 * 24 * 60 * 60);
+
+        // Should have correct INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD (1 year)
+        expect(await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD()).to.equal(365 * 24 * 60 * 60);
+
+        // Should have correct PRICE_STEP (0.001 ether / 1e15)
+        expect(await s.xns.PRICE_STEP()).to.equal(ethers.parseEther("0.001"));
+
+        // Should have correct SPECIAL_NAMESPACE ("x")
+        expect(await s.xns.SPECIAL_NAMESPACE()).to.equal("x");
+
+        // Should have correct SPECIAL_NAMESPACE_PRICE (100 ether)
+        expect(await s.xns.SPECIAL_NAMESPACE_PRICE()).to.equal(ethers.parseEther("100"));
+
+        // Should have correct DETH address
+        expect(await s.xns.DETH()).to.equal("0xE46861C9f28c46F27949fb471986d59B256500a7");
     });
 
     // -----------------------

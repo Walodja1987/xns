@@ -4,7 +4,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ## XNS
 
-### Constructor
+### Contract initialization
 
 #### Functionality
 
@@ -14,24 +14,18 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
   - Should register special namespace "x" with correct price (100 ETH).
   - Should set special namespace creator to owner.
   - Should map SPECIAL_NAMESPACE_PRICE to "x" namespace.
+- Should have correct constants
+  - Should have correct `NAMESPACE_REGISTRATION_FEE` (200 ether).
+  - Should have correct `NAMESPACE_CREATOR_EXCLUSIVE_PERIOD` (30 days).
+  - Should have correct `INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD` (1 year).
+  - Should have correct `PRICE_STEP` (0.001 ether / 1e15).
+  - Should have correct `SPECIAL_NAMESPACE` ("x").
+  - Should have correct `SPECIAL_NAMESPACE_PRICE` (100 ether).
+  - Should have correct `DETH` address.
 
 #### Events
 
 - Should emit `NamespaceRegistered` event for special namespace.
-
----
-
-### Constants
-
-#### Functionality
-
-- Should have correct `NAMESPACE_REGISTRATION_FEE` (200 ether).
-- Should have correct `NAMESPACE_CREATOR_EXCLUSIVE_PERIOD` (30 days).
-- Should have correct `INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD` (1 year).
-- Should have correct `PRICE_STEP` (0.001 ether / 1e15).
-- Should have correct `SPECIAL_NAMESPACE` ("x").
-- Should have correct `SPECIAL_NAMESPACE_PRICE` (100 ether).
-- Should have correct `DETH` address.
 
 ---
 
