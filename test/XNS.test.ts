@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 import { XNS } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
@@ -334,7 +334,7 @@ describe("XNS", function () {
         // ---------
         const namespace = "yolo";
         const pricePerName = ethers.parseEther("0.001");
-        const fee = ethers.parseEther("200");
+        const fee = await s.xns.NAMESPACE_REGISTRATION_FEE();
 
         // ---------
         // Act: Register namespace with user1 (not owner as they can register namespaces for free in the first year)
@@ -345,7 +345,7 @@ describe("XNS", function () {
         const createdAt = block!.timestamp;
 
         // ---------
-        // Assert: Verify namespace information
+        // Assert: Verify namespace was registered correctly
         // ---------
         // Retrieve namespace info by namespace string
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
@@ -371,6 +371,85 @@ describe("XNS", function () {
         expect(createdAtByPrice).to.equal(createdAt);
     });
 
+    it("Should allow owner to register namespace without fee (`msg.value = 0`) during initial period (1 year)", async () => {
+        // ---------
+        // Arrange: Prepare parameters for namespace registration
+        // ---------
+        const namespace = "ape";
+        const pricePerName = ethers.parseEther("0.001");
+        // Confirm that this registration is within the INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+        const latestBlock = await ethers.provider.getBlock("latest");
+        const now = latestBlock.timestamp;
+        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const deployedAt = await s.xns.DEPLOYED_AT();
+        expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
+
+        // ---------
+        // Act: Owner registers namespace with msg.value = 0 during initial period
+        // ---------
+        const tx = await s.xns.connect(s.owner).registerNamespace(namespace, pricePerName, { value: 0 });
+        const receipt = await tx.wait();
+        const block = await ethers.provider.getBlock(receipt!.blockNumber);
+        const createdAt = block!.timestamp;
+
+        // ---------
+        // Assert: Verify namespace was registered correctly
+        // ---------
+        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
+        const [returnedPrice, creator, returnedCreatedAt] = await getNamespaceInfoByString(namespace);
+
+        expect(returnedPrice).to.equal(pricePerName);
+        expect(creator).to.equal(s.owner.address);
+        expect(returnedCreatedAt).to.equal(createdAt);
+
+        // Verify namespace can be queried by price
+        const getNamespaceInfoByPrice = s.xns.getFunction("getNamespaceInfo(uint256)");
+        const [returnedNamespace] = await getNamespaceInfoByPrice(pricePerName);
+        expect(returnedNamespace).to.equal(namespace);
+    });
+
+    it("Should require owner to pay fee after 1 year", async () => {
+        // ---------
+        // Arrange: Fast-forward time to be after the initial period
+        // ---------
+        const namespace = "test";
+        const pricePerName = ethers.parseEther("0.002");
+        const fee = await s.xns.NAMESPACE_REGISTRATION_FEE();
+        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const deployedAt = await s.xns.DEPLOYED_AT();
+        
+        // Fast-forward time to be after the initial period (1 year + 1 day to be safe)
+        const timeToAdd = Number(initialPeriod) + 86400; // 1 year + 1 day in seconds
+        await time.increase(timeToAdd);
+        
+        // Verify we're past the initial period
+        const latestBlock = await ethers.provider.getBlock("latest");
+        const now = latestBlock.timestamp;
+        expect(now).to.be.gt(Number(deployedAt) + Number(initialPeriod));
+
+        // ---------
+        // Act: Owner registers namespace with standard fee
+        // ---------
+        const tx = await s.xns.connect(s.owner).registerNamespace(namespace, pricePerName, { value: fee });
+        const receipt = await tx.wait();
+        const block = await ethers.provider.getBlock(receipt!.blockNumber);
+        const createdAt = block!.timestamp;
+
+        // ---------
+        // Assert: Verify namespace was registered correctly
+        // ---------
+        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
+        const [returnedPrice, creator, returnedCreatedAt] = await getNamespaceInfoByString(namespace);
+
+        expect(returnedPrice).to.equal(pricePerName);
+        expect(creator).to.equal(s.owner.address);
+        expect(returnedCreatedAt).to.equal(createdAt);
+
+        // Verify namespace can be queried by price
+        const getNamespaceInfoByPrice = s.xns.getFunction("getNamespaceInfo(uint256)");
+        const [returnedNamespace] = await getNamespaceInfoByPrice(pricePerName);
+        expect(returnedNamespace).to.equal(namespace);
+    });
     
   });
 });
