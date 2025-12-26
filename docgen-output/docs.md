@@ -54,7 +54,7 @@ within their registered namespace, following namespace registration. Registratio
 opened to the public after the 30-day exclusivity period.
 
 **Requirements:**
-- Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
+- Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-', cannot contain consecutive hyphens)
 - Namespace must be valid and exist.
 - `msg.value` must be >= the namespace's registered price (excess will be refunded).
 - Caller must be namespace creator if called during the 30-day exclusivity period.
@@ -347,6 +347,7 @@ Function to check if a label is valid (returns bool, does not revert).
 - Label must be 1–20 characters long
 - Label must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
 - Label cannot start or end with '-'
+- Label cannot contain consecutive hyphens ('--')
 
 ```solidity
 function isValidLabel(string label) external pure returns (bool isValid)

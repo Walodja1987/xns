@@ -19,6 +19,15 @@ describe("XNS", function () {
   async function setup(): Promise<SetupOutput> {
     const [owner, user1, user2] = await ethers.getSigners();
 
+    // Deploy DETH contract at the required address
+    const DETH_ADDRESS = "0xE46861C9f28c46F27949fb471986d59B256500a7";
+    const deth = await ethers.deployContract("DETH");
+    await deth.waitForDeployment();
+    
+    // Use hardhat_setCode to set the DETH contract code at the required address
+    const dethBytecode = await ethers.provider.getCode(deth.target);
+    await ethers.provider.send("hardhat_setCode", [DETH_ADDRESS, dethBytecode!]);
+
     const xns = await ethers.deployContract("XNS", [owner.address]);
     const deploymentTx = xns.deploymentTransaction();
     await xns.waitForDeployment();
@@ -303,6 +312,63 @@ describe("XNS", function () {
         expect(await s.xns.isValidNamespace("test.label")).to.be.false;
         expect(await s.xns.isValidNamespace("a!b")).to.be.false;
         expect(await s.xns.isValidNamespace("a_b")).to.be.false;
+    });
+
+    
+  });
+
+  describe("registerNamespace", function () {
+    let s: SetupOutput;
+
+    beforeEach(async () => {
+      s = await loadFixture(setup);
+    });
+
+    // -----------------------
+    // Functionality
+    // -----------------------
+
+    it("Should register a new namespace correctly", async () => {
+        // ---------
+        // Arrange: Prepare parameters for namespace registration
+        // ---------
+        const namespace = "yolo";
+        const pricePerName = ethers.parseEther("0.001");
+        const fee = ethers.parseEther("200");
+
+        // ---------
+        // Act: Register namespace with user1 (not owner as they can register namespaces for free in the first year)
+        // ---------
+        const tx = await s.xns.connect(s.user1).registerNamespace(namespace, pricePerName, { value: fee });
+        const receipt = await tx.wait();
+        const block = await ethers.provider.getBlock(receipt!.blockNumber);
+        const createdAt = block!.timestamp;
+
+        // ---------
+        // Assert: Verify namespace information
+        // ---------
+        // Retrieve namespace info by namespace string
+        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
+        const [returnedPrice, creator, returnedCreatedAt] = await getNamespaceInfoByString(namespace);
+
+        // Should create namespace with correct price
+        expect(returnedPrice).to.equal(pricePerName);
+
+        // Should set namespace creator to `msg.sender` (user1 in this case)
+        expect(creator).to.equal(s.user1.address);
+
+        // Should set createdAt timestamp
+        expect(returnedCreatedAt).to.equal(createdAt);
+
+        // Retrieve namespace info by price
+        const getNamespaceInfoByPrice = s.xns.getFunction("getNamespaceInfo(uint256)");
+        const [returnedNamespace, returnedPriceByPrice, creatorByPrice, createdAtByPrice] = await getNamespaceInfoByPrice(pricePerName);
+
+        // Should map price to namespace
+        expect(returnedNamespace).to.equal(namespace);
+        expect(returnedPriceByPrice).to.equal(pricePerName);
+        expect(creatorByPrice).to.equal(s.user1.address);
+        expect(createdAtByPrice).to.equal(createdAt);
     });
 
     
