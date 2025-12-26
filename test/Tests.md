@@ -84,7 +84,11 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should register a new namespace correctly.
+- Should register a new namespace correctly
+  - Should create namespace with correct price.
+  - Should set namespace creator to `msg.sender`.
+  - Should map price to namespace.
+  - Should set `createdAt` timestamp.
 - Should allow owner to register namespace without fee (`msg.value = 0`) during initial period (1 year).
 - Should require owner to pay fee after 1 year.
 - Should refund all ETH to owner if owner sends ETH during initial period.
@@ -123,7 +127,11 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should register a name correctly.
+- Should register a name correctly
+  - Should set name owner to `msg.sender`.
+  - Should map name hash to owner address.
+  - Should map owner address to name.
+  - Should set correct label and namespace.
 - Should allow namespace creator to register a paid name during exclusive period.
 - Should allow anyone to register paid names after exclusive period (30 days).
 - Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
@@ -151,7 +159,11 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should register a name for recipient when recipient authorizes via signature (e.g., set name owner to recipient, not `msg.sender`).
+- Should register a name for recipient when recipient authorizes via signature
+  - Should set name owner to recipient, not `msg.sender`.
+  - Should map name hash to recipient address.
+  - Should map recipient address to name.
+  - Should set correct label and namespace.
 - Should allow namespace creator to sponsor registrations during exclusive period (30 days).
 - Should allow anyone to sponsor registrations after exclusive period (30 days).
 - Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
@@ -183,7 +195,11 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should register multiple names in a single transaction (set name owners to recipients, verify mappings, require same namespace).
+- Should register multiple names in a single transaction
+  - Should set name owners to recipients, not `msg.sender`.
+  - Should verify mappings for all successful registrations.
+  - Should require same namespace for all registrations.
+  - Should process all registrations atomically.
 - Should skip registrations where recipient already has a name.
 - Should skip registrations where name is already registered.
 - Should return the number of successful registrations (case > 0).
@@ -221,11 +237,18 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should allow owner to claim all pending fees for `msg.sender` and transfer to recipient (non-owner).
-- Should allow namespace creator to claim all pending fees for `msg.sender` and transfer to recipient (non-namspace-creator).
-- Should allow owner to claim all pending fees to themselves.
-- Should allow namespace creator to claim all pending fees to themselves.
-- Should reset pending fees to zero after claiming.
+- Should allow owner to claim all pending fees for `msg.sender` and transfer to recipient (non-owner)
+  - Should transfer correct amount to recipient.
+  - Should reset pending fees to zero after claiming.
+- Should allow namespace creator to claim all pending fees for `msg.sender` and transfer to recipient (non-namespace-creator)
+  - Should transfer correct amount to recipient.
+  - Should reset pending fees to zero after claiming.
+- Should allow owner to claim all pending fees to themselves
+  - Should transfer correct amount to `msg.sender`.
+  - Should reset pending fees to zero after claiming.
+- Should allow namespace creator to claim all pending fees to themselves
+  - Should transfer correct amount to `msg.sender`.
+  - Should reset pending fees to zero after claiming.
 - Should allow claiming fees multiple times as they accumulate.
 
 #### Events
@@ -244,9 +267,12 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should allow owner to claim all pending fees to themselves.
-- Should allow namespace creator to claim all pending fees to themselves.
-- Should reset pending fees to zero after claiming.
+- Should allow owner to claim all pending fees to themselves
+  - Should transfer correct amount to `msg.sender`.
+  - Should reset pending fees to zero after claiming.
+- Should allow namespace creator to claim all pending fees to themselves
+  - Should transfer correct amount to `msg.sender`.
+  - Should reset pending fees to zero after claiming.
 
 #### Events
 
@@ -318,8 +344,14 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should return correct details.
-- Should return correct details for special namespace "x".
+- Should return correct details
+  - Should return correct `pricePerName`.
+  - Should return correct creator address.
+  - Should return correct `createdAt` timestamp.
+- Should return correct details for special namespace "x"
+  - Should return correct `pricePerName` (100 ETH).
+  - Should return correct creator address (owner).
+  - Should return correct `createdAt` timestamp.
 
 #### Reverts
 
@@ -331,8 +363,16 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should return correct details.
-- Should return correct values for SPECIAL_NAMESPACE_PRICE.
+- Should return correct details
+  - Should return correct namespace string.
+  - Should return correct `pricePerName`.
+  - Should return correct creator address.
+  - Should return correct `createdAt` timestamp.
+- Should return correct values for `SPECIAL_NAMESPACE_PRICE`
+  - Should return "x" as namespace.
+  - Should return 100 ETH as p`ricePerName`.
+  - Should return owner as creator.
+  - Should return correct `createdAt` timestamp.
 
 #### Reverts
 

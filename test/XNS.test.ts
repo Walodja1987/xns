@@ -12,6 +12,7 @@ describe("XNS", function () {
     user1: SignerWithAddress;
     user2: SignerWithAddress;
     deploymentBlockTimestamp: number;
+    deploymentReceipt: any;
   }
 
   // Test setup function
@@ -30,6 +31,7 @@ describe("XNS", function () {
       user1,
       user2,
       deploymentBlockTimestamp: deploymentBlock!.timestamp,
+      deploymentReceipt: deploymentReceipt!,
     };
   }
 
@@ -40,9 +42,9 @@ describe("XNS", function () {
       s = await loadFixture(setup);
     });
 
-    // ------------
+    // -----------------------
     // Functionality
-    // ------------
+    // -----------------------
 
     it("Should initialize the contract correctly", async () => {
         // Should initialize owner correctly
@@ -65,6 +67,16 @@ describe("XNS", function () {
         const getNamespaceInfoByPrice = s.xns.getFunction("getNamespaceInfo(uint256)");
         const [namespace] = await getNamespaceInfoByPrice(ethers.parseEther("100"));
         expect(namespace).to.equal("x");
+    });
+
+    // -----------------------
+    // Events
+    // -----------------------
+
+    it("Should emit `NamespaceRegistered` event for special namespace", async () => {
+        await expect(s.xns.deploymentTransaction())
+            .to.emit(s.xns, "NamespaceRegistered")
+            .withArgs("x", ethers.parseEther("100"), s.owner.address);
     });
 
     
