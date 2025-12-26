@@ -104,5 +104,110 @@ describe("XNS", function () {
 
     
   });
+
+  describe("isValidLabel", function () {
+    let s: SetupOutput;
+
+    beforeEach(async () => {
+      s = await loadFixture(setup);
+    });
+
+    // -----------------------
+    // Functionality
+    // -----------------------
+
+    it("Should return `true` for valid labels with lowercase letters", async () => {
+        expect(await s.xns.isValidLabel("alice")).to.be.true;
+        expect(await s.xns.isValidLabel("bob")).to.be.true;
+        expect(await s.xns.isValidLabel("charlie")).to.be.true;
+    });
+
+    it("Should return `true` for valid labels with digits", async () => {
+        expect(await s.xns.isValidLabel("123")).to.be.true;
+        expect(await s.xns.isValidLabel("0")).to.be.true;
+        expect(await s.xns.isValidLabel("999")).to.be.true;
+    });
+
+    it("Should return `true` for valid labels with hyphens", async () => {
+        expect(await s.xns.isValidLabel("alice-bob")).to.be.true;
+        expect(await s.xns.isValidLabel("test-label")).to.be.true;
+        expect(await s.xns.isValidLabel("my-name")).to.be.true;
+    });
+
+    it("Should return `true` for valid labels combining letters, digits, and hyphens", async () => {
+        expect(await s.xns.isValidLabel("alice123")).to.be.true;
+        expect(await s.xns.isValidLabel("test-123")).to.be.true;
+        expect(await s.xns.isValidLabel("user-42-name")).to.be.true;
+        expect(await s.xns.isValidLabel("abc-123-def")).to.be.true;
+    });
+
+    it("Should return `true` for minimum length (1 character)", async () => {
+        expect(await s.xns.isValidLabel("a")).to.be.true;
+        expect(await s.xns.isValidLabel("1")).to.be.true;
+        expect(await s.xns.isValidLabel("x")).to.be.true;
+    });
+
+    it("Should return `true` for maximum length (20 characters)", async () => {
+        expect(await s.xns.isValidLabel("a".repeat(20))).to.be.true;
+        expect(await s.xns.isValidLabel("1".repeat(20))).to.be.true;
+        expect(await s.xns.isValidLabel("abcdefghijklmnopqrst")).to.be.true;
+    });
+
+    // -----------------------
+    // Reverts
+    // -----------------------
+
+    it("Should return `false` for empty string", async () => {
+        expect(await s.xns.isValidLabel("")).to.be.false;
+    });
+
+    it("Should return `false` for labels longer than 20 characters", async () => {
+        expect(await s.xns.isValidLabel("a".repeat(21))).to.be.false;
+        expect(await s.xns.isValidLabel("abcdefghijklmnopqrstu")).to.be.false;
+        expect(await s.xns.isValidLabel("verylonglabelname12345")).to.be.false;
+    });
+
+    it("Should return `false` for labels starting with hyphen", async () => {
+        expect(await s.xns.isValidLabel("-alice")).to.be.false;
+        expect(await s.xns.isValidLabel("-test")).to.be.false;
+        expect(await s.xns.isValidLabel("-123")).to.be.false;
+    });
+
+    it("Should return `false` for labels ending with hyphen", async () => {
+        expect(await s.xns.isValidLabel("alice-")).to.be.false;
+        expect(await s.xns.isValidLabel("test-")).to.be.false;
+        expect(await s.xns.isValidLabel("123-")).to.be.false;
+    });
+
+    it("Should return `false` for labels containing uppercase letters", async () => {
+        expect(await s.xns.isValidLabel("Alice")).to.be.false;
+        expect(await s.xns.isValidLabel("TEST")).to.be.false;
+        expect(await s.xns.isValidLabel("aliceBob")).to.be.false;
+        expect(await s.xns.isValidLabel("test-Label")).to.be.false;
+    });
+
+    it("Should return `false` for labels containing spaces", async () => {
+        expect(await s.xns.isValidLabel("alice bob")).to.be.false;
+        expect(await s.xns.isValidLabel("test label")).to.be.false;
+        expect(await s.xns.isValidLabel(" alice")).to.be.false;
+        expect(await s.xns.isValidLabel("alice ")).to.be.false;
+    });
+
+    it("Should return `false` for labels containing special characters (except hyphen)", async () => {
+        expect(await s.xns.isValidLabel("alice@bob")).to.be.false;
+        expect(await s.xns.isValidLabel("test#label")).to.be.false;
+        expect(await s.xns.isValidLabel("user$name")).to.be.false;
+        expect(await s.xns.isValidLabel("test.label")).to.be.false;
+        expect(await s.xns.isValidLabel("alice!bob")).to.be.false;
+    });
+
+    it("Should return `false` for labels containing underscores", async () => {
+        expect(await s.xns.isValidLabel("alice_bob")).to.be.false;
+        expect(await s.xns.isValidLabel("test_label")).to.be.false;
+        expect(await s.xns.isValidLabel("user_name_123")).to.be.false;
+    });
+
+    
+  });
 });
 

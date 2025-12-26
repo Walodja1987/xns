@@ -691,12 +691,13 @@ contract XNS is EIP712 {
         }
     }
 
+    // @todo Should we disallow labels with two following hyphens?
     /// @dev Helper function to check if a label is valid. Used in `registerName` and `isValidLabel`.
     function _isValidLabel(string memory label) private pure returns (bool isValid) {
         bytes memory b = bytes(label);
         uint256 len = b.length;
         if (len == 0 || len > 20) return false;
-
+    
         for (uint256 i = 0; i < len; i++) {
             bytes1 c = b[i];
             bool isLowercaseLetter = (c >= 0x61 && c <= 0x7A); // 'a'..'z'
