@@ -312,7 +312,6 @@ contract XNS is EIP712 {
     /// - All registrations must be in the same namespace.
     /// - Array arguments must have equal length and be non-empty.
     /// - `msg.value` must be >= `pricePerName * successfulCount` (excess will be refunded).
-    /// - At least one registration must succeed.
     /// - All individual requirements from `registerNameWithAuthorization` apply to each registration.
     ///
     /// @dev **Note:** Input validation errors (invalid label, zero recipient, namespace mismatch, invalid signature)
@@ -321,7 +320,7 @@ contract XNS is EIP712 {
     ///
     /// @param registerNameAuths Array of `RegisterNameAuth` structs, each including label, namespace, and recipient.
     /// @param signatures Array of EIP-712 signatures by recipients (EOA) or EIP-1271 contract signatures.
-    /// @return successfulCount The number of names successfully registered.
+    /// @return successfulCount The number of names successfully registered (may be 0 if all registrations were skipped).
     function batchRegisterNameWithAuthorization(
         RegisterNameAuth[] calldata registerNameAuths,
         bytes[] calldata signatures
@@ -337,7 +336,7 @@ contract XNS is EIP712 {
 
         // Check whether within exclusivity period.
         if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
-            require(msg.sender == ns.creator, "XNS: only creator can sponsor during exclusivity");
+            require(msg.sender == ns.creator, "XNS: not namespace creator");
         }
 
         // Validate and register all names, skipping where the recipient already has a name
@@ -380,17 +379,20 @@ contract XNS is EIP712 {
             successful++;
         }
 
-        // Revert with a clear message on no successful registrations instead of failing silently
-        // by returning 0. By reverting, we avoid the need to handle refunds separately
-        // for zero-success cases.
-        require(successful > 0, "XNS: no successful registrations");
-
         // Process payment only for successful registrations: burn 90%, credit fees, and refund excess.
-        uint256 actualTotal = ns.pricePerName * successful;
-        require(msg.value >= actualTotal, "XNS: insufficient payment");
-        _processETHPayment(actualTotal, ns.creator);
+        if (successful > 0) {
+            uint256 actualTotal = ns.pricePerName * successful;
+            require(msg.value >= actualTotal, "XNS: insufficient payment");
+            _processETHPayment(actualTotal, ns.creator);
+            return successful;
+        }
 
-        return successful;
+        // If no registrations succeeded, refund all payment and return 0.
+        if (msg.value > 0) {
+            (bool success, ) = msg.sender.call{value: msg.value}("");
+            require(success, "XNS: refund failed");
+        }
+        return 0;
     }
 
     /// @notice Function to register a new namespace and assign a price-per-name.
