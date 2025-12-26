@@ -216,5 +216,96 @@ describe("XNS", function () {
 
     
   });
+
+  describe("isValidNamespace", function () {
+    let s: SetupOutput;
+
+    beforeEach(async () => {
+      s = await loadFixture(setup);
+    });
+
+    // -----------------------
+    // Functionality
+    // -----------------------
+
+    it("Should return `true` for valid namespaces with lowercase letters", async () => {
+        expect(await s.xns.isValidNamespace("a")).to.be.true;
+        expect(await s.xns.isValidNamespace("ab")).to.be.true;
+        expect(await s.xns.isValidNamespace("abc")).to.be.true;
+        expect(await s.xns.isValidNamespace("defi")).to.be.true;
+    });
+
+    it("Should return `true` for valid namespaces with digits", async () => {
+        expect(await s.xns.isValidNamespace("0")).to.be.true;
+        expect(await s.xns.isValidNamespace("1")).to.be.true;
+        expect(await s.xns.isValidNamespace("001")).to.be.true;
+        expect(await s.xns.isValidNamespace("1234")).to.be.true;
+    });
+
+    it("Should return `true` for valid namespaces combining letters and digits", async () => {
+        expect(await s.xns.isValidNamespace("a1")).to.be.true;
+        expect(await s.xns.isValidNamespace("1a")).to.be.true;
+        expect(await s.xns.isValidNamespace("ab1")).to.be.true;
+        expect(await s.xns.isValidNamespace("1ab2")).to.be.true;
+    });
+
+    it("Should return `true` for minimum length (1 character)", async () => {
+        expect(await s.xns.isValidNamespace("a")).to.be.true;
+        expect(await s.xns.isValidNamespace("1")).to.be.true;
+        expect(await s.xns.isValidNamespace("x")).to.be.true;
+    });
+
+    it("Should return `true` for maximum length (4 characters)", async () => {
+        expect(await s.xns.isValidNamespace("abcd")).to.be.true;
+        expect(await s.xns.isValidNamespace("1234")).to.be.true;
+        expect(await s.xns.isValidNamespace("a1b2")).to.be.true;
+    });
+
+    // -----------------------
+    // Reverts
+    // -----------------------
+
+    it("Should return `false` for empty string", async () => {
+        expect(await s.xns.isValidNamespace("")).to.be.false;
+    });
+
+    it("Should return `false` for namespaces longer than 4 characters", async () => {
+        expect(await s.xns.isValidNamespace("abcde")).to.be.false;
+        expect(await s.xns.isValidNamespace("12345")).to.be.false;
+        expect(await s.xns.isValidNamespace("verylong")).to.be.false;
+    });
+
+    it("Should return `false` for namespaces containing uppercase letters", async () => {
+        expect(await s.xns.isValidNamespace("A")).to.be.false;
+        expect(await s.xns.isValidNamespace("ABC")).to.be.false;
+        expect(await s.xns.isValidNamespace("aBc")).to.be.false;
+        expect(await s.xns.isValidNamespace("defI")).to.be.false;
+    });
+
+    it("Should return `false` for namespaces containing hyphens", async () => {
+        expect(await s.xns.isValidNamespace("a-b")).to.be.false;
+        expect(await s.xns.isValidNamespace("test-1")).to.be.false;
+        expect(await s.xns.isValidNamespace("-ab")).to.be.false;
+        expect(await s.xns.isValidNamespace("ab-")).to.be.false;
+    });
+
+    it("Should return `false` for namespaces containing spaces", async () => {
+        expect(await s.xns.isValidNamespace("a b")).to.be.false;
+        expect(await s.xns.isValidNamespace("test 1")).to.be.false;
+        expect(await s.xns.isValidNamespace(" ab")).to.be.false;
+        expect(await s.xns.isValidNamespace("ab ")).to.be.false;
+    });
+
+    it("Should return `false` for namespaces containing special characters", async () => {
+        expect(await s.xns.isValidNamespace("a@b")).to.be.false;
+        expect(await s.xns.isValidNamespace("test#1")).to.be.false;
+        expect(await s.xns.isValidNamespace("user$name")).to.be.false;
+        expect(await s.xns.isValidNamespace("test.label")).to.be.false;
+        expect(await s.xns.isValidNamespace("a!b")).to.be.false;
+        expect(await s.xns.isValidNamespace("a_b")).to.be.false;
+    });
+
+    
+  });
 });
 
