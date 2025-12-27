@@ -93,7 +93,6 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should refund excess payment when owner pays more than required fee after initial period.
 - Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
 - Should not distribute fees when owner registers with `msg.value > 0` during initial period.
-- Should credit zero DETH to owner during free initial period.
 - Should credit correct amount of DETH to non-owner registrant during initial period.
 - Should credit correct amount of DETH to owner after initial period.
 - Should credit correct amount of DETH to non-owner registrant after initial period.

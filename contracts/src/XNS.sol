@@ -30,12 +30,12 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - garry.ape
 ///
 /// ### Name registration
-// - To register a name, users call `registerName(label, namespace)` and send ETH.
+/// - To register a name, users call `registerName(label, namespace)` and send ETH.
 /// - The amount of ETH sent must be >= the namespace's registered price (excess will be refunded).
 /// - For example, if the "100x" namespace was registered with price 0.1 ETH, then calling
 ///   `registerName("vitalik", "100x")` with 0.1 ETH registers "vitalik.100x".
 /// - Each address can own at most one name.
-/// - With `registerName(label)`, names are always linked to the caller's address and cannot
+/// - With `registerName(label, namespace)`, names are always linked to the caller's address and cannot
 ///   be assigned to another address.
 ///
 /// ### Sponsorship via authorization (EIP-712 + EIP-1271)
@@ -349,24 +349,27 @@ contract XNS is EIP712 {
             require(_isValidLabel(auth.label), "XNS: invalid label");
             require(auth.recipient != address(0), "XNS: 0x recipient");
 
-            // Verify all are same namespace.
-            bytes32 nsHash = keccak256(bytes(auth.namespace));
-            require(nsHash == firstNsHash, "XNS: namespace mismatch");
-
-            // Verify that the signature is valid.
-            require(_isValidSignature(auth, signatures[i]), "XNS: bad authorization");
-
             // Skip if recipient already has a name (resistant to griefing attacks).
+            // Check early to avoid expensive operations below.
             if (bytes(_addressToName[auth.recipient].label).length > 0) {
                 continue;
             }
 
+            // Verify all are same namespace.
+            bytes32 nsHash = keccak256(bytes(auth.namespace));
+            require(nsHash == firstNsHash, "XNS: namespace mismatch");
+
             bytes32 key = keccak256(abi.encodePacked(auth.label, ".", auth.namespace));
             
             // Skip if name is already registered (resistant to griefing attacks).
+            // Check early to avoid expensive signature validation below.
             if (_nameHashToAddress[key] != address(0)) {
                 continue;
             }
+
+            // Verify that the signature is valid.
+            // Doing this expensive check only if we're not skipping.
+            require(_isValidSignature(auth, signatures[i]), "XNS: bad authorization");
 
             // Register name to recipient (not msg.sender).
             _nameHashToAddress[key] = auth.recipient;
