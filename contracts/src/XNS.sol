@@ -517,41 +517,31 @@ contract XNS is EIP712 {
         if (len == 0) return address(0);
 
         // Search for '.' from the right within the last 5 characters (".xxxx")
-        uint256 endExclusive = (len > 5) ? (len - 5) : 0;
-        int256 lastDot = -1;
+        uint256 endInclusive = (len > 5) ? (len - 5) : 0;
+        uint256 dotIndex = type(uint256).max; // Sentinel: no dot found
 
-        for (uint256 i = len - 1; ; i--) {
-            if (i < endExclusive) break;
+        for (uint256 i = len - 1; i >= endInclusive; i--) {
             if (b[i] == 0x2E) {
-                // '.'
-                lastDot = int256(i);
+                dotIndex = i;
                 break;
             }
-            if (i == endExclusive) break;
+            if (i == endInclusive) break; // For bare names like "nike", "snoopy", etc. that do not have a dot
         }
 
-        string memory label;
-        string memory namespace;
-
-        if (lastDot == -1) {
+        if (dotIndex == type(uint256).max) {
             // Bare label => label.x
-            label = fullName;
-            namespace = SPECIAL_NAMESPACE;
-        } else {
-            uint256 dotIndex = uint256(lastDot);
-
-            bytes memory bl = new bytes(dotIndex);
-            for (uint256 j = 0; j < dotIndex; j++) bl[j] = b[j];
-
-            uint256 nsLen = len - dotIndex - 1;
-            bytes memory bn = new bytes(nsLen);
-            for (uint256 j = 0; j < nsLen; j++) bn[j] = b[dotIndex + 1 + j];
-
-            label = string(bl);
-            namespace = string(bn);
+            return _getAddress(fullName, SPECIAL_NAMESPACE);
         }
 
-        return _getAddress(label, namespace);
+        // Extract label and namespace
+        bytes memory labelBytes = new bytes(dotIndex);
+        for (uint256 j = 0; j < dotIndex; j++) labelBytes[j] = b[j];
+
+        uint256 nsLen = len - dotIndex - 1;
+        bytes memory nsBytes = new bytes(nsLen);
+        for (uint256 j = 0; j < nsLen; j++) nsBytes[j] = b[dotIndex + 1 + j];
+
+        return _getAddress(string(labelBytes), string(nsBytes));
     }
 
     /// @notice Function to resolve a name to an address taking separate label and namespace parameters.
