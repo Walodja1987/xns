@@ -193,18 +193,17 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
   - Should set name owners to recipients, not `msg.sender`.
   - Should verify mappings for all successful registrations.
   - Should require same namespace for all registrations.
-  - Should process all registrations atomically.
+  - Should process all registrations.
+  - Should return the number of successful registrations.
 - Should skip registrations where recipient already has a name.
 - Should skip registrations where name is already registered.
-- Should return the number of successful registrations (case > 0).
-- Should only charge for successful registrations and refund excess payment.
 - Should return 0 if no registrations succeed and refund all payment.
 - Should process the ETH payment correctly (90% burnt via DETH, 5% to namespace creator, 5% to contract owner) only for successful registrations.
 - Should credit correct amount of DETH to sponsor, not recipients.
 - Should allow namespace creator to sponsor batch registrations during exclusive period (30 days).
 - Should allow anyone to sponsor batch registrations after exclusive period (30 days).
-- Should work correctly with EIP-1271 contract wallet signatures (Safe, Argent, etc.).
-- Should work correctly with special namespace "x" (100 ETH).
+- Should allow sponsoring name registrations including an EIP-1271 contract wallet recipient.
+- Should permit anyone (non-namespace-creator) to register multiple names in the special "x" namespace (100 ETH) after the exclusive period ends.
 
 #### Events
 

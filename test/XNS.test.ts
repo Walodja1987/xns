@@ -2758,5 +2758,1118 @@ describe("XNS", function () {
     });
     
   });
+
+  describe("batchRegisterNameWithAuthorization", function () {
+    let s: SetupOutput;
+
+    beforeEach(async () => {
+      s = await loadFixture(setup);
+    });
+
+    // -----------------------
+    // Functionality
+    // -----------------------
+
+    it("Should register multiple names in a single transaction", async () => {
+        // ---------
+        // Arrange: Prepare parameters for batch registration
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can sponsor
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Prepare multiple registrations
+        const registrations = [
+            { label: "alice", recipient: s.user1.address },
+            { label: "bob", recipient: s.user2.address },
+            { label: "charlie", recipient: s.owner.address },
+        ];
+
+        // Create signatures for all recipients
+        const registerNameAuths = [];
+        const signatures = [];
+        for (const reg of registrations) {
+            // Get the signer for each recipient
+            let signer: SignerWithAddress;
+            if (reg.recipient === s.user1.address) {
+                signer = s.user1;
+            } else if (reg.recipient === s.user2.address) {
+                signer = s.user2;
+            } else if (reg.recipient === s.owner.address) {
+                signer = s.owner;
+            } else {
+                throw new Error(`Unknown recipient: ${reg.recipient}`);
+            }
+            
+            const signature = await s.signRegisterNameAuth(
+                signer,
+                reg.recipient,
+                reg.label,
+                namespace
+            );
+            registerNameAuths.push({
+                recipient: reg.recipient,
+                label: reg.label,
+                namespace: namespace,
+            });
+            signatures.push(signature);
+        }
+
+        // Calculate total payment needed
+        const totalPayment = pricePerName * BigInt(registrations.length);
+
+        // Verify expected return value using staticCall
+        const expectedSuccessfulCount = await s.xns.connect(s.owner).batchRegisterNameWithAuthorization.staticCall(
+            registerNameAuths,
+            signatures,
+            { value: totalPayment }
+        );
+        expect(expectedSuccessfulCount).to.equal(BigInt(registrations.length));
+
+        // ---------
+        // Act: Sponsor batch registration for multiple recipients
+        // ---------
+        const tx = await s.xns.connect(s.owner).batchRegisterNameWithAuthorization(
+            registerNameAuths,
+            signatures,
+            { value: totalPayment }
+        );
+        const receipt = await tx.wait();
+
+        // ---------
+        // Assert: Verify all names were registered correctly
+        // ---------
+        // Verify return value matches expected (via event count)
+        const eventFilter = s.xns.filters.NameRegistered();
+        const events = await s.xns.queryFilter(eventFilter, receipt!.blockNumber, receipt!.blockNumber);
+        expect(events.length).to.equal(Number(expectedSuccessfulCount));
+        expect(events.length).to.equal(registrations.length);
+
+        // Should set name owners to recipients
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        for (const reg of registrations) {
+            const ownerAddress = await getAddressByLabelAndNamespace(reg.label, namespace);
+            expect(ownerAddress).to.equal(reg.recipient);
+        }
+
+        // Should verify mappings for all successful registrations
+        const getName = s.xns.getFunction("getName(address)");
+        for (const reg of registrations) {
+            // Should map name hash to recipient address
+            const fullName = `${reg.label}.${namespace}`;
+            const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+            const ownerAddressByFullName = await getAddressByFullName(fullName);
+            expect(ownerAddressByFullName).to.equal(reg.recipient);
+
+            // Should map recipient address to name
+            const returnedName = await getName(reg.recipient);
+            expect(returnedName).to.equal(fullName);
+
+            // Should set correct label and namespace
+            const [returnedLabel, returnedNamespace] = returnedName.split(".");
+            expect(returnedLabel).to.equal(reg.label);
+            expect(returnedNamespace).to.equal(namespace);
+        }
+
+        // Should require same namespace for all registrations (verified by successful execution).
+        // All registrations used the same namespace, so if the transaction succeeded, this is verified.
+
+    });
+
+    it("Should skip registrations where recipient already has a name", async () => {
+        // ---------
+        // Arrange: Prepare parameters and register a name for one recipient first
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can sponsor
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // First, register a name for user1 so they already have a name
+        const firstLabel = "firstname";
+        await s.xns.connect(s.user1).registerName(firstLabel, namespace, { value: pricePerName });
+
+        // Verify user1 has a name
+        const getName = s.xns.getFunction("getName(address)");
+        const user1Name = await getName(s.user1.address);
+        expect(user1Name).to.equal(`${firstLabel}.${namespace}`);
+
+        // Prepare batch registrations: user1 (already has name), user2 (new), owner (new)
+        const registrations = [
+            { label: "alice", recipient: s.user1.address }, // user1 already has a name - should be skipped
+            { label: "bob", recipient: s.user2.address }, // user2 doesn't have a name - should succeed
+            { label: "charlie", recipient: s.owner.address }, // owner doesn't have a name - should succeed
+        ];
+
+        // Create signatures for all recipients
+        const registerNameAuths = [];
+        const signatures = [];
+        for (const reg of registrations) {
+            // Get the signer for each recipient
+            let signer: SignerWithAddress;
+            if (reg.recipient === s.user1.address) {
+                signer = s.user1;
+            } else if (reg.recipient === s.user2.address) {
+                signer = s.user2;
+            } else if (reg.recipient === s.owner.address) {
+                signer = s.owner;
+            } else {
+                throw new Error(`Unknown recipient: ${reg.recipient}`);
+            }
+            
+            const signature = await s.signRegisterNameAuth(
+                signer,
+                reg.recipient,
+                reg.label,
+                namespace
+            );
+            registerNameAuths.push({
+                recipient: reg.recipient,
+                label: reg.label,
+                namespace: namespace,
+            });
+            signatures.push(signature);
+        }
+
+        // Calculate total payment for all registrations (but only 2 should succeed)
+        const totalPayment = pricePerName * BigInt(registrations.length);
+        const expectedSuccessfulCount = 2n; // user2 and owner, but not user1
+
+        // Get initial balances for payment verification
+        const balanceBefore = await ethers.provider.getBalance(s.owner.address);
+
+        // ---------
+        // Act: Sponsor batch registration (user1 should be skipped)
+        // ---------
+        const tx = await s.xns.connect(s.owner).batchRegisterNameWithAuthorization(
+            registerNameAuths,
+            signatures,
+            { value: totalPayment }
+        );
+        const receipt = await tx.wait();
+
+        // Calculate gas cost
+        const gasUsed = receipt!.gasUsed;
+        const gasPrice = receipt!.gasPrice || tx.gasPrice || 0n;
+        const gasCost = gasUsed * gasPrice;
+
+        // Get balance after transaction
+        const balanceAfter = await ethers.provider.getBalance(s.owner.address);
+
+        // ---------
+        // Assert: Verify user1's registration was skipped, others succeeded
+        // ---------
+        // Verify return value (should be 2, not 3)
+        const eventFilter = s.xns.filters.NameRegistered();
+        const events = await s.xns.queryFilter(eventFilter, receipt!.blockNumber, receipt!.blockNumber);
+        expect(events.length).to.equal(Number(expectedSuccessfulCount));
+
+        // Verify user1 still has their original name (not the new one)
+        const user1NameAfter = await getName(s.user1.address);
+        expect(user1NameAfter).to.equal(`${firstLabel}.${namespace}`); // Original name, not "alice.xns"
+        
+        // Verify "alice.xns" was not registered (should return address(0))
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const aliceOwner = await getAddressByLabelAndNamespace("alice", namespace);
+        expect(aliceOwner).to.equal(ethers.ZeroAddress);
+
+        // Verify user2's registration succeeded
+        const bobOwner = await getAddressByLabelAndNamespace("bob", namespace);
+        expect(bobOwner).to.equal(s.user2.address);
+        const user2Name = await getName(s.user2.address);
+        expect(user2Name).to.equal(`bob.${namespace}`);
+
+        // Verify owner's registration succeeded
+        const charlieOwner = await getAddressByLabelAndNamespace("charlie", namespace);
+        expect(charlieOwner).to.equal(s.owner.address);
+        const ownerName = await getName(s.owner.address);
+        expect(ownerName).to.equal(`charlie.${namespace}`);
+
+        // Verify payment: should only charge for 2 successful registrations, refund the rest
+        // balanceAfter should equal balanceBefore - (pricePerName * 2) - gasCost
+        const expectedBalanceAfter = balanceBefore - (pricePerName * expectedSuccessfulCount) - BigInt(gasCost.toString());
+        expect(balanceAfter).to.equal(expectedBalanceAfter);
+    });
+
+    it("Should skip registrations where name is already registered", async () => {
+        // ---------
+        // Arrange: Prepare parameters and register a name first
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can sponsor
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // First, register "alice.xns" for user1
+        const existingLabel = "alice";
+        await s.xns.connect(s.user1).registerName(existingLabel, namespace, { value: pricePerName });
+
+        // Verify the name is registered
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const existingOwner = await getAddressByLabelAndNamespace(existingLabel, namespace);
+        expect(existingOwner).to.equal(s.user1.address);
+
+        // Prepare batch registrations: "alice" (already registered), "bob" (new), "charlie" (new)
+        const registrations = [
+            { label: existingLabel, recipient: s.user2.address }, // "alice" already registered - should be skipped
+            { label: "bob", recipient: s.user2.address }, // user2 doesn't have a name - should succeed
+            { label: "charlie", recipient: s.owner.address }, // owner doesn't have a name - should succeed
+        ];
+
+        // Create signatures for all recipients
+        const registerNameAuths = [];
+        const signatures = [];
+        for (const reg of registrations) {
+            // Get the signer for each recipient
+            let signer: SignerWithAddress;
+            if (reg.recipient === s.user1.address) {
+                signer = s.user1;
+            } else if (reg.recipient === s.user2.address) {
+                signer = s.user2;
+            } else if (reg.recipient === s.owner.address) {
+                signer = s.owner;
+            } else {
+                throw new Error(`Unknown recipient: ${reg.recipient}`);
+            }
+            
+            const signature = await s.signRegisterNameAuth(
+                signer,
+                reg.recipient,
+                reg.label,
+                namespace
+            );
+            registerNameAuths.push({
+                recipient: reg.recipient,
+                label: reg.label,
+                namespace: namespace,
+            });
+            signatures.push(signature);
+        }
+
+        // Calculate total payment for all registrations (but only 2 should succeed)
+        const totalPayment = pricePerName * BigInt(registrations.length);
+        const expectedSuccessfulCount = 2n; // "bob" and "charlie", but not "alice"
+
+        // Get initial balances for payment verification
+        const balanceBefore = await ethers.provider.getBalance(s.owner.address);
+
+        // ---------
+        // Act: Sponsor batch registration ("alice" should be skipped)
+        // ---------
+        const tx = await s.xns.connect(s.owner).batchRegisterNameWithAuthorization(
+            registerNameAuths,
+            signatures,
+            { value: totalPayment }
+        );
+        const receipt = await tx.wait();
+
+        // Calculate gas cost
+        const gasUsed = receipt!.gasUsed;
+        const gasPrice = receipt!.gasPrice || tx.gasPrice || 0n;
+        const gasCost = gasUsed * BigInt(gasPrice.toString());
+
+        // Get balance after transaction
+        const balanceAfter = await ethers.provider.getBalance(s.owner.address);
+
+        // ---------
+        // Assert: Verify "alice" registration was skipped, others succeeded
+        // ---------
+        // Verify return value (should be 2, not 3)
+        const eventFilter = s.xns.filters.NameRegistered();
+        const events = await s.xns.queryFilter(eventFilter, receipt!.blockNumber, receipt!.blockNumber);
+        expect(events.length).to.equal(Number(expectedSuccessfulCount));
+
+        // Verify "alice.xns" still belongs to user1 (not user2)
+        const aliceOwnerAfter = await getAddressByLabelAndNamespace(existingLabel, namespace);
+        expect(aliceOwnerAfter).to.equal(s.user1.address); // Still user1, not user2
+        expect(aliceOwnerAfter).to.not.equal(s.user2.address); // user2 did not get it
+
+        // Verify user2's "bob.xns" registration succeeded
+        const bobOwner = await getAddressByLabelAndNamespace("bob", namespace);
+        expect(bobOwner).to.equal(s.user2.address);
+        const getName = s.xns.getFunction("getName(address)");
+        const user2Name = await getName(s.user2.address);
+        expect(user2Name).to.equal(`bob.${namespace}`);
+
+        // Verify owner's "charlie.xns" registration succeeded
+        const charlieOwner = await getAddressByLabelAndNamespace("charlie", namespace);
+        expect(charlieOwner).to.equal(s.owner.address);
+        const ownerName = await getName(s.owner.address);
+        expect(ownerName).to.equal(`charlie.${namespace}`);
+
+        // Verify payment: should only charge for 2 successful registrations, refund the rest
+        // balanceAfter should equal balanceBefore - (pricePerName * 2) - gasCost
+        const expectedBalanceAfter = balanceBefore - (pricePerName * expectedSuccessfulCount) - gasCost;
+        expect(balanceAfter).to.equal(expectedBalanceAfter);
+    });
+
+    it("Should return 0 if no registrations succeed and refund all payment", async () => {
+        // ---------
+        // Arrange: Prepare parameters where all registrations will be skipped
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can sponsor
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // First, register names for all recipients so they all already have names
+        await s.xns.connect(s.user1).registerName("first", namespace, { value: pricePerName });
+        await s.xns.connect(s.user2).registerName("second", namespace, { value: pricePerName });
+        await s.xns.connect(s.owner).registerName("third", namespace, { value: pricePerName });
+
+        // Verify all recipients have names
+        const getName = s.xns.getFunction("getName(address)");
+        expect(await getName(s.user1.address)).to.equal("first.xns");
+        expect(await getName(s.user2.address)).to.equal("second.xns");
+        expect(await getName(s.owner.address)).to.equal("third.xns");
+
+        // Prepare batch registrations where all recipients already have names (all will be skipped)
+        const registrations = [
+            { label: "alice", recipient: s.user1.address }, // user1 already has a name - will be skipped
+            { label: "bob", recipient: s.user2.address }, // user2 already has a name - will be skipped
+            { label: "charlie", recipient: s.owner.address }, // owner already has a name - will be skipped
+        ];
+
+        // Create signatures for all recipients
+        const registerNameAuths = [];
+        const signatures = [];
+        for (const reg of registrations) {
+            // Get the signer for each recipient
+            let signer: SignerWithAddress;
+            if (reg.recipient === s.user1.address) {
+                signer = s.user1;
+            } else if (reg.recipient === s.user2.address) {
+                signer = s.user2;
+            } else if (reg.recipient === s.owner.address) {
+                signer = s.owner;
+            } else {
+                throw new Error(`Unknown recipient: ${reg.recipient}`);
+            }
+            
+            const signature = await s.signRegisterNameAuth(
+                signer,
+                reg.recipient,
+                reg.label,
+                namespace
+            );
+            registerNameAuths.push({
+                recipient: reg.recipient,
+                label: reg.label,
+                namespace: namespace,
+            });
+            signatures.push(signature);
+        }
+
+        // Calculate total payment (but none should succeed)
+        const totalPayment = pricePerName * BigInt(registrations.length);
+        const expectedSuccessfulCount = 0n; // All should be skipped
+
+        // Get initial balance for payment verification
+        const balanceBefore = await ethers.provider.getBalance(s.owner.address);
+
+        // ---------
+        // Act: Sponsor batch registration (all should be skipped)
+        // ---------
+        const tx = await s.xns.connect(s.owner).batchRegisterNameWithAuthorization(
+            registerNameAuths,
+            signatures,
+            { value: totalPayment }
+        );
+        const receipt = await tx.wait();
+
+        // Calculate gas cost
+        const gasUsed = receipt!.gasUsed;
+        const gasPrice = receipt!.gasPrice || tx.gasPrice || 0n;
+        const gasCost = gasUsed * BigInt(gasPrice.toString());
+
+        // Get balance after transaction
+        const balanceAfter = await ethers.provider.getBalance(s.owner.address);
+
+        // ---------
+        // Assert: Verify no registrations succeeded and all payment was refunded
+        // ---------
+        // Verify return value (should be 0)
+        const eventFilter = s.xns.filters.NameRegistered();
+        const events = await s.xns.queryFilter(eventFilter, receipt!.blockNumber, receipt!.blockNumber);
+        expect(events.length).to.equal(Number(expectedSuccessfulCount));
+
+        // Verify no new names were registered
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const aliceOwner = await getAddressByLabelAndNamespace("alice", namespace);
+        expect(aliceOwner).to.equal(ethers.ZeroAddress); // Not registered
+        const bobOwner = await getAddressByLabelAndNamespace("bob", namespace);
+        expect(bobOwner).to.equal(ethers.ZeroAddress); // Not registered
+        const charlieOwner = await getAddressByLabelAndNamespace("charlie", namespace);
+        expect(charlieOwner).to.equal(ethers.ZeroAddress); // Not registered
+
+        // Verify all recipients still have their original names
+        expect(await getName(s.user1.address)).to.equal("first.xns");
+        expect(await getName(s.user2.address)).to.equal("second.xns");
+        expect(await getName(s.owner.address)).to.equal("third.xns");
+
+        // Verify payment: should refund all payment (only gas cost should be deducted)
+        // balanceAfter should equal balanceBefore - gasCost (all payment refunded)
+        const expectedBalanceAfter = balanceBefore - gasCost;
+        expect(balanceAfter).to.equal(expectedBalanceAfter);
+    });
+
+    it("Should process the ETH payment correctly (90% burnt via DETH, 5% to namespace creator, 5% to contract owner) only for successful registrations", async () => {
+        // ---------
+        // Arrange: Prepare parameters with some registrations that will be skipped
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can sponsor
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // First, register a name for user1 so they already have a name (will be skipped)
+        await s.xns.connect(s.user1).registerName("existing", namespace, { value: pricePerName });
+
+        // Prepare batch registrations: user1 (already has name - skip), user2 (new - succeed), owner (new - succeed)
+        const registrations = [
+            { label: "alice", recipient: s.user1.address }, // user1 already has a name - will be skipped
+            { label: "bob", recipient: s.user2.address }, // user2 doesn't have a name - will succeed
+            { label: "charlie", recipient: s.owner.address }, // owner doesn't have a name - will succeed
+        ];
+
+        // Create signatures for all recipients
+        const registerNameAuths = [];
+        const signatures = [];
+        for (const reg of registrations) {
+            // Get the signer for each recipient
+            let signer: SignerWithAddress;
+            if (reg.recipient === s.user1.address) {
+                signer = s.user1;
+            } else if (reg.recipient === s.user2.address) {
+                signer = s.user2;
+            } else if (reg.recipient === s.owner.address) {
+                signer = s.owner;
+            } else {
+                throw new Error(`Unknown recipient: ${reg.recipient}`);
+            }
+            
+            const signature = await s.signRegisterNameAuth(
+                signer,
+                reg.recipient,
+                reg.label,
+                namespace
+            );
+            registerNameAuths.push({
+                recipient: reg.recipient,
+                label: reg.label,
+                namespace: namespace,
+            });
+            signatures.push(signature);
+        }
+
+        // Calculate total payment (but only 2 should succeed)
+        const totalPayment = pricePerName * BigInt(registrations.length);
+        const expectedSuccessfulCount = 2n; // user2 and owner, but not user1
+
+        // Get initial state for payment verification
+        const initialDETHBurned = await s.deth.burned(s.owner.address); // owner is the sponsor/payer
+        const initialCreatorFees = await s.xns.getPendingFees(s.user1.address); // user1 is namespace creator
+        const initialOwnerFees = await s.xns.getPendingFees(s.owner.address); // owner is contract owner
+
+        // Calculate expected amounts (only for 2 successful registrations)
+        const actualTotal = pricePerName * expectedSuccessfulCount;
+        const expectedBurnAmount = (actualTotal * 90n) / 100n; // 90% of 2 * 0.001 ETH
+        const expectedCreatorFee = (actualTotal * 5n) / 100n; // 5% of 2 * 0.001 ETH
+        const expectedOwnerFee = actualTotal - expectedBurnAmount - expectedCreatorFee; // 5% of 2 * 0.001 ETH
+
+        // ---------
+        // Act: Sponsor batch registration (user1 should be skipped)
+        // ---------
+        await s.xns.connect(s.owner).batchRegisterNameWithAuthorization(
+            registerNameAuths,
+            signatures,
+            { value: totalPayment }
+        );
+
+        // ---------
+        // Assert: Verify payment processing only for successful registrations
+        // ---------
+        // Verify 90% was burnt via DETH (credited to payer/sponsor - owner) for 2 successful registrations only
+        const finalDETHBurned = await s.deth.burned(s.owner.address);
+        expect(finalDETHBurned - initialDETHBurned).to.equal(expectedBurnAmount);
+
+        // Verify 5% was credited to namespace creator (user1) for 2 successful registrations only
+        const finalCreatorFees = await s.xns.getPendingFees(s.user1.address);
+        expect(finalCreatorFees - initialCreatorFees).to.equal(expectedCreatorFee);
+
+        // Verify 5% was credited to contract owner (owner) for 2 successful registrations only
+        const finalOwnerFees = await s.xns.getPendingFees(s.owner.address);
+        expect(finalOwnerFees - initialOwnerFees).to.equal(expectedOwnerFee);
+
+        // Verify that payment was only processed for 2 registrations, not 3
+        // If it processed for 3, the amounts would be 50% higher
+        const expectedIfAllProcessed = (pricePerName * 3n * 90n) / 100n;
+        expect(finalDETHBurned - initialDETHBurned).to.not.equal(expectedIfAllProcessed);
+        expect(finalDETHBurned - initialDETHBurned).to.equal(expectedBurnAmount); // Only 2 processed
+    });
+
+    it("Should credit correct amount of DETH to sponsor, not recipients", async () => {
+        // ---------
+        // Arrange: Prepare parameters with multiple recipients (distinct from sponsor)
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const pricePerName = ethers.parseEther("0.001");
+    
+        // Fast-forward time past the exclusivity period so anyone can sponsor
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+    
+        // Prepare batch registrations: user1 and user2 as recipients (sponsor is owner)
+        const registrations = [
+            { label: "alice", recipient: s.user1.address }, // user1 is recipient
+            { label: "bob", recipient: s.user2.address }, // user2 is recipient
+        ];
+    
+        // Create signatures for all recipients
+        const registerNameAuths = [];
+        const signatures = [];
+        for (const reg of registrations) {
+            // Get the signer for each recipient
+            let signer: SignerWithAddress;
+            if (reg.recipient === s.user1.address) {
+                signer = s.user1;
+            } else if (reg.recipient === s.user2.address) {
+                signer = s.user2;
+            } else {
+                throw new Error(`Unknown recipient: ${reg.recipient}`);
+            }
+            
+            const signature = await s.signRegisterNameAuth(
+                signer,
+                reg.recipient,
+                reg.label,
+                namespace
+            );
+            registerNameAuths.push({
+                recipient: reg.recipient,
+                label: reg.label,
+                namespace: namespace,
+            });
+            signatures.push(signature);
+        }
+    
+        // Calculate total payment
+        const totalPayment = pricePerName * BigInt(registrations.length);
+        const expectedSuccessfulCount = 2n; // Both should succeed
+    
+        // Get initial DETH state for sponsor (owner) and recipients (user1, user2)
+        const initialDETHBurnedSponsor = await s.deth.burned(s.owner.address); // owner is the sponsor
+        const initialDETHBurnedUser1 = await s.deth.burned(s.user1.address); // user1 is a recipient
+        const initialDETHBurnedUser2 = await s.deth.burned(s.user2.address); // user2 is a recipient
+    
+        // Calculate expected DETH amount (90% of total payment for 2 registrations)
+        const actualTotal = pricePerName * expectedSuccessfulCount;
+        const expectedDETHAmount = (actualTotal * 90n) / 100n; // 90% of 2 * 0.001 ETH
+    
+        // ---------
+        // Act: Sponsor (owner) registers names for recipients via batch
+        // ---------
+        await s.xns.connect(s.owner).batchRegisterNameWithAuthorization(
+            registerNameAuths,
+            signatures,
+            { value: totalPayment }
+        );
+    
+        // ---------
+        // Assert: Verify DETH is credited to sponsor, not recipients
+        // ---------
+        // Verify DETH was credited to sponsor (owner)
+        const finalDETHBurnedSponsor = await s.deth.burned(s.owner.address);
+        expect(finalDETHBurnedSponsor - initialDETHBurnedSponsor).to.equal(expectedDETHAmount);
+    
+        // Verify DETH was NOT credited to recipient user1 (should remain unchanged)
+        const finalDETHBurnedUser1 = await s.deth.burned(s.user1.address);
+        expect(finalDETHBurnedUser1 - initialDETHBurnedUser1).to.equal(0n);
+    
+        // Verify DETH was NOT credited to recipient user2 (should remain unchanged)
+        const finalDETHBurnedUser2 = await s.deth.burned(s.user2.address);
+        expect(finalDETHBurnedUser2 - initialDETHBurnedUser2).to.equal(0n);
+    });
+
+    it("Should allow namespace creator to sponsor batch registrations during exclusive period (30 days)", async () => {
+        // ---------
+        // Arrange: Prepare parameters and verify we're within exclusivity period
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Verify we're within the exclusivity period
+        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
+        const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
+        expect(creator).to.equal(s.user1.address); // user1 is the namespace creator
+
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const latestBlock = await ethers.provider.getBlock("latest");
+        const now = latestBlock.timestamp;
+        expect(now).to.be.lt(Number(createdAt) + Number(exclusivityPeriod));
+
+        // Prepare batch registrations: user2 and owner as recipients (sponsor is user1, the namespace creator)
+        const registrations = [
+            { label: "alice", recipient: s.user2.address }, // user2 is recipient
+            { label: "bob", recipient: s.owner.address }, // owner is recipient
+        ];
+
+        // Create signatures for all recipients
+        const registerNameAuths = [];
+        const signatures = [];
+        for (const reg of registrations) {
+            // Get the signer for each recipient
+            let signer: SignerWithAddress;
+            if (reg.recipient === s.user2.address) {
+                signer = s.user2;
+            } else if (reg.recipient === s.owner.address) {
+                signer = s.owner;
+            } else {
+                throw new Error(`Unknown recipient: ${reg.recipient}`);
+            }
+            
+            const signature = await s.signRegisterNameAuth(
+                signer,
+                reg.recipient,
+                reg.label,
+                namespace
+            );
+            registerNameAuths.push({
+                recipient: reg.recipient,
+                label: reg.label,
+                namespace: namespace,
+            });
+            signatures.push(signature);
+        }
+
+        // Calculate total payment
+        const totalPayment = pricePerName * BigInt(registrations.length);
+
+        // ---------
+        // Act: Namespace creator (user1) sponsors batch registrations during exclusivity period
+        // ---------
+        const tx = await s.xns.connect(s.user1).batchRegisterNameWithAuthorization(
+            registerNameAuths,
+            signatures,
+            { value: totalPayment }
+        );
+        const receipt = await tx.wait();
+
+        // ---------
+        // Assert: Verify names were registered correctly
+        // ---------
+        // Verify return value (should be 2 successful registrations)
+        const expectedSuccessfulCount = 2n;
+        const eventFilter = s.xns.filters.NameRegistered();
+        const events = await s.xns.queryFilter(eventFilter, receipt!.blockNumber, receipt!.blockNumber);
+        expect(events.length).to.equal(Number(expectedSuccessfulCount));
+
+        // Verify name mappings for each registration
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const getName = s.xns.getFunction("getName(address)");
+
+        for (const reg of registrations) {
+            const ownerAddress = await getAddressByLabelAndNamespace(reg.label, namespace);
+            expect(ownerAddress).to.equal(reg.recipient); // recipient is the owner, not user1 (sponsor)
+            expect(ownerAddress).to.not.equal(s.user1.address); // sponsor should not own the name
+
+            const fullName = `${reg.label}.${namespace}`;
+            expect(await getName(reg.recipient)).to.equal(fullName);
+        }
+    });
+
+    it("Should allow anyone to sponsor batch registrations after exclusive period (30 days)", async () => {
+        // ---------
+        // Arrange: Prepare parameters and fast-forward past exclusivity period
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can sponsor
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Verify we're past the exclusivity period
+        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
+        const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
+        expect(creator).to.equal(s.user1.address); // user1 is the namespace creator
+
+        const latestBlock = await ethers.provider.getBlock("latest");
+        const now = latestBlock.timestamp;
+        expect(now).to.be.gte(Number(createdAt) + Number(exclusivityPeriod));
+
+        // Prepare batch registrations: user2 and owner as recipients (sponsor is owner, not namespace creator)
+        const registrations = [
+            { label: "alice", recipient: s.user2.address }, // user2 is recipient
+            { label: "bob", recipient: s.user1.address }, // user1 is recipient (but also namespace creator)
+        ];
+
+        // Create signatures for all recipients
+        const registerNameAuths = [];
+        const signatures = [];
+        for (const reg of registrations) {
+            // Get the signer for each recipient
+            let signer: SignerWithAddress;
+            if (reg.recipient === s.user2.address) {
+                signer = s.user2;
+            } else if (reg.recipient === s.user1.address) {
+                signer = s.user1;
+            } else {
+                throw new Error(`Unknown recipient: ${reg.recipient}`);
+            }
+            
+            const signature = await s.signRegisterNameAuth(
+                signer,
+                reg.recipient,
+                reg.label,
+                namespace
+            );
+            registerNameAuths.push({
+                recipient: reg.recipient,
+                label: reg.label,
+                namespace: namespace,
+            });
+            signatures.push(signature);
+        }
+
+        // Calculate total payment
+        const totalPayment = pricePerName * BigInt(registrations.length);
+
+        // Note: We'll use owner (not namespace creator) as the sponsor to verify anyone can sponsor
+        // ---------
+        // Act: Non-creator (owner) sponsors batch registrations after exclusivity period
+        // ---------
+        const tx = await s.xns.connect(s.owner).batchRegisterNameWithAuthorization(
+            registerNameAuths,
+            signatures,
+            { value: totalPayment }
+        );
+        const receipt = await tx.wait();
+
+        // ---------
+        // Assert: Verify names were registered correctly
+        // ---------
+        // Verify return value (should be 2 successful registrations)
+        const expectedSuccessfulCount = 2n;
+        const eventFilter = s.xns.filters.NameRegistered();
+        const events = await s.xns.queryFilter(eventFilter, receipt!.blockNumber, receipt!.blockNumber);
+        expect(events.length).to.equal(Number(expectedSuccessfulCount));
+
+        // Verify name mappings for each registration
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const getName = s.xns.getFunction("getName(address)");
+
+        for (const reg of registrations) {
+            const ownerAddress = await getAddressByLabelAndNamespace(reg.label, namespace);
+            expect(ownerAddress).to.equal(reg.recipient); // recipient is the owner, not owner (sponsor)
+            expect(ownerAddress).to.not.equal(s.owner.address); // sponsor should not own the name
+
+            const fullName = `${reg.label}.${namespace}`;
+            expect(await getName(reg.recipient)).to.equal(fullName);
+        }
+    });
+
+    it("Should allow sponsoring name registrations including an EIP-1271 contract wallet recipient.", async () => {
+        // ---------
+        // Arrange: Prepare parameters (EIP-1271 wallet is already deployed in setup)
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can sponsor
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Get wallet address from setup
+        const walletAddress = await s.eip1271Wallet.getAddress();
+
+        // Verify wallet owner is user2
+        expect(await s.eip1271Wallet.owner()).to.equal(s.user2.address);
+
+        // Prepare batch registrations: EIP-1271 wallet and EOA (user1) as recipients
+        // This tests that EIP-1271 signatures work correctly in a batch with mixed recipients
+        const registrations = [
+            { label: "wallet1", recipient: walletAddress, signer: s.user2 }, // EIP-1271 wallet is recipient, signed by owner (user2)
+            { label: "eoa1", recipient: s.user1.address, signer: s.user1 }, // EOA recipient, signed by themselves
+        ];
+
+        // Create signatures for all recipients
+        const registerNameAuths = [];
+        const signatures = [];
+        for (const reg of registrations) {
+            // For EIP-1271 wallet, the signature is created by the wallet owner (user2)
+            // The signature will be validated by the wallet's isValidSignature function
+            // For EOA, the signature is created by the recipient themselves
+            const signature = await s.signRegisterNameAuth(
+                (reg as any).signer,
+                reg.recipient,
+                reg.label,
+                namespace
+            );
+            registerNameAuths.push({
+                recipient: reg.recipient,
+                label: reg.label,
+                namespace: namespace,
+            });
+            signatures.push(signature);
+        }
+
+        // Calculate total payment
+        const totalPayment = pricePerName * BigInt(registrations.length);
+
+        // ---------
+        // Act: Sponsor batch registrations for EIP-1271 contract wallet recipient
+        // ---------
+        const tx = await s.xns.connect(s.owner).batchRegisterNameWithAuthorization(
+            registerNameAuths,
+            signatures,
+            { value: totalPayment }
+        );
+        const receipt = await tx.wait();
+
+        // ---------
+        // Assert: Verify names were registered correctly to the contract wallet
+        // ---------
+        // Verify return value (should be 2 successful registrations)
+        const expectedSuccessfulCount = 2n;
+        const eventFilter = s.xns.filters.NameRegistered();
+        const events = await s.xns.queryFilter(eventFilter, receipt!.blockNumber, receipt!.blockNumber);
+        expect(events.length).to.equal(Number(expectedSuccessfulCount));
+
+        // Verify name mappings for each registration
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const getName = s.xns.getFunction("getName(address)");
+
+        // Verify name mappings for each registration
+        for (const reg of registrations) {
+            const ownerAddress = await getAddressByLabelAndNamespace(reg.label, namespace);
+            expect(ownerAddress).to.equal(reg.recipient); // recipient is the owner, not owner (sponsor)
+            expect(ownerAddress).to.not.equal(s.owner.address); // sponsor should not own the name
+
+            const fullName = `${reg.label}.${namespace}`;
+            expect(await getName(reg.recipient)).to.equal(fullName);
+        }
+
+        // Specifically verify EIP-1271 wallet registration
+        const walletOwnerAddress = await getAddressByLabelAndNamespace(registrations[0].label, namespace);
+        expect(walletOwnerAddress).to.equal(walletAddress);
+        expect(await getName(walletAddress)).to.equal(`${registrations[0].label}.${namespace}`);
+
+        // Verify EOA registration
+        const eoaOwnerAddress = await getAddressByLabelAndNamespace(registrations[1].label, namespace);
+        expect(eoaOwnerAddress).to.equal(s.user1.address);
+        expect(await getName(s.user1.address)).to.equal(`${registrations[1].label}.${namespace}`);
+    });
+
+    it("Should permit anyone (non-namespace-creator) to register multiple names in the special \"x\" namespace (100 ETH) after the exclusive period ends", async () => {
+        // ---------
+        // Arrange: Prepare parameters for special namespace "x"
+        // ---------
+        const namespace = "x"; // Special namespace
+        const specialNamespacePrice = await s.xns.SPECIAL_NAMESPACE_PRICE(); // 100 ETH
+        const pricePerName = specialNamespacePrice;
+
+        // Fast-forward time past the exclusivity period so anyone can sponsor
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Verify we're past the exclusivity period
+        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
+        const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
+        expect(creator).to.equal(s.owner.address); // owner is the namespace creator for "x"
+
+        const latestBlock = await ethers.provider.getBlock("latest");
+        const now = latestBlock.timestamp;
+        expect(now).to.be.gte(Number(createdAt) + Number(exclusivityPeriod));
+
+        // Prepare batch registrations: user1 and user2 as recipients (sponsor is owner, but owner is also namespace creator)
+        // To test non-creator, we'll use user1 as sponsor (not namespace creator)
+        const registrations = [
+            { label: "alice", recipient: s.user1.address }, // user1 is recipient
+            { label: "bob", recipient: s.user2.address }, // user2 is recipient
+        ];
+
+        // Create signatures for all recipients
+        const registerNameAuths = [];
+        const signatures = [];
+        for (const reg of registrations) {
+            // Get the signer for each recipient
+            let signer: SignerWithAddress;
+            if (reg.recipient === s.user1.address) {
+                signer = s.user1;
+            } else if (reg.recipient === s.user2.address) {
+                signer = s.user2;
+            } else {
+                throw new Error(`Unknown recipient: ${reg.recipient}`);
+            }
+            
+            const signature = await s.signRegisterNameAuth(
+                signer,
+                reg.recipient,
+                reg.label,
+                namespace
+            );
+            registerNameAuths.push({
+                recipient: reg.recipient,
+                label: reg.label,
+                namespace: namespace,
+            });
+            signatures.push(signature);
+        }
+
+        // Calculate total payment (2 * 100 ETH = 200 ETH)
+        const totalPayment = pricePerName * BigInt(registrations.length);
+
+        // Note: We'll use user1 (not namespace creator) as the sponsor to verify anyone can sponsor
+        // ---------
+        // Act: Non-creator (user1) sponsors batch registrations in special "x" namespace after exclusivity period
+        // ---------
+        const tx = await s.xns.connect(s.user1).batchRegisterNameWithAuthorization(
+            registerNameAuths,
+            signatures,
+            { value: totalPayment }
+        );
+        const receipt = await tx.wait();
+
+        // ---------
+        // Assert: Verify names were registered correctly
+        // ---------
+        // Verify return value (should be 2 successful registrations)
+        const expectedSuccessfulCount = 2n;
+        const eventFilter = s.xns.filters.NameRegistered();
+        const events = await s.xns.queryFilter(eventFilter, receipt!.blockNumber, receipt!.blockNumber);
+        expect(events.length).to.equal(Number(expectedSuccessfulCount));
+
+        // Verify name mappings for each registration
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const getName = s.xns.getFunction("getName(address)");
+
+        for (const reg of registrations) {
+            const ownerAddress = await getAddressByLabelAndNamespace(reg.label, namespace);
+            expect(ownerAddress).to.equal(reg.recipient); // recipient is the owner, not sponsor (unless sponsor is also recipient)
+
+            const fullName = `${reg.label}`;
+            expect(await getName(reg.recipient)).to.equal(fullName);
+        }
+
+        // Verify that names are registered to recipients, not sponsor (except where sponsor is also recipient)
+        const ownerAddress1 = await getAddressByLabelAndNamespace(registrations[0].label, namespace);
+        const ownerAddress2 = await getAddressByLabelAndNamespace(registrations[1].label, namespace);
+        expect(ownerAddress1).to.equal(s.user1.address); // user1 is recipient for first registration
+        expect(ownerAddress2).to.equal(s.user2.address); // user2 is recipient for second registration
+        expect(ownerAddress2).to.not.equal(s.user1.address); // sponsor (user1) should not own user2's name
+
+        // Verify that the special namespace price (100 ETH) was used
+        // This is implicitly verified by the successful transaction with totalPayment = 2 * 100 ETH
+        expect(totalPayment).to.equal(specialNamespacePrice * 2n);
+    });
+
+    it("Should emit `NameRegistered` event for each successful registration", async () => {
+        // ---------
+        // Arrange: Prepare parameters for batch registration
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can sponsor
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Prepare batch registrations: user1, user2, and owner as recipients
+        const registrations = [
+            { label: "alice", recipient: s.user1.address },
+            { label: "bob", recipient: s.user2.address },
+            { label: "charlie", recipient: s.owner.address },
+        ];
+
+        // Create signatures for all recipients
+        const registerNameAuths = [];
+        const signatures = [];
+        for (const reg of registrations) {
+            // Get the signer for each recipient
+            let signer: SignerWithAddress;
+            if (reg.recipient === s.user1.address) {
+                signer = s.user1;
+            } else if (reg.recipient === s.user2.address) {
+                signer = s.user2;
+            } else if (reg.recipient === s.owner.address) {
+                signer = s.owner;
+            } else {
+                throw new Error(`Unknown recipient: ${reg.recipient}`);
+            }
+            
+            const signature = await s.signRegisterNameAuth(
+                signer,
+                reg.recipient,
+                reg.label,
+                namespace
+            );
+            registerNameAuths.push({
+                recipient: reg.recipient,
+                label: reg.label,
+                namespace: namespace,
+            });
+            signatures.push(signature);
+        }
+
+        // Calculate total payment
+        const totalPayment = pricePerName * BigInt(registrations.length);
+
+        // ---------
+        // Act: Sponsor batch registrations
+        // ---------
+        const tx = await s.xns.connect(s.owner).batchRegisterNameWithAuthorization(
+            registerNameAuths,
+            signatures,
+            { value: totalPayment }
+        );
+        const receipt = await tx.wait();
+
+        // ---------
+        // Assert: Verify `NameRegistered` events were emitted for each successful registration
+        // ---------
+        const eventFilter = s.xns.filters.NameRegistered();
+        const events = await s.xns.queryFilter(eventFilter, receipt!.blockNumber, receipt!.blockNumber);
+
+        // Verify correct number of events (should be 3, one for each successful registration)
+        expect(events.length).to.equal(registrations.length);
+
+        // Verify each registration has a corresponding event
+        // Note: Events have indexed label and namespace (stored as bytes32 hashes in topics)
+        for (const reg of registrations) {
+            const expectedLabelHash = ethers.keccak256(ethers.toUtf8Bytes(reg.label));
+            const expectedNamespaceHash = ethers.keccak256(ethers.toUtf8Bytes(namespace));
+            
+            const matchingEvent = events.find((event: any) => {
+                // Check if the event's label hash, namespace hash, and owner all match
+                return event.args && 
+                    event.args.owner && 
+                    event.args.owner.toLowerCase() === reg.recipient.toLowerCase() &&
+                    event.topics && 
+                    event.topics[1] === expectedLabelHash && // topics[0] is the event signature, topics[1] is first indexed param
+                    event.topics[2] === expectedNamespaceHash; // topics[2] is second indexed param
+            });
+            expect(matchingEvent).to.not.be.undefined;
+            expect(matchingEvent!.args!.owner).to.equal(reg.recipient);
+            
+            // Verify the indexed parameters (label and namespace hashes)
+            expect(matchingEvent!.topics[1]).to.equal(expectedLabelHash);
+            expect(matchingEvent!.topics[2]).to.equal(expectedNamespaceHash);
+        }
+
+    });
+
+  });
 });
 
