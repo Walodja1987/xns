@@ -311,12 +311,12 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should resolve correctly for two-character namespaces.
 - Should resolve correctly for three-character namespaces.
 - Should resolve correctly for four-character namespaces.
-- Should resolve fullnames with with three characters.
-- Should resolve fullnames with with four characters.
-- Should resolve fullnames with with five characters.
-- Should resolve fullnames with with six characters.
-- Should resolve fullnames with with seven characters.
-- Should resolve fullnames with with twenty-five characters.
+- Should resolve fullnames with three characters.
+- Should resolve fullnames with four characters.
+- Should resolve fullnames with five characters.
+- Should resolve fullnames with six characters.
+- Should resolve fullnames with seven characters.
+- Should resolve fullnames with twenty-five characters.
 - Should return `address(0)` for unregistered names.
 - Should return `address(0)` for empty string.
 

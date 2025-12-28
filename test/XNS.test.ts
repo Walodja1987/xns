@@ -5005,5 +5005,621 @@ describe("XNS", function () {
     });
 
   });
+
+  describe("isValidSignature", function () {
+    let s: SetupOutput;
+
+    beforeEach(async () => {
+      s = await loadFixture(setup);
+    });
+
+    // -----------------------
+    // Functionality
+    // -----------------------
+
+    it("Should return `true` for valid EOA signature", async () => {
+        // ---------
+        // Arrange: Create a valid signature from an EOA
+        // ---------
+        const recipient = s.user2.address;
+        const label = "alice";
+        const namespace = "xns";
+
+        // Create a valid signature
+        const signature = await s.signRegisterNameAuth(s.user2, recipient, label, namespace);
+
+        // ---------
+        // Act: Check if signature is valid
+        // ---------
+        const isValid = await s.xns.isValidSignature(
+            {
+                recipient: recipient,
+                label: label,
+                namespace: namespace,
+            },
+            signature
+        );
+
+        // ---------
+        // Assert: Signature should be valid
+        // ---------
+        expect(isValid).to.be.true;
+    });
+
+    it("Should return `true` for valid EIP-1271 contract wallet signature", async () => {
+        // ---------
+        // Arrange: Create a valid signature from EIP-1271 wallet owner
+        // ---------
+        const walletAddress = await s.eip1271Wallet.getAddress();
+        const label = "alice";
+        const namespace = "xns";
+
+        // Create signature from the wallet's owner (user2)
+        const signature = await s.signRegisterNameAuth(s.user2, walletAddress, label, namespace);
+
+        // ---------
+        // Act: Check if signature is valid for EIP-1271 wallet
+        // ---------
+        const isValid = await s.xns.isValidSignature(
+            {
+                recipient: walletAddress,
+                label: label,
+                namespace: namespace,
+            },
+            signature
+        );
+
+        // ---------
+        // Assert: Signature should be valid (EIP-1271 wallet will validate it)
+        // ---------
+        expect(isValid).to.be.true;
+    });
+
+    it("Should return `false` for invalid signature", async () => {
+        // ---------
+        // Arrange: Create an invalid signature (wrong bytes)
+        // ---------
+        const recipient = s.user2.address;
+        const label = "alice";
+        const namespace = "xns";
+
+        // Create an invalid signature (random bytes)
+        const invalidSignature = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef123456";
+
+        // ---------
+        // Act: Check if invalid signature is valid
+        // ---------
+        const isValid = await s.xns.isValidSignature(
+            {
+                recipient: recipient,
+                label: label,
+                namespace: namespace,
+            },
+            invalidSignature
+        );
+
+        // ---------
+        // Assert: Signature should be invalid
+        // ---------
+        expect(isValid).to.be.false;
+    });
+
+    it("Should return `false` for signature from wrong recipient", async () => {
+        // ---------
+        // Arrange: Create signature from user2 but check for user1 as recipient
+        // ---------
+        const actualRecipient = s.user2.address;
+        const wrongRecipient = s.user1.address;
+        const label = "alice";
+        const namespace = "xns";
+
+        // Create signature from user2 for themselves
+        const signature = await s.signRegisterNameAuth(s.user2, actualRecipient, label, namespace);
+
+        // ---------
+        // Act: Check if signature is valid for wrong recipient
+        // ---------
+        const isValid = await s.xns.isValidSignature(
+            {
+                recipient: wrongRecipient, // Wrong recipient
+                label: label,
+                namespace: namespace,
+            },
+            signature
+        );
+
+        // ---------
+        // Assert: Signature should be invalid (wrong recipient)
+        // ---------
+        expect(isValid).to.be.false;
+    });
+
+    it("Should return `false` for signature with wrong label", async () => {
+        // ---------
+        // Arrange: Create signature with one label but check with different label
+        // ---------
+        const recipient = s.user2.address;
+        const correctLabel = "alice";
+        const wrongLabel = "bob";
+        const namespace = "xns";
+
+        // Create signature with correct label
+        const signature = await s.signRegisterNameAuth(s.user2, recipient, correctLabel, namespace);
+
+        // ---------
+        // Act: Check if signature is valid with wrong label
+        // ---------
+        const isValid = await s.xns.isValidSignature(
+            {
+                recipient: recipient,
+                label: wrongLabel, // Wrong label
+                namespace: namespace,
+            },
+            signature
+        );
+
+        // ---------
+        // Assert: Signature should be invalid (wrong label)
+        // ---------
+        expect(isValid).to.be.false;
+    });
+
+    it("Should return `false` for signature with wrong namespace", async () => {
+        // ---------
+        // Arrange: Create signature with one namespace but check with different namespace
+        // ---------
+        const recipient = s.user2.address;
+        const label = "alice";
+        const correctNamespace = "xns";
+        const wrongNamespace = "yolo";
+
+        // Create signature with correct namespace
+        const signature = await s.signRegisterNameAuth(s.user2, recipient, label, correctNamespace);
+
+        // ---------
+        // Act: Check if signature is valid with wrong namespace
+        // ---------
+        const isValid = await s.xns.isValidSignature(
+            {
+                recipient: recipient,
+                label: label,
+                namespace: wrongNamespace, // Wrong namespace
+            },
+            signature
+        );
+
+        // ---------
+        // Assert: Signature should be invalid (wrong namespace)
+        // ---------
+        expect(isValid).to.be.false;
+    });
+
+  });
+
+  describe("getAddress (label, namespace)", function () {
+    let s: SetupOutput;
+
+    beforeEach(async () => {
+      s = await loadFixture(setup);
+    });
+
+    // -----------------------
+    // Functionality
+    // -----------------------
+
+    it("Should return correct owner address for registered name", async () => {
+        // ---------
+        // Arrange: Register a name
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const pricePerName = ethers.parseEther("0.001");
+        const label = "alice";
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Register name for user2
+        await s.xns.connect(s.user2).registerName(label, namespace, { value: pricePerName });
+
+        // ---------
+        // Act: Get address for the registered name
+        // ---------
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const ownerAddress = await getAddressByLabelAndNamespace(label, namespace);
+
+        // ---------
+        // Assert: Should return the correct owner address
+        // ---------
+        expect(ownerAddress).to.equal(s.user2.address);
+    });
+
+    it("Should return `address(0)` for unregistered name", async () => {
+        // ---------
+        // Arrange: Use an unregistered name
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const label = "unregistered";
+
+        // ---------
+        // Act: Get address for the unregistered name
+        // ---------
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const ownerAddress = await getAddressByLabelAndNamespace(label, namespace);
+
+        // ---------
+        // Assert: Should return address(0) for unregistered name
+        // ---------
+        expect(ownerAddress).to.equal(ethers.ZeroAddress);
+    });
+
+    it("Should handle special namespace \"x\" correctly", async () => {
+        // ---------
+        // Arrange: Register a name in the special "x" namespace (bare name)
+        // ---------
+        const namespace = "x";
+        const pricePerName = ethers.parseEther("100"); // Special namespace price
+        const label = "vitalik";
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Register bare name for user2
+        await s.xns.connect(s.user2).registerName(label, namespace, { value: pricePerName });
+
+        // ---------
+        // Act: Get address for the bare name using "x" namespace
+        // ---------
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const ownerAddress = await getAddressByLabelAndNamespace(label, namespace);
+
+        // ---------
+        // Assert: Should return the correct owner address for bare name
+        // ---------
+        expect(ownerAddress).to.equal(s.user2.address);
+
+        // Also verify that getAddress with full name works (bare names are equivalent to "label.x")
+        const fullName = `${label}.${namespace}`;
+        const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+        const ownerAddressByFullName = await getAddressByFullName(fullName);
+        expect(ownerAddressByFullName).to.equal(s.user2.address);
+    });
+
+  });
+
+  describe("getAddress(fullName)", function () {
+    let s: SetupOutput;
+
+    beforeEach(async () => {
+      s = await loadFixture(setup);
+    });
+
+    // -----------------------
+    // Functionality
+    // -----------------------
+
+    it("Should resolve full name with dot notation correctly (e.g., \"alice.001\")", async () => {
+      // ---------
+      // Arrange
+      // ---------
+      const namespaceFee = await s.xns.NAMESPACE_REGISTRATION_FEE();
+      const pricePerName = ethers.parseEther("0.01");
+      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      await time.increase(Number(exclusivityPeriod) + 86400);
+
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      await s.xns.connect(user3).registerNamespace("001", pricePerName, { value: namespaceFee });
+      await s.xns.connect(user3).registerName("alice", "001", { value: pricePerName });
+
+      const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+      // ---------
+      // Act & Assert
+      // ---------
+      expect(await getAddressByFullName("alice.001")).to.equal(user3.address);
+    });
+
+    it("Should resolve bare label as special namespace \"x\" (e.g., \"nike\" -> \"nike.x\")", async () => {
+      // ---------
+      // Arrange
+      // ---------
+      const specialNamespacePrice = ethers.parseEther("100");
+      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      await time.increase(Number(exclusivityPeriod) + 86400);
+
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      await s.xns.connect(user3).registerName("nike", "x", { value: specialNamespacePrice });
+
+      const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+      // ---------
+      // Act & Assert
+      // ---------
+      expect(await getAddressByFullName("nike")).to.equal(user3.address);
+    });
+
+    it("Should resolve explicit \".x\" namespace (e.g., \"adidas.x\")", async () => {
+      // ---------
+      // Arrange
+      // ---------
+      const specialNamespacePrice = ethers.parseEther("100");
+      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      await time.increase(Number(exclusivityPeriod) + 86400);
+
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      await s.xns.connect(user3).registerName("adidas", "x", { value: specialNamespacePrice });
+
+      const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+      // ---------
+      // Act & Assert
+      // ---------
+      expect(await getAddressByFullName("adidas.x")).to.equal(user3.address);
+    });
+
+    it("Should resolve correctly for one-character namespaces", async () => {
+      // ---------
+      // Arrange
+      // ---------
+      const namespaceFee = await s.xns.NAMESPACE_REGISTRATION_FEE();
+      const pricePerName = ethers.parseEther("0.002");
+      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      await time.increase(Number(exclusivityPeriod) + 86400);
+
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      await s.xns.connect(user3).registerNamespace("a", pricePerName, { value: namespaceFee });
+      await s.xns.connect(user3).registerName("bob", "a", { value: pricePerName });
+
+      const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+      // ---------
+      // Act & Assert
+      // ---------
+      expect(await getAddressByFullName("bob.a")).to.equal(user3.address);
+    });
+
+    it("Should resolve correctly for two-character namespaces", async () => {
+      // ---------
+      // Arrange
+      // ---------
+      const namespaceFee = await s.xns.NAMESPACE_REGISTRATION_FEE();
+      const pricePerName = ethers.parseEther("0.002");
+      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      await time.increase(Number(exclusivityPeriod) + 86400);
+
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      await s.xns.connect(user3).registerNamespace("ab", pricePerName, { value: namespaceFee });
+      await s.xns.connect(user3).registerName("charlie", "ab", { value: pricePerName });
+
+      const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+      // ---------
+      // Act & Assert
+      // ---------
+      expect(await getAddressByFullName("charlie.ab")).to.equal(user3.address);
+    });
+
+    it("Should resolve correctly for three-character namespaces", async () => {
+      // ---------
+      // Arrange
+      // ---------
+      const pricePerName = ethers.parseEther("0.003");
+      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      await time.increase(Number(exclusivityPeriod) + 86400);
+
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      // "xns" namespace already registered in setup
+      await s.xns.connect(user3).registerName("david", "xns", { value: pricePerName });
+
+      const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+      // ---------
+      // Act & Assert
+      // ---------
+      expect(await getAddressByFullName("david.xns")).to.equal(user3.address);
+    });
+
+    it("Should resolve correctly for four-character namespaces", async () => {
+      // ---------
+      // Arrange
+      // ---------
+      const namespaceFee = await s.xns.NAMESPACE_REGISTRATION_FEE();
+      const pricePerName = ethers.parseEther("0.002");
+      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      await time.increase(Number(exclusivityPeriod) + 86400);
+
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      await s.xns.connect(user3).registerNamespace("abcd", pricePerName, { value: namespaceFee });
+      await s.xns.connect(user3).registerName("eve", "abcd", { value: pricePerName });
+
+      const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+      // ---------
+      // Act & Assert
+      // ---------
+      expect(await getAddressByFullName("eve.abcd")).to.equal(user3.address);
+    });
+
+    it("Should resolve fullnames with three characters", async () => {
+      // ---------
+      // Arrange
+      // ---------
+      const namespaceFee = await s.xns.NAMESPACE_REGISTRATION_FEE();
+      const pricePerName = ethers.parseEther("0.004");
+      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      await time.increase(Number(exclusivityPeriod) + 86400);
+
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      await s.xns.connect(user3).registerNamespace("a", pricePerName, { value: namespaceFee });
+      await s.xns.connect(user3).registerName("xy", "a", { value: pricePerName });
+
+      const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+      // ---------
+      // Act & Assert
+      // ---------
+      expect(await getAddressByFullName("xy.a")).to.equal(user3.address);
+    });
+
+    it("Should resolve fullnames with four characters", async () => {
+      // ---------
+      // Arrange
+      // ---------
+      const namespaceFee = await s.xns.NAMESPACE_REGISTRATION_FEE();
+      const pricePerName = ethers.parseEther("0.005");
+      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      await time.increase(Number(exclusivityPeriod) + 86400);
+
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      await s.xns.connect(user3).registerNamespace("abc", pricePerName, { value: namespaceFee });
+      await s.xns.connect(user3).registerName("a", "abc", { value: pricePerName });
+
+      const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+      // ---------
+      // Act & Assert
+      // ---------
+      expect(await getAddressByFullName("a.abc")).to.equal(user3.address);
+    });
+
+    it("Should resolve fullnames with five characters", async () => {
+      // ---------
+      // Arrange
+      // ---------
+      const namespaceFee = await s.xns.NAMESPACE_REGISTRATION_FEE();
+      const pricePerName = ethers.parseEther("0.006");
+      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      await time.increase(Number(exclusivityPeriod) + 86400);
+
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      await s.xns.connect(user3).registerNamespace("abc", pricePerName, { value: namespaceFee });
+      await s.xns.connect(user3).registerName("ab", "abc", { value: pricePerName });
+
+      const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+      // ---------
+      // Act & Assert
+      // ---------
+      expect(await getAddressByFullName("ab.abc")).to.equal(user3.address);
+    });
+
+    it("Should resolve fullnames with six characters", async () => {
+      // ---------
+      // Arrange
+      // ---------
+      const namespaceFee = await s.xns.NAMESPACE_REGISTRATION_FEE();
+      const pricePerName = ethers.parseEther("0.007");
+      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      await time.increase(Number(exclusivityPeriod) + 86400);
+
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      await s.xns.connect(user3).registerNamespace("abc", pricePerName, { value: namespaceFee });
+      await s.xns.connect(user3).registerName("abc", "abc", { value: pricePerName });
+
+      const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+      // ---------
+      // Act & Assert
+      // ---------
+      expect(await getAddressByFullName("abc.abc")).to.equal(user3.address);
+    });
+
+    it("Should resolve fullnames with seven characters", async () => {
+      // ---------
+      // Arrange
+      // ---------
+      const namespaceFee = await s.xns.NAMESPACE_REGISTRATION_FEE();
+      const pricePerName = ethers.parseEther("0.008");
+      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      await time.increase(Number(exclusivityPeriod) + 86400);
+
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      await s.xns.connect(user3).registerNamespace("abc", pricePerName, { value: namespaceFee });
+      await s.xns.connect(user3).registerName("abcd", "abc", { value: pricePerName });
+
+      const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+      // ---------
+      // Act & Assert
+      // ---------
+      expect(await getAddressByFullName("abcd.abc")).to.equal(user3.address);
+    });
+
+    it("Should resolve fullnames with twenty-five characters", async () => {
+      // ---------
+      // Arrange
+      // ---------
+      const namespaceFee = await s.xns.NAMESPACE_REGISTRATION_FEE();
+      const pricePerName = ethers.parseEther("0.009");
+      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      await time.increase(Number(exclusivityPeriod) + 86400);
+
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      // 20-character label (max) + 4-character namespace (max) = 25 characters total
+      await s.xns.connect(user3).registerNamespace("abcd", pricePerName, { value: namespaceFee });
+      await s.xns.connect(user3).registerName("abcdefghijklmnopqrst", "abcd", { value: pricePerName });
+
+      const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+      // ---------
+      // Act & Assert
+      // ---------
+      expect(await getAddressByFullName("abcdefghijklmnopqrst.abcd")).to.equal(user3.address);
+    });
+
+    it("Should return `address(0)` for unregistered names", async () => {
+      // ---------
+      // Arrange
+      // ---------
+      const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+      // ---------
+      // Act & Assert
+      // ---------
+      expect(await getAddressByFullName("unregistered.xns")).to.equal(ethers.ZeroAddress);
+      expect(await getAddressByFullName("unknown.x")).to.equal(ethers.ZeroAddress);
+      expect(await getAddressByFullName("notregistered")).to.equal(ethers.ZeroAddress);
+    });
+
+    it("Should return `address(0)` for empty string", async () => {
+      // ---------
+      // Arrange
+      // ---------
+      const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+      // ---------
+      // Act & Assert
+      // ---------
+      expect(await getAddressByFullName("")).to.equal(ethers.ZeroAddress);
+    });
+
+  });
 });
 

@@ -520,12 +520,14 @@ contract XNS is EIP712 {
         uint256 endExclusive = (len > 5) ? (len - 5) : 0;
         int256 lastDot = -1;
 
-        for (uint256 i = len - 1; i > endExclusive; i--) {
+        for (uint256 i = len - 1; ; i--) {
+            if (i < endExclusive) break;
             if (b[i] == 0x2E) {
                 // '.'
                 lastDot = int256(i);
                 break;
             }
+            if (i == endExclusive) break;
         }
 
         string memory label;
