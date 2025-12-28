@@ -1730,6 +1730,89 @@ describe("XNS", function () {
             s.xns.connect(s.user2).registerName(label, namespace, { value: insufficientPayment })
         ).to.be.revertedWith("XNS: insufficient payment");
     });
+
+    it("Should revert with `XNS: not namespace creator` error when non-creator tries to register during exclusive period", async () => {
+        // ---------
+        // Arrange: Prepare parameters and verify we're within exclusivity period
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const label = "test";
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Verify we're within the exclusivity period
+        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
+        const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
+        expect(creator).to.equal(s.user1.address); // user1 is the namespace creator
+
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const latestBlock = await ethers.provider.getBlock("latest");
+        const now = latestBlock.timestamp;
+        expect(now).to.be.lt(Number(createdAt) + Number(exclusivityPeriod));
+
+        // ---------
+        // Act & Assert: Attempt to register name as non-creator (user2) and expect revert
+        // ---------
+        await expect(
+            s.xns.connect(s.user2).registerName(label, namespace, { value: pricePerName })
+        ).to.be.revertedWith("XNS: not namespace creator");
+    });
+
+    it("Should revert with `XNS: address already has a name` error when address already owns a name", async () => {
+        // ---------
+        // Arrange: Register a name first, then try to register another
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const firstLabel = "firstname";
+        const secondLabel = "secondname";
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Register first name for user2
+        await s.xns.connect(s.user2).registerName(firstLabel, namespace, { value: pricePerName });
+
+        // Verify user2 has a name
+        const getName = s.xns.getFunction("getName(address)");
+        const returnedName = await getName(s.user2.address);
+        expect(returnedName).to.equal(`${firstLabel}.${namespace}`);
+
+        // ---------
+        // Act & Assert: Attempt to register another name for the same address and expect revert
+        // ---------
+        await expect(
+            s.xns.connect(s.user2).registerName(secondLabel, namespace, { value: pricePerName })
+        ).to.be.revertedWith("XNS: address already has a name");
+    });
+
+    it("Should revert with `XNS: name already registered` error when name is already registered", async () => {
+        // ---------
+        // Arrange: Register a name first, then try to register the same name again
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const label = "duplicate";
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Register name for user2
+        await s.xns.connect(s.user2).registerName(label, namespace, { value: pricePerName });
+
+        // Verify name is registered
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const ownerAddress = await getAddressByLabelAndNamespace(label, namespace);
+        expect(ownerAddress).to.equal(s.user2.address);
+
+        // ---------
+        // Act & Assert: Attempt to register the same name again and expect revert
+        // ---------
+        await expect(
+            s.xns.connect(s.user1).registerName(label, namespace, { value: pricePerName })
+        ).to.be.revertedWith("XNS: name already registered");
+    });
     
   });
 });
