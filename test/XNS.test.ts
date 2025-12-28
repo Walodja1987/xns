@@ -133,6 +133,12 @@ describe("XNS", function () {
         const getNamespaceInfoByPrice = s.xns.getFunction("getNamespaceInfo(uint256)");
         const [namespace] = await getNamespaceInfoByPrice(ethers.parseEther("100"));
         expect(namespace).to.equal("x");
+
+        // Should register bare name "xns" for the XNS contract itself
+        const contractAddress = await s.xns.getAddress();
+        expect(await s.xns.getAddress("xns")).to.equal(contractAddress);
+        expect(await s.xns.getAddress("xns", "x")).to.equal(contractAddress);
+        expect(await s.xns.getName(contractAddress)).to.equal("xns");
     });
 
     it("Should have correct constants", async () => {
@@ -166,6 +172,13 @@ describe("XNS", function () {
         await expect(s.xns.deploymentTransaction())
             .to.emit(s.xns, "NamespaceRegistered")
             .withArgs("x", ethers.parseEther("100"), s.owner.address);
+    });
+
+    it("Should emit `NameRegistered` event for contract's own name 'xns'", async () => {
+        const contractAddress = await s.xns.getAddress();
+        await expect(s.xns.deploymentTransaction())
+            .to.emit(s.xns, "NameRegistered")
+            .withArgs("xns", "x", contractAddress);
     });
 
     

@@ -173,7 +173,7 @@ contract XNS is EIP712 {
 
     /// @dev Initializes the contract by setting the immutable owner and deployment timestamp.
     /// Also pre-registers the special namespace "x" (bare names) with the given owner as its creator
-    /// and a price of 100 ETH per name.
+    /// and a price of 100 ETH per name. Additionally, registers the bare name "xns" for the XNS contract itself.
     /// @param owner Address that will own the contract and receive protocol fees.
     constructor(address owner) EIP712("XNS", "1") {
         OWNER = owner;
@@ -189,6 +189,17 @@ contract XNS is EIP712 {
         _priceToNamespace[SPECIAL_NAMESPACE_PRICE] = SPECIAL_NAMESPACE;
 
         emit NamespaceRegistered(SPECIAL_NAMESPACE, SPECIAL_NAMESPACE_PRICE, owner);
+
+        // Register bare name "xns" for the XNS contract itself.
+        string memory contractLabel = "xns";
+        bytes32 nameKey = keccak256(abi.encodePacked(contractLabel, ".", SPECIAL_NAMESPACE));
+        _nameHashToAddress[nameKey] = address(this);
+        _addressToName[address(this)] = Name({
+            label: contractLabel,
+            namespace: SPECIAL_NAMESPACE
+        });
+        
+        emit NameRegistered(contractLabel, SPECIAL_NAMESPACE, address(this));
     }
 
     // =========================================================================
