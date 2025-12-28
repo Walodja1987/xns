@@ -3,11 +3,24 @@
 ## XNS
 
 
+An Ethereum-native name registry that maps human-readable names to Ethereum addresses.
+Names are **permanent, immutable, and non-transferable**.
+
+Name format: [label].[namespace]
+
+Examples:
+- alice.xns
+- bob.yolo
+- vitalik.100x
+- garry.ape
+
+### Name registration
+- To register a name, users call `registerName(label, namespace)` and send ETH.
 - The amount of ETH sent must be >= the namespace's registered price (excess will be refunded).
 - For example, if the "100x" namespace was registered with price 0.1 ETH, then calling
   `registerName("vitalik", "100x")` with 0.1 ETH registers "vitalik.100x".
 - Each address can own at most one name.
-- With `registerName(label)`, names are always linked to the caller's address and cannot
+- With `registerName(label, namespace)`, names are always linked to the caller's address and cannot
   be assigned to another address.
 
 ### Sponsorship via authorization (EIP-712 + EIP-1271)
@@ -54,7 +67,7 @@ within their registered namespace, following namespace registration. Registratio
 opened to the public after the 30-day exclusivity period.
 
 **Requirements:**
-- Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
+- Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-', cannot contain consecutive hyphens)
 - Namespace must be valid and exist.
 - `msg.value` must be >= the namespace's registered price (excess will be refunded).
 - Caller must be namespace creator if called during the 30-day exclusivity period.
@@ -347,6 +360,7 @@ Function to check if a label is valid (returns bool, does not revert).
 - Label must be 1–20 characters long
 - Label must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
 - Label cannot start or end with '-'
+- Label cannot contain consecutive hyphens ('--')
 
 ```solidity
 function isValidLabel(string label) external pure returns (bool isValid)

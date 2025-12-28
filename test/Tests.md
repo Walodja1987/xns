@@ -4,33 +4,28 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ## XNS
 
-### Constructor
+### Contract initialization
 
 #### Functionality
 
-- Should initialize owner correctly.
-- Should set `deployedAt` to current block timestamp.
-- Should register special namespace "x" with correct price (100 ETH).
-- Should set special namespace creator to owner.
-- Should map SPECIAL_NAMESPACE_PRICE to "x" namespace.
+- Should initialize the contract correctly
+  - Should initialize owner correctly.
+  - Should set `deployedAt` to current block timestamp.
+  - Should register special namespace "x" with correct price (100 ETH).
+  - Should set special namespace creator to owner.
+  - Should map SPECIAL_NAMESPACE_PRICE to "x" namespace.
+- Should have correct constants
+  - Should have correct `NAMESPACE_REGISTRATION_FEE` (200 ether).
+  - Should have correct `NAMESPACE_CREATOR_EXCLUSIVE_PERIOD` (30 days).
+  - Should have correct `INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD` (1 year).
+  - Should have correct `PRICE_STEP` (0.001 ether / 1e15).
+  - Should have correct `SPECIAL_NAMESPACE` ("x").
+  - Should have correct `SPECIAL_NAMESPACE_PRICE` (100 ether).
+  - Should have correct `DETH` address.
 
 #### Events
 
 - Should emit `NamespaceRegistered` event for special namespace.
-
----
-
-### Constants
-
-#### Functionality
-
-- Should have correct `NAMESPACE_REGISTRATION_FEE` (200 ether).
-- Should have correct `NAMESPACE_CREATOR_EXCLUSIVE_PERIOD` (30 days).
-- Should have correct `INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD` (1 year).
-- Should have correct `PRICE_STEP` (0.001 ether / 1e15).
-- Should have correct `SPECIAL_NAMESPACE` ("x").
-- Should have correct `SPECIAL_NAMESPACE_PRICE` (100 ether).
-- Should have correct `DETH` address.
 
 ---
 
@@ -55,6 +50,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should return `false` for labels containing spaces.
 - Should return `false` for labels containing special characters (except hyphen).
 - Should return `false` for labels containing underscores.
+- Should return `false` for labels containing consecutive hyphens.
 
 ---
 
@@ -83,7 +79,11 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should register a new namespace correctly.
+- Should register a new namespace correctly
+  - Should create namespace with correct price.
+  - Should set namespace creator to `msg.sender`.
+  - Should map price to namespace.
+  - Should set `createdAt` timestamp.
 - Should allow owner to register namespace without fee (`msg.value = 0`) during initial period (1 year).
 - Should require owner to pay fee after 1 year.
 - Should refund all ETH to owner if owner sends ETH during initial period.
@@ -93,7 +93,6 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should refund excess payment when owner pays more than required fee after initial period.
 - Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
 - Should not distribute fees when owner registers with `msg.value > 0` during initial period.
-- Should credit zero DETH to owner during free initial period.
 - Should credit correct amount of DETH to non-owner registrant during initial period.
 - Should credit correct amount of DETH to owner after initial period.
 - Should credit correct amount of DETH to non-owner registrant after initial period.
@@ -122,14 +121,20 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should register a name correctly.
+- Should register a name correctly
+  - Should set name owner to `msg.sender`.
+  - Should map name hash to owner address.
+  - Should map owner address to name.
+  - Should set correct label and namespace.
 - Should allow namespace creator to register a paid name during exclusive period.
 - Should allow anyone to register paid names after exclusive period (30 days).
 - Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
 - Should refund excess payment when `msg.value` exceeds namespace price.
-- Should work correctly with special namespace "x" (100 ETH).
+- Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (100 ETH) after the exclusive period ends.
 - Should credit correct amount of DETH to `msg.sender`.
 - Should credit correct amount of DETH to namespace creator (`msg.sender`) during exclusive period.
+- Should allow a contract to register a name for itself via `registerName` (in constructor).
+- Should allow a contract to register a name for itself via `registerName` (after deployment).
 
 #### Events
 
@@ -150,15 +155,17 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should register a name for recipient when recipient authorizes via signature (e.g., set name owner to recipient, not `msg.sender`).
+- Should register a name for recipient when recipient authorizes via signature
+  - Should set name owner to recipient, not `msg.sender`.
+  - Should map name hash to recipient address.
+  - Should map recipient address to name.
+  - Should set correct label and namespace.
 - Should allow namespace creator to sponsor registrations during exclusive period (30 days).
 - Should allow anyone to sponsor registrations after exclusive period (30 days).
 - Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
-- Should work correctly with EOA signatures.
-- Should work correctly with EIP-1271 contract wallet signatures (Safe, Argent, etc.).
+- Should allow sponsoring a name registration for an EIP-1271 contract wallet recipient.
 - Should refund excess payment when `msg.value` exceeds namespace price.
-- Should work correctly with special namespace "x" (100 ETH).
-- Should credit correct amount of DETH to sponsor, not recipient.
+- Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (100 ETH) after the exclusive period ends.
 
 #### Events
 
@@ -182,19 +189,21 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should register multiple names in a single transaction (set name owners to recipients, verify mappings, require same namespace).
+- Should register multiple names in a single transaction
+  - Should set name owners to recipients, not `msg.sender`.
+  - Should verify mappings for all successful registrations.
+  - Should require same namespace for all registrations.
+  - Should process all registrations.
+  - Should return the number of successful registrations.
 - Should skip registrations where recipient already has a name.
 - Should skip registrations where name is already registered.
-- Should return the number of successful registrations (case > 0).
-- Should only charge for successful registrations and refund excess payment.
 - Should return 0 if no registrations succeed and refund all payment.
 - Should process the ETH payment correctly (90% burnt via DETH, 5% to namespace creator, 5% to contract owner) only for successful registrations.
 - Should credit correct amount of DETH to sponsor, not recipients.
 - Should allow namespace creator to sponsor batch registrations during exclusive period (30 days).
 - Should allow anyone to sponsor batch registrations after exclusive period (30 days).
-- Should work correctly with EOA signatures.
-- Should work correctly with EIP-1271 contract wallet signatures (Safe, Argent, etc.).
-- Should work correctly with special namespace "x" (100 ETH).
+- Should allow sponsoring name registrations including an EIP-1271 contract wallet recipient.
+- Should permit anyone (non-namespace-creator) to register multiple names in the special "x" namespace (100 ETH) after the exclusive period ends.
 
 #### Events
 
@@ -205,7 +214,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: length mismatch` error when arrays have different lengths.
 - Should revert with `XNS: empty array` error when arrays are empty.
 - Should revert with `XNS: namespace not found` error for non-existent namespace.
-- Should revert with `XNS: insufficient payment` error when msg.value is less than pricePerName * successfulCount.
+- Should revert with `XNS: insufficient payment` error when `msg.value` is less than `pricePerName * successfulCount`.
 - Should revert with `XNS: not namespace creator` error when non-creator tries to sponsor during exclusive period.
 - Should revert with `XNS: namespace mismatch` error when registrations are in different namespaces.
 - Should revert with `XNS: invalid label` error for invalid label in any registration.
@@ -220,11 +229,18 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should allow owner to claim all pending fees for `msg.sender` and transfer to recipient (non-owner).
-- Should allow namespace creator to claim all pending fees for `msg.sender` and transfer to recipient (non-namspace-creator).
-- Should allow owner to claim all pending fees to themselves.
-- Should allow namespace creator to claim all pending fees to themselves.
-- Should reset pending fees to zero after claiming.
+- Should allow owner to claim all pending fees for `msg.sender` and transfer to recipient (non-owner)
+  - Should transfer correct amount to recipient.
+  - Should reset pending fees to zero after claiming.
+- Should allow namespace creator to claim all pending fees for `msg.sender` and transfer to recipient (non-namespace-creator)
+  - Should transfer correct amount to recipient.
+  - Should reset pending fees to zero after claiming.
+- Should allow owner to claim all pending fees to themselves
+  - Should transfer correct amount to `msg.sender`.
+  - Should reset pending fees to zero after claiming.
+- Should allow namespace creator to claim all pending fees to themselves
+  - Should transfer correct amount to `msg.sender`.
+  - Should reset pending fees to zero after claiming.
 - Should allow claiming fees multiple times as they accumulate.
 
 #### Events
@@ -243,13 +259,16 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should allow owner to claim all pending fees to themselves.
-- Should allow namespace creator to claim all pending fees to themselves.
-- Should reset pending fees to zero after claiming.
+- Should allow owner to claim all pending fees to themselves
+  - Should transfer correct amount to `msg.sender`.
+  - Should reset pending fees to zero after claiming.
+- Should allow namespace creator to claim all pending fees to themselves
+  - Should transfer correct amount to `msg.sender`.
+  - Should reset pending fees to zero after claiming.
 
 #### Events
 
-- Should emit `FeesClaimed` event with msg.sender as recipient.
+- Should emit `FeesClaimed` event with `msg.sender` as recipient.
 
 #### Reverts
 
@@ -271,7 +290,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
-### getAddress (label, namespace)
+### getAddress(label,namespace)
 
 #### Functionality
 
@@ -281,23 +300,29 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
-### getAddress (fullName)
+### getAddress(fullName)
 
 #### Functionality
 
 - Should resolve full name with dot notation correctly (e.g., "alice.001").
-- Should resolve bare label as special namespace "x" (e.g., "nike" -> "nike.x").
+- Should resolve bare label with 1 character (e.g., "a").
+- Should resolve bare label with 2 characters (e.g., "ab").
+- Should resolve bare label with 3 characters (e.g., "abc").
+- Should resolve bare label with 4 characters (e.g., "nike").
+- Should resolve bare label with 5 characters (e.g., "alice").
+- Should resolve bare label with 6 characters (e.g., "snoopy").
+- Should resolve bare label with 7 characters (e.g., "bankless").
 - Should resolve explicit ".x" namespace (e.g., "nike.x").
 - Should resolve correctly for one-character namespaces.
 - Should resolve correctly for two-character namespaces.
 - Should resolve correctly for three-character namespaces.
 - Should resolve correctly for four-character namespaces.
-- Should resolve fullnames with with three characters.
-- Should resolve fullnames with with four characters.
-- Should resolve fullnames with with five characters.
-- Should resolve fullnames with with six characters.
-- Should resolve fullnames with with seven characters.
-- Should resolve fullnames with with twenty-five characters.
+- Should resolve fullnames with three characters.
+- Should resolve fullnames with four characters.
+- Should resolve fullnames with five characters.
+- Should resolve fullnames with six characters.
+- Should resolve fullnames with seven characters.
+- Should resolve fullnames with twenty-five characters.
 - Should return `address(0)` for unregistered names.
 - Should return `address(0)` for empty string.
 
@@ -313,12 +338,14 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
-### getNamespaceInfo (namespace string)
+### getNamespaceInfo(namespace string)
 
 #### Functionality
 
-- Should return correct details.
-- Should return correct details for special namespace "x".
+- Should return correct details
+  - Should return correct `pricePerName`.
+  - Should return correct creator address.
+  - Should return correct `createdAt` timestamp.
 
 #### Reverts
 
@@ -326,17 +353,19 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
-### getNamespaceInfo (price)
+### getNamespaceInfo(price)
 
 #### Functionality
 
-- Should return correct details.
-- Should return correct values for SPECIAL_NAMESPACE_PRICE.
+- Should return correct details
+  - Should return correct namespace string.
+  - Should return correct `pricePerName`.
+  - Should return correct creator address.
+  - Should return correct `createdAt` timestamp.
 
 #### Reverts
 
-- Should revert with `XNS: price not mapped to namespace` error for unmapped price.
-- Should revert with `XNS: namespace not found` error when price maps to non-existent namespace.
+- Should revert with `XNS: namespace not found` error for unmapped price.
 
 ---
 

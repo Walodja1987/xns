@@ -30,12 +30,12 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - garry.ape
 ///
 /// ### Name registration
-// - To register a name, users call `registerName(label, namespace)` and send ETH.
+/// - To register a name, users call `registerName(label, namespace)` and send ETH.
 /// - The amount of ETH sent must be >= the namespace's registered price (excess will be refunded).
 /// - For example, if the "100x" namespace was registered with price 0.1 ETH, then calling
 ///   `registerName("vitalik", "100x")` with 0.1 ETH registers "vitalik.100x".
 /// - Each address can own at most one name.
-/// - With `registerName(label)`, names are always linked to the caller's address and cannot
+/// - With `registerName(label, namespace)`, names are always linked to the caller's address and cannot
 ///   be assigned to another address.
 ///
 /// ### Sponsorship via authorization (EIP-712 + EIP-1271)
@@ -159,7 +159,7 @@ contract XNS is EIP712 {
 
     /// @dev Emitted in `registerName`, `registerNameWithAuthorization`,
     /// and `batchRegisterNameWithAuthorization` functions.
-    event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
+    event NameRegistered(string indexed label, string indexed namespace, address indexed owner); // @todo rename to nameOwner? Also in tests and IXNS?
 
     /// @dev Emitted in constructor when "x" namespace is registered, and in `registerNamespace` function.
     event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator);
@@ -201,7 +201,7 @@ contract XNS is EIP712 {
     /// opened to the public after the 30-day exclusivity period.
     ///
     /// **Requirements:**
-    /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
+    /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-', cannot contain consecutive hyphens)
     /// - Namespace must be valid and exist.
     /// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
     /// - Caller must be namespace creator if called during the 30-day exclusivity period.
@@ -349,24 +349,27 @@ contract XNS is EIP712 {
             require(_isValidLabel(auth.label), "XNS: invalid label");
             require(auth.recipient != address(0), "XNS: 0x recipient");
 
-            // Verify all are same namespace.
-            bytes32 nsHash = keccak256(bytes(auth.namespace));
-            require(nsHash == firstNsHash, "XNS: namespace mismatch");
-
-            // Verify that the signature is valid.
-            require(_isValidSignature(auth, signatures[i]), "XNS: bad authorization");
-
             // Skip if recipient already has a name (resistant to griefing attacks).
+            // Check early to avoid expensive operations below.
             if (bytes(_addressToName[auth.recipient].label).length > 0) {
                 continue;
             }
 
+            // Verify all are same namespace.
+            bytes32 nsHash = keccak256(bytes(auth.namespace));
+            require(nsHash == firstNsHash, "XNS: namespace mismatch");
+
             bytes32 key = keccak256(abi.encodePacked(auth.label, ".", auth.namespace));
             
             // Skip if name is already registered (resistant to griefing attacks).
+            // Check early to avoid expensive signature validation below.
             if (_nameHashToAddress[key] != address(0)) {
                 continue;
             }
+
+            // Verify that the signature is valid.
+            // Doing this expensive check only if we're not skipping.
+            require(_isValidSignature(auth, signatures[i]), "XNS: bad authorization");
 
             // Register name to recipient (not msg.sender).
             _nameHashToAddress[key] = auth.recipient;
@@ -514,39 +517,31 @@ contract XNS is EIP712 {
         if (len == 0) return address(0);
 
         // Search for '.' from the right within the last 5 characters (".xxxx")
-        uint256 endExclusive = (len > 5) ? (len - 5) : 0;
-        int256 lastDot = -1;
+        uint256 endInclusive = (len > 5) ? (len - 5) : 0;
+        uint256 dotIndex = type(uint256).max; // Sentinel: no dot found
 
-        for (uint256 i = len - 1; i > endExclusive; i--) {
+        for (uint256 i = len - 1; i >= endInclusive; i--) {
             if (b[i] == 0x2E) {
-                // '.'
-                lastDot = int256(i);
+                dotIndex = i;
                 break;
             }
+            if (i == endInclusive) break; // For bare names like "nike", "snoopy", etc. that do not have a dot
         }
 
-        string memory label;
-        string memory namespace;
-
-        if (lastDot == -1) {
+        if (dotIndex == type(uint256).max) {
             // Bare label => label.x
-            label = fullName;
-            namespace = SPECIAL_NAMESPACE;
-        } else {
-            uint256 dotIndex = uint256(lastDot);
-
-            bytes memory bl = new bytes(dotIndex);
-            for (uint256 j = 0; j < dotIndex; j++) bl[j] = b[j];
-
-            uint256 nsLen = len - dotIndex - 1;
-            bytes memory bn = new bytes(nsLen);
-            for (uint256 j = 0; j < nsLen; j++) bn[j] = b[dotIndex + 1 + j];
-
-            label = string(bl);
-            namespace = string(bn);
+            return _getAddress(fullName, SPECIAL_NAMESPACE);
         }
 
-        return _getAddress(label, namespace);
+        // Extract label and namespace
+        bytes memory labelBytes = new bytes(dotIndex);
+        for (uint256 j = 0; j < dotIndex; j++) labelBytes[j] = b[j];
+
+        uint256 nsLen = len - dotIndex - 1;
+        bytes memory nsBytes = new bytes(nsLen);
+        for (uint256 j = 0; j < nsLen; j++) nsBytes[j] = b[dotIndex + 1 + j];
+
+        return _getAddress(string(labelBytes), string(nsBytes));
     }
 
     /// @notice Function to resolve a name to an address taking separate label and namespace parameters.
@@ -612,10 +607,9 @@ contract XNS is EIP712 {
         uint256 price
     ) external view returns (string memory namespace, uint256 pricePerName, address creator, uint64 createdAt) {
         namespace = _priceToNamespace[price];
-        require(bytes(namespace).length != 0, "XNS: price not mapped to namespace");
+        require(bytes(namespace).length != 0, "XNS: namespace not found");
 
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
-        require(ns.creator != address(0), "XNS: namespace not found");
 
         return (namespace, ns.pricePerName, ns.creator, ns.createdAt);
     }
@@ -626,6 +620,7 @@ contract XNS is EIP712 {
     /// - Label must be 1–20 characters long
     /// - Label must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
     /// - Label cannot start or end with '-'
+    /// - Label cannot contain consecutive hyphens ('--')
     /// @param label The label to check if is valid.
     /// @return isValid True if the label is valid, false otherwise.
     function isValidLabel(string memory label) external pure returns (bool isValid) {
@@ -696,13 +691,16 @@ contract XNS is EIP712 {
         bytes memory b = bytes(label);
         uint256 len = b.length;
         if (len == 0 || len > 20) return false;
-
+    
         for (uint256 i = 0; i < len; i++) {
             bytes1 c = b[i];
             bool isLowercaseLetter = (c >= 0x61 && c <= 0x7A); // 'a'..'z'
             bool isDigit = (c >= 0x30 && c <= 0x39); // '0'..'9'
             bool isHyphen = (c == 0x2D); // '-'
             if (!(isLowercaseLetter || isDigit || isHyphen)) return false;
+            
+            // Disallow consecutive hyphens
+            if (isHyphen && i > 0 && b[i - 1] == 0x2D) return false;
         }
 
         if (b[0] == 0x2D || b[len - 1] == 0x2D) return false; // no leading/trailing '-'
