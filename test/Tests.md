@@ -290,7 +290,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
-### getAddress (label, namespace)
+### getAddress(label,namespace)
 
 #### Functionality
 
@@ -300,12 +300,18 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
-### getAddress (fullName)
+### getAddress(fullName)
 
 #### Functionality
 
 - Should resolve full name with dot notation correctly (e.g., "alice.001").
-- Should resolve bare label as special namespace "x" (e.g., "nike" -> "nike.x").
+- Should resolve bare label with 1 character (e.g., "a").
+- Should resolve bare label with 2 characters (e.g., "ab").
+- Should resolve bare label with 3 characters (e.g., "abc").
+- Should resolve bare label with 4 characters (e.g., "nike").
+- Should resolve bare label with 5 characters (e.g., "alice").
+- Should resolve bare label with 6 characters (e.g., "snoopy").
+- Should resolve bare label with 7 characters (e.g., "bankless").
 - Should resolve explicit ".x" namespace (e.g., "nike.x").
 - Should resolve correctly for one-character namespaces.
 - Should resolve correctly for two-character namespaces.
@@ -332,17 +338,13 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
-### getNamespaceInfo (namespace string)
+### getNamespaceInfo(namespace string)
 
 #### Functionality
 
 - Should return correct details
   - Should return correct `pricePerName`.
   - Should return correct creator address.
-  - Should return correct `createdAt` timestamp.
-- Should return correct details for special namespace "x"
-  - Should return correct `pricePerName` (100 ETH).
-  - Should return correct creator address (owner).
   - Should return correct `createdAt` timestamp.
 
 #### Reverts
@@ -351,7 +353,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
-### getNamespaceInfo (price)
+### getNamespaceInfo(price)
 
 #### Functionality
 
@@ -360,16 +362,10 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
   - Should return correct `pricePerName`.
   - Should return correct creator address.
   - Should return correct `createdAt` timestamp.
-- Should return correct values for `SPECIAL_NAMESPACE_PRICE`
-  - Should return "x" as namespace.
-  - Should return 100 ETH as p`ricePerName`.
-  - Should return owner as creator.
-  - Should return correct `createdAt` timestamp.
 
 #### Reverts
 
-- Should revert with `XNS: price not mapped to namespace` error for unmapped price.
-- Should revert with `XNS: namespace not found` error when price maps to non-existent namespace.
+- Should revert with `XNS: namespace not found` error for unmapped price.
 
 ---
 

@@ -607,10 +607,9 @@ contract XNS is EIP712 {
         uint256 price
     ) external view returns (string memory namespace, uint256 pricePerName, address creator, uint64 createdAt) {
         namespace = _priceToNamespace[price];
-        require(bytes(namespace).length != 0, "XNS: price not mapped to namespace");
+        require(bytes(namespace).length != 0, "XNS: namespace not found");
 
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
-        require(ns.creator != address(0), "XNS: namespace not found");
 
         return (namespace, ns.pricePerName, ns.creator, ns.createdAt);
     }
