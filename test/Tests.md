@@ -130,7 +130,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should allow anyone to register paid names after exclusive period (30 days).
 - Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
 - Should refund excess payment when `msg.value` exceeds namespace price.
-- Should work correctly with special namespace "x" (100 ETH).
+- Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (100 ETH) after the exclusive period ends.
 - Should credit correct amount of DETH to `msg.sender`.
 - Should credit correct amount of DETH to namespace creator (`msg.sender`) during exclusive period.
 
