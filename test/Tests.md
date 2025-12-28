@@ -133,6 +133,8 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (100 ETH) after the exclusive period ends.
 - Should credit correct amount of DETH to `msg.sender`.
 - Should credit correct amount of DETH to namespace creator (`msg.sender`) during exclusive period.
+- Should allow a contract to register a name for itself via `registerName` (in constructor).
+- Should allow a contract to register a name for itself via `registerName` (after deployment).
 
 #### Events
 
@@ -161,11 +163,9 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should allow namespace creator to sponsor registrations during exclusive period (30 days).
 - Should allow anyone to sponsor registrations after exclusive period (30 days).
 - Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
-- Should work correctly with EOA signatures.
-- Should work correctly with EIP-1271 contract wallet signatures (Safe, Argent, etc.).
+- Should allow sponsoring a name registration for an EIP-1271 contract wallet recipient.
 - Should refund excess payment when `msg.value` exceeds namespace price.
 - Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (100 ETH) after the exclusive period ends.
-- Should credit correct amount of DETH to sponsor, not recipient.
 
 #### Events
 
@@ -203,7 +203,6 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should credit correct amount of DETH to sponsor, not recipients.
 - Should allow namespace creator to sponsor batch registrations during exclusive period (30 days).
 - Should allow anyone to sponsor batch registrations after exclusive period (30 days).
-- Should work correctly with EOA signatures.
 - Should work correctly with EIP-1271 contract wallet signatures (Safe, Argent, etc.).
 - Should work correctly with special namespace "x" (100 ETH).
 
