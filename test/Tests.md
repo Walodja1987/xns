@@ -214,7 +214,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: length mismatch` error when arrays have different lengths.
 - Should revert with `XNS: empty array` error when arrays are empty.
 - Should revert with `XNS: namespace not found` error for non-existent namespace.
-- Should revert with `XNS: insufficient payment` error when msg.value is less than pricePerName * successfulCount.
+- Should revert with `XNS: insufficient payment` error when `msg.value` is less than `pricePerName * successfulCount`.
 - Should revert with `XNS: not namespace creator` error when non-creator tries to sponsor during exclusive period.
 - Should revert with `XNS: namespace mismatch` error when registrations are in different namespaces.
 - Should revert with `XNS: invalid label` error for invalid label in any registration.
