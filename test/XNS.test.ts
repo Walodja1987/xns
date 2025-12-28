@@ -14,6 +14,40 @@ describe("XNS", function () {
     deth: DETH; // DETH contract instance at the hardcoded address
     deploymentBlockTimestamp: number;
     deploymentReceipt: any;
+    signRegisterNameAuth: (signer: SignerWithAddress, recipient: string, label: string, namespace: string) => Promise<string>;
+  }
+
+  // Helper function to sign RegisterNameAuth for EIP-712
+  async function signRegisterNameAuth(
+    xns: XNS,
+    signer: SignerWithAddress,
+    recipient: string,
+    label: string,
+    namespace: string
+  ): Promise<string> {
+    const chainId = (await ethers.provider.getNetwork()).chainId;
+    const domain = {
+      name: "XNS",
+      version: "1",
+      chainId: Number(chainId),
+      verifyingContract: await xns.getAddress(),
+    };
+
+    const types = {
+      RegisterNameAuth: [
+        { name: "recipient", type: "address" },
+        { name: "labelHash", type: "bytes32" },
+        { name: "namespaceHash", type: "bytes32" },
+      ],
+    };
+
+    const value = {
+      recipient: recipient,
+      labelHash: ethers.keccak256(ethers.toUtf8Bytes(label)),
+      namespaceHash: ethers.keccak256(ethers.toUtf8Bytes(namespace)),
+    };
+
+    return await signer.signTypedData(domain, types, value);
   }
 
   // Test setup function
@@ -52,6 +86,8 @@ describe("XNS", function () {
       deth,
       deploymentBlockTimestamp: deploymentBlock!.timestamp,
       deploymentReceipt: deploymentReceipt!,
+      signRegisterNameAuth: (signer: SignerWithAddress, recipient: string, label: string, namespace: string) =>
+        signRegisterNameAuth(xns, signer, recipient, label, namespace),
     };
   }
 
@@ -1812,6 +1848,255 @@ describe("XNS", function () {
         await expect(
             s.xns.connect(s.user1).registerName(label, namespace, { value: pricePerName })
         ).to.be.revertedWith("XNS: name already registered");
+    });
+    
+  });
+
+  describe("registerNameWithAuthorization", function () {
+    let s: SetupOutput;
+
+    beforeEach(async () => {
+      s = await loadFixture(setup);
+    });
+
+    // -----------------------
+    // Functionality
+    // -----------------------
+
+    it("Should register a name for recipient when recipient authorizes via signature", async () => {
+        // ---------
+        // Arrange: Prepare parameters and create signature
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const label = "alice";
+        const recipient = s.user2.address; // user2 is the recipient
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can sponsor
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Create signature from recipient (user2)
+        const signature = await s.signRegisterNameAuth(s.user2, recipient, label, namespace);
+
+        // ---------
+        // Act: Sponsor registers name for recipient (user1 sponsors, user2 is recipient)
+        // ---------
+        await s.xns.connect(s.user1).registerNameWithAuthorization(
+            {
+                recipient: recipient,
+                label: label,
+                namespace: namespace,
+            },
+            signature,
+            { value: pricePerName }
+        );
+
+        // ---------
+        // Assert: Verify name was registered correctly
+        // ---------
+        // Should set name owner to recipient, not msg.sender
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const ownerAddress = await getAddressByLabelAndNamespace(label, namespace);
+        expect(ownerAddress).to.equal(recipient); // recipient, not user1 (msg.sender)
+        expect(ownerAddress).to.not.equal(s.user1.address); // msg.sender should not be the owner
+
+        // Should map name hash to recipient address
+        const fullName = `${label}.${namespace}`;
+        const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+        const ownerAddressByFullName = await getAddressByFullName(fullName);
+        expect(ownerAddressByFullName).to.equal(recipient);
+
+        // Should map recipient address to name
+        const getName = s.xns.getFunction("getName(address)");
+        const returnedName = await getName(recipient);
+        expect(returnedName).to.equal(fullName);
+
+        // Should set correct label and namespace
+        const [returnedLabel, returnedNamespace] = returnedName.split(".");
+        expect(returnedLabel).to.equal(label);
+        expect(returnedNamespace).to.equal(namespace);
+    });
+
+    it("Should allow namespace creator to sponsor registrations during exclusive period (30 days)", async () => {
+        // ---------
+        // Arrange: Prepare parameters and verify we're within exclusivity period
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const label = "sponsored";
+        const recipient = s.user2.address; // user2 is the recipient
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Verify we're within the exclusivity period
+        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
+        const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
+        expect(creator).to.equal(s.user1.address); // user1 is the namespace creator
+
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const latestBlock = await ethers.provider.getBlock("latest");
+        const now = latestBlock.timestamp;
+        expect(now).to.be.lt(Number(createdAt) + Number(exclusivityPeriod));
+
+        // Create signature from recipient (user2)
+        const signature = await s.signRegisterNameAuth(s.user2, recipient, label, namespace);
+
+        // ---------
+        // Act: Namespace creator (user1) sponsors registration for recipient during exclusivity period
+        // ---------
+        await s.xns.connect(s.user1).registerNameWithAuthorization(
+            {
+                recipient: recipient,
+                label: label,
+                namespace: namespace,
+            },
+            signature,
+            { value: pricePerName }
+        );
+
+        // ---------
+        // Assert: Verify name was registered correctly
+        // ---------
+        // Should set name owner to recipient, not msg.sender
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const ownerAddress = await getAddressByLabelAndNamespace(label, namespace);
+        expect(ownerAddress).to.equal(recipient); // recipient, not user1 (msg.sender)
+        expect(ownerAddress).to.not.equal(s.user1.address); // msg.sender should not be the owner
+
+        // Should map name hash to recipient address
+        const fullName = `${label}.${namespace}`;
+        const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+        const ownerAddressByFullName = await getAddressByFullName(fullName);
+        expect(ownerAddressByFullName).to.equal(recipient);
+
+        // Should map recipient address to name
+        const getName = s.xns.getFunction("getName(address)");
+        const returnedName = await getName(recipient);
+        expect(returnedName).to.equal(fullName);
+
+        // Should set correct label and namespace
+        const [returnedLabel, returnedNamespace] = returnedName.split(".");
+        expect(returnedLabel).to.equal(label);
+        expect(returnedNamespace).to.equal(namespace);
+    });
+
+    it("Should allow anyone to sponsor registrations after exclusive period (30 days)", async () => {
+        // ---------
+        // Arrange: Prepare parameters and fast-forward past exclusivity period
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const label = "publicsponsored";
+        const recipient = s.user2.address; // user2 is the recipient
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can sponsor
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Verify we're past the exclusivity period
+        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
+        const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
+        expect(creator).to.equal(s.user1.address); // user1 is the namespace creator
+
+        const latestBlock = await ethers.provider.getBlock("latest");
+        const now = latestBlock.timestamp;
+        expect(now).to.be.gte(Number(createdAt) + Number(exclusivityPeriod));
+
+        // Create signature from recipient (user2)
+        const signature = await s.signRegisterNameAuth(s.user2, recipient, label, namespace);
+
+        // Note: We'll use owner (not namespace creator) as the sponsor to verify anyone can sponsor
+        // ---------
+        // Act: Non-creator (owner) sponsors registration for recipient after exclusivity period
+        // ---------
+        await s.xns.connect(s.owner).registerNameWithAuthorization(
+            {
+                recipient: recipient,
+                label: label,
+                namespace: namespace,
+            },
+            signature,
+            { value: pricePerName }
+        );
+
+        // ---------
+        // Assert: Verify name was registered correctly
+        // ---------
+        // Should set name owner to recipient, not msg.sender
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const ownerAddress = await getAddressByLabelAndNamespace(label, namespace);
+        expect(ownerAddress).to.equal(recipient); // recipient, not owner (msg.sender)
+        expect(ownerAddress).to.not.equal(s.owner.address); // msg.sender should not be the owner
+
+        // Should map name hash to recipient address
+        const fullName = `${label}.${namespace}`;
+        const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+        const ownerAddressByFullName = await getAddressByFullName(fullName);
+        expect(ownerAddressByFullName).to.equal(recipient);
+
+        // Should map recipient address to name
+        const getName = s.xns.getFunction("getName(address)");
+        const returnedName = await getName(recipient);
+        expect(returnedName).to.equal(fullName);
+
+        // Should set correct label and namespace
+        const [returnedLabel, returnedNamespace] = returnedName.split(".");
+        expect(returnedLabel).to.equal(label);
+        expect(returnedNamespace).to.equal(namespace);
+    });
+
+    it("Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid", async () => {
+        // ---------
+        // Arrange: Prepare parameters and get initial state
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const label = "paymenttest";
+        const recipient = s.user2.address; // user2 is the recipient
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can sponsor
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Get initial state
+        const initialDETHBurned = await s.deth.burned(s.owner.address); // owner is the sponsor/payer
+        const initialCreatorFees = await s.xns.getPendingFees(s.user1.address); // user1 is namespace creator
+        const initialOwnerFees = await s.xns.getPendingFees(s.owner.address); // owner is contract owner
+
+        // Calculate expected amounts
+        const expectedBurnAmount = (pricePerName * 90n) / 100n; // 90% = 0.0009 ETH
+        const expectedCreatorFee = (pricePerName * 5n) / 100n; // 5% = 0.00005 ETH
+        const expectedOwnerFee = pricePerName - expectedBurnAmount - expectedCreatorFee; // 5% = 0.00005 ETH
+
+        // Create signature from recipient (user2)
+        const signature = await s.signRegisterNameAuth(s.user2, recipient, label, namespace);
+
+        // ---------
+        // Act: Sponsor registers name for recipient (owner sponsors, user2 is recipient)
+        // ---------
+        await s.xns.connect(s.owner).registerNameWithAuthorization(
+            {
+                recipient: recipient,
+                label: label,
+                namespace: namespace,
+            },
+            signature,
+            { value: pricePerName }
+        );
+
+        // ---------
+        // Assert: Verify payment was processed correctly
+        // ---------
+        // Verify 90% was burnt via DETH (credited to payer/sponsor - owner)
+        const finalDETHBurned = await s.deth.burned(s.owner.address);
+        expect(finalDETHBurned - initialDETHBurned).to.equal(expectedBurnAmount);
+
+        // Verify 5% was credited to namespace creator (user1)
+        const finalCreatorFees = await s.xns.getPendingFees(s.user1.address);
+        expect(finalCreatorFees - initialCreatorFees).to.equal(expectedCreatorFee);
+
+        // Verify 5% was credited to contract owner (owner)
+        const finalOwnerFees = await s.xns.getPendingFees(s.owner.address);
+        expect(finalOwnerFees - initialOwnerFees).to.equal(expectedOwnerFee);
     });
     
   });

@@ -164,7 +164,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should work correctly with EOA signatures.
 - Should work correctly with EIP-1271 contract wallet signatures (Safe, Argent, etc.).
 - Should refund excess payment when `msg.value` exceeds namespace price.
-- Should work correctly with special namespace "x" (100 ETH).
+- Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (100 ETH) after the exclusive period ends.
 - Should credit correct amount of DETH to sponsor, not recipient.
 
 #### Events
