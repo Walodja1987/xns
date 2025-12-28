@@ -4812,5 +4812,198 @@ describe("XNS", function () {
     });
 
   });
+
+  describe("claimFeesToSelf", function () {
+    let s: SetupOutput;
+
+    beforeEach(async () => {
+      s = await loadFixture(setup);
+    });
+
+    // -----------------------
+    // Functionality
+    // -----------------------
+
+    it("Should allow owner to claim all pending fees to themselves", async () => {
+        // ---------
+        // Arrange: Accumulate fees for owner
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Register a name to accumulate fees for the owner (5% of pricePerName)
+        await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
+
+        // Get the pending fees for owner
+        const expectedFees = await s.xns.getPendingFees(s.owner.address);
+        expect(expectedFees).to.be.gt(0);
+
+        // Get initial balance of owner
+        const ownerInitialBalance = await ethers.provider.getBalance(s.owner.address);
+
+        // ---------
+        // Act: Owner claims fees to themselves using claimFeesToSelf
+        // ---------
+        const tx = await s.xns.connect(s.owner).claimFeesToSelf();
+        const receipt = await tx.wait();
+        const gasUsed = receipt!.gasUsed * receipt!.gasPrice;
+
+        // ---------
+        // Assert: Verify correct amount transferred and fees reset
+        // ---------
+        // Verify owner received the correct amount (accounting for gas costs)
+        const ownerFinalBalance = await ethers.provider.getBalance(s.owner.address);
+        const receivedAmount = ownerFinalBalance - ownerInitialBalance + gasUsed;
+        expect(receivedAmount).to.equal(expectedFees);
+
+        // Verify pending fees are reset to zero
+        const pendingFeesAfter = await s.xns.getPendingFees(s.owner.address);
+        expect(pendingFeesAfter).to.equal(0);
+    });
+
+    it("Should allow namespace creator to claim all pending fees to themselves", async () => {
+        // ---------
+        // Arrange: Accumulate fees for namespace creator
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Verify user1 is the namespace creator
+        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
+        const [, creator] = await getNamespaceInfoByString(namespace);
+        expect(creator).to.equal(s.user1.address);
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Register a name to accumulate fees for the namespace creator (5% of pricePerName)
+        await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
+
+        // Get the pending fees for namespace creator (user1)
+        const expectedFees = await s.xns.getPendingFees(s.user1.address);
+        expect(expectedFees).to.be.gt(0);
+
+        // Get initial balance of namespace creator
+        const creatorInitialBalance = await ethers.provider.getBalance(s.user1.address);
+
+        // ---------
+        // Act: Namespace creator claims fees to themselves using claimFeesToSelf
+        // ---------
+        const tx = await s.xns.connect(s.user1).claimFeesToSelf();
+        const receipt = await tx.wait();
+        const gasUsed = receipt!.gasUsed * receipt!.gasPrice;
+
+        // ---------
+        // Assert: Verify correct amount transferred and fees reset
+        // ---------
+        // Verify namespace creator received the correct amount (accounting for gas costs)
+        const creatorFinalBalance = await ethers.provider.getBalance(s.user1.address);
+        const receivedAmount = creatorFinalBalance - creatorInitialBalance + gasUsed;
+        expect(receivedAmount).to.equal(expectedFees);
+
+        // Verify pending fees are reset to zero
+        const pendingFeesAfter = await s.xns.getPendingFees(s.user1.address);
+        expect(pendingFeesAfter).to.equal(0);
+    });
+
+    // -----------------------
+    // Events
+    // -----------------------
+
+    it("Should emit `FeesClaimed` event with `msg.sender` as recipient", async () => {
+        // ---------
+        // Arrange: Accumulate fees for owner
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Register a name to accumulate fees for the owner (5% of pricePerName)
+        await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
+
+        // Get the pending fees for owner
+        const expectedFees = await s.xns.getPendingFees(s.owner.address);
+        expect(expectedFees).to.be.gt(0);
+
+        // ---------
+        // Act: Owner claims fees to themselves using claimFeesToSelf
+        // ---------
+        const tx = await s.xns.connect(s.owner).claimFeesToSelf();
+        const receipt = await tx.wait();
+
+        // ---------
+        // Assert: Verify FeesClaimed event was emitted with msg.sender as recipient
+        // ---------
+        const events = await s.xns.queryFilter(s.xns.filters.FeesClaimed(), receipt!.blockNumber, receipt!.blockNumber);
+        expect(events.length).to.equal(1);
+        expect(events[0].args.recipient).to.equal(s.owner.address);
+        expect(events[0].args.amount).to.equal(expectedFees);
+    });
+
+    // -----------------------
+    // Reverts
+    // -----------------------
+
+    it("Should revert with `XNS: no fees to claim` error when caller has no pending fees", async () => {
+        // ---------
+        // Arrange: Ensure caller has no pending fees
+        // ---------
+        // Verify user2 has no pending fees
+        const pendingFees = await s.xns.getPendingFees(s.user2.address);
+        expect(pendingFees).to.equal(0);
+
+        // ---------
+        // Act & Assert: Attempt to claim fees when there are none
+        // ---------
+        await expect(
+            s.xns.connect(s.user2).claimFeesToSelf()
+        ).to.be.revertedWith("XNS: no fees to claim");
+    });
+
+    it("Should revert with `XNS: fee transfer failed` error when transfer fails", async () => {
+        // ---------
+        // Arrange: Accumulate fees and deploy RevertingReceiver
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Register a name to accumulate fees for the owner
+        await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
+
+        // Verify owner has pending fees
+        const pendingFees = await s.xns.getPendingFees(s.owner.address);
+        expect(pendingFees).to.be.gt(0);
+
+        // Deploy RevertingReceiver contract that will revert when receiving ETH
+        const RevertingReceiver = await ethers.getContractFactory("RevertingReceiver");
+        const revertingReceiver = await RevertingReceiver.deploy();
+        await revertingReceiver.waitForDeployment();
+
+        // Set the reverting receiver's code at the owner's address using hardhat_setCode
+        // This simulates the owner being a contract that reverts on receive
+        const revertingReceiverCode = await ethers.provider.getCode(await revertingReceiver.getAddress());
+        await ethers.provider.send("hardhat_setCode", [s.owner.address, revertingReceiverCode!]);
+
+        // ---------
+        // Act & Assert: Attempt to claim fees to self when owner is a reverting contract
+        // ---------
+        await expect(
+            s.xns.connect(s.owner).claimFeesToSelf()
+        ).to.be.revertedWith("XNS: fee transfer failed");
+    });
+
+  });
 });
 
