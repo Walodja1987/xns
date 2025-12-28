@@ -4696,6 +4696,121 @@ describe("XNS", function () {
         expect(totalReceived).to.equal(expectedTotal);
     });
 
+    // -----------------------
+    // Events
+    // -----------------------
+
+    it("Should emit `FeesClaimed` event with correct recipient and amount", async () => {
+        // ---------
+        // Arrange: Accumulate fees for owner
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Register a name to accumulate fees for the owner (5% of pricePerName)
+        await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
+
+        // Get the pending fees for owner
+        const expectedFees = await s.xns.getPendingFees(s.owner.address);
+        expect(expectedFees).to.be.gt(0);
+
+        // ---------
+        // Act: Owner claims fees to a recipient
+        // ---------
+        const recipient = s.user1.address;
+        const tx = await s.xns.connect(s.owner).claimFees(recipient);
+        const receipt = await tx.wait();
+
+        // ---------
+        // Assert: Verify FeesClaimed event was emitted with correct parameters
+        // ---------
+        const events = await s.xns.queryFilter(s.xns.filters.FeesClaimed(), receipt!.blockNumber, receipt!.blockNumber);
+        expect(events.length).to.equal(1);
+        expect(events[0].args.recipient).to.equal(recipient);
+        expect(events[0].args.amount).to.equal(expectedFees);
+    });
+
+    // -----------------------
+    // Reverts
+    // -----------------------
+
+    it("Should revert with `XNS: zero recipient` error when recipient is address(0)", async () => {
+        // ---------
+        // Arrange: Accumulate fees for owner
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Register a name to accumulate fees for the owner
+        await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
+
+        // Verify owner has pending fees
+        const pendingFees = await s.xns.getPendingFees(s.owner.address);
+        expect(pendingFees).to.be.gt(0);
+
+        // ---------
+        // Act & Assert: Attempt to claim fees to zero address
+        // ---------
+        await expect(
+            s.xns.connect(s.owner).claimFees(ethers.ZeroAddress)
+        ).to.be.revertedWith("XNS: zero recipient");
+    });
+
+    it("Should revert with `XNS: no fees to claim` error when caller has no pending fees", async () => {
+        // ---------
+        // Arrange: Ensure caller has no pending fees
+        // ---------
+        // Verify user2 has no pending fees
+        const pendingFees = await s.xns.getPendingFees(s.user2.address);
+        expect(pendingFees).to.equal(0);
+
+        // ---------
+        // Act & Assert: Attempt to claim fees when there are none
+        // ---------
+        await expect(
+            s.xns.connect(s.user2).claimFees(s.user2.address)
+        ).to.be.revertedWith("XNS: no fees to claim");
+    });
+
+    it("Should revert with `XNS: fee transfer failed` error when transfer fails", async () => {
+        // ---------
+        // Arrange: Accumulate fees and deploy RevertingReceiver
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const pricePerName = ethers.parseEther("0.001");
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Register a name to accumulate fees for the owner
+        await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
+
+        // Verify owner has pending fees
+        const pendingFees = await s.xns.getPendingFees(s.owner.address);
+        expect(pendingFees).to.be.gt(0);
+
+        // Deploy RevertingReceiver contract that will revert when receiving ETH
+        const RevertingReceiver = await ethers.getContractFactory("RevertingReceiver");
+        const revertingReceiver = await RevertingReceiver.deploy();
+        await revertingReceiver.waitForDeployment();
+
+        // ---------
+        // Act & Assert: Attempt to claim fees to RevertingReceiver
+        // ---------
+        await expect(
+            s.xns.connect(s.owner).claimFees(await revertingReceiver.getAddress())
+        ).to.be.revertedWith("XNS: fee transfer failed");
+    });
+
   });
 });
 

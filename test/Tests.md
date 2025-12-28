@@ -268,7 +268,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Events
 
-- Should emit `FeesClaimed` event with msg.sender as recipient.
+- Should emit `FeesClaimed` event with `msg.sender` as recipient.
 
 #### Reverts
 
