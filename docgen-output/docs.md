@@ -61,9 +61,10 @@ Examples:
 ### registerName
 
 
-Function to register a paid name for `msg.sender`.
-Namespace creators have a 30-day exclusivity window to register a name for themselves
-within their registered namespace, following namespace registration. Registrations are
+Function to register a paid name for `msg.sender`. To register a bare name
+(e.g., "vitalik"), use "x" as the namespace parameter. Namespace creators
+have a 30-day exclusivity window to register a name for themselves within their
+registered namespace, following namespace registration. Registrations are
 opened to the public after the 30-day exclusivity period.
 
 **Requirements:**
@@ -91,7 +92,7 @@ function registerName(string label, string namespace) external payable
 
 
 Function to sponsor a paid name registration for `recipient` who explicitly authorized it via
-signature. Allows a third party (relayer) to pay gas and registration fees while the recipient explicitly
+signature. Allows a third party to pay gas and registration fees while the recipient explicitly
 approves via EIP-712 signature. During the namespace creator exclusivity period, only the namespace creator
 may sponsor registrations in that namespace.
 
