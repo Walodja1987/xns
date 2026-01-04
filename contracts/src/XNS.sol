@@ -213,12 +213,16 @@ contract XNS is EIP712 {
     /// opened to the public after the 30-day exclusivity period.
     ///
     /// **Requirements:**
-    /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-', cannot contain consecutive hyphens)
+    /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-',
+    ///   cannot contain consecutive hyphens)
     /// - Namespace must be valid and exist.
     /// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
     /// - Caller must be namespace creator if called during the 30-day exclusivity period.
     /// - Caller must not already have a name.
     /// - Name must not already be registered.
+    ///
+    /// **Note:** Due to block reorganization risks, users should wait for a few blocks and verify
+    /// the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
     ///
     /// @param label The label part of the name to register.
     /// @param namespace The namespace part of the name to register.
@@ -268,6 +272,9 @@ contract XNS is EIP712 {
     /// - Recipient must not already have a name.
     /// - Name must not already be registered.
     /// - Signature must be valid EIP-712 signature from `recipient`.
+    ///
+    /// **Note:** Due to block reorganization risks, users should wait for a few blocks and verify
+    /// the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
     ///
     /// @param registerNameAuth The argument for the function, including label, namespace, and recipient.
     /// @param signature EIP-712 signature by `recipient` (EOA) or EIP-1271 contract signature.

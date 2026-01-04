@@ -1,5 +1,7 @@
 # XNS Contract Documentation
 
+This is an automatically generated documentation (using `solidity-docgen` package) for the XNS contract based on the NatSpec comments in the code.
+
 ## XNS
 
 
@@ -68,12 +70,16 @@ registered namespace, following namespace registration. Registrations are
 opened to the public after the 30-day exclusivity period.
 
 **Requirements:**
-- Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-', cannot contain consecutive hyphens)
+- Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-',
+  cannot contain consecutive hyphens)
 - Namespace must be valid and exist.
 - `msg.value` must be >= the namespace's registered price (excess will be refunded).
 - Caller must be namespace creator if called during the 30-day exclusivity period.
 - Caller must not already have a name.
 - Name must not already be registered.
+
+**Note:** Due to block reorganization risks, users should wait for a few blocks and verify
+the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
 
 ```solidity
 function registerName(string label, string namespace) external payable
@@ -105,6 +111,9 @@ may sponsor registrations in that namespace.
 - Recipient must not already have a name.
 - Name must not already be registered.
 - Signature must be valid EIP-712 signature from `recipient`.
+
+**Note:** Due to block reorganization risks, users should wait for a few blocks and verify
+the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
 
 ```solidity
 function registerNameWithAuthorization(struct XNS.RegisterNameAuth registerNameAuth, bytes signature) external payable

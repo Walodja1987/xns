@@ -33,17 +33,98 @@ Once a name is registered, it is **forever** linked to the owner’s address.
 
 ---
 
-## ✨ Core Properties
+ ## 📚 Documentation
+  
+  - [API Reference](docs/API.md) - Complete function documentation
+  - [Audit Information](docs/AUDIT.md) - For auditors and code reviewers
 
-### 🔒 Permanent Ownership
+---
 
-XNS names never expire.
+## ✨ How It Works
 
-- No renewals
-- No grace periods
-- No risk of losing your name
+### ®️ Registering a Name
 
-If you register a name, it is yours **forever**.
+1. Call the `registerName` function on the contract at [0x123..333](https://etherscan.io/) with the associated price tag for the chosen namespace.
+2. After submitting your transaction, wait a few blocks for confirmation.
+3. Then, use the `getAddress` and `getName` functions to ensure your chosen name correctly resolves to your address.
+
+**Example:** To register `alice.xns`:
+- Call `registerName` with `label = "alice"` and `namespace = "xns"`.
+- Send the required price for the `"xns"` namespace (e.g., 0.001 ETH).
+
+If you're unsure of a namespace's price, retrieve it with `getNamespaceInfo("your_namespace")` by replacing `"your_namespace"` with your desired namespace.
+
+**Important:** 
+- A valid label is:
+   - Non-empty
+   - Length 1–20
+   - Consists only of [a-z0-9-]
+   - Cannot start or end with '-'
+   - Cannot contain consecutive hyphens
+- A name (label.namespace) must not be registered yet.
+- Each address can own at most one name.
+- With `registerName(label, namespace)`, names are always linked to the caller's address and cannot be assigned to another address.
+
+Valid Examples:
+✅ alice.xns
+✅ bob.yolo
+✅ vitalik.100x
+✅ garry.ape
+
+
+### 💤 Register a namespace
+
+1. Call the `registerNamespace` function on the contract at [0x123..333](https://etherscan.io/).
+2. After submitting your transaction, wait a few blocks for confirmation.
+3. Then, use the `getNamespaceInfo` function to verify your namespace was registered correctly with the intended price.
+
+**Example:** To register a namespace "yolo" with a price of 0.250 ETH per name:
+- Call `registerNamespace` with `namespace = "yolo"` and `pricePerName = 0.25 ether` (250000000000000000 wei).
+- Send 200 ETH as the namespace registration fee (any excess will be refunded).
+
+>**Note:** During the first year after contract deployment, the contract owner can register namespaces for free.
+
+**Important:** 
+- The price per name must be a multiple of 0.001 ETH (0.001, 0.002, 0.250, etc.).
+- Each price can only be assigned to one namespace (price uniqueness is enforced).
+- Namespaces must be 1–4 characters long and contain only lowercase letters and digits (`a-z`, `0-9`).
+- The namespace must not exist yet.
+- The namespace `"eth"` is forbidden to avoid confusion with ENS.
+- As the namespace creator, you'll receive 5% of all name registration fees for names registered in your namespace.
+
+Valid Examples:
+✅ 100x
+✅ bob.yolo
+✅ vitalik.100x
+✅ garry.ape
+
+---
+
+### Price list
+
+## 🔥 XNS Price list
+
+| Namespace | ETH Amount   |
+| --------- | -----------  |
+| xns       | 0.001 ETH    | 
+| gm        | 0.002 ETH    |
+| long      | 0.003 ETH    |
+| wtf       | 0.004 ETH    |
+| yolo      | 0.005 ETH    |
+| bro       | 0.006 ETH    |
+| chad      | 0.007 ETH    |
+| og        | 0.008 ETH    |
+| hodl      | 0.009 ETH    |
+| maxi      | 0.010 ETH    |
+| bull      | 0.015 ETH    |
+| pump      | 0.025 ETH    |
+| 100x      | 0.030 ETH    |
+| xyz       | 0.035 ETH    |
+| ape       | 0.040 ETH    |
+| moon      | 0.045 ETH    |
+| com       | 0.050 ETH    |
+| io        | 0.055 ETH    |
+| 888       | 0.888 ETH    |
 
 ---
 
@@ -51,9 +132,8 @@ If you register a name, it is yours **forever**.
 
 Names are registered by burning ETH. The amount of ETH burned determines the namespace.
 
-- 90% of ETH sent is burned via the [DETH contract](https://github.com/Walodja1987/deth)
+- 90% of ETH sent is burned via the [DETH contract](https://github.com/Walodja1987/deth), contributing Ethereum's deflationary mechanism and ETH's value accrual
 - The sender is credited DETH 1:1
-- Burned ETH is permanently removed from circulation, contributing Ethereum's deflationary mechanism and ETH's value accrual
 
 There is no secondary market and no resale incentive.
 

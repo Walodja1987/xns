@@ -1843,7 +1843,7 @@ const config: HardhatUserConfig = {
   //   deploymentsDir: "deployments_tenderly",
   // },
   docgen: {
-    outputDir: "./docgen-output",
+    outputDir: "./docs",
     templates: "./docgen-templates", // Path to your custom templates directory
     pages: (item, file, config) => {
       // Only include XNS contract
@@ -1864,7 +1864,7 @@ const config: HardhatUserConfig = {
         return undefined;
       }
       // Include XNS contract and its functions
-      return "docs" + config.pageExtension;
+      return "API" + config.pageExtension;
     },
   },
 };
