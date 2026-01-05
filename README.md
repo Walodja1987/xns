@@ -1,6 +1,4 @@
----
-
-# XNS – The On-Chain Name Service
+# XNS – The Permanent Name Registry on Ethereum
 
 ```
 //////////////////////////////
@@ -17,28 +15,31 @@
 
 ## 🚀 Overview
 
-**XNS** is a decentralized, Ethereum-native name registry that maps **human-readable names to Ethereum addresses**.
+**XNS** is a decentralized, Ethereum-native name registry that **maps human-readable names to Ethereum addresses**.
 
-Names are acquired by **burning ETH** and are **permanent, immutable, and non-transferable**.
+**Key properties:**
+- **Permanent, immutable, and non-transferable**: Names are forever linked to the owner's address. There is no secondary market or resale mechanism.
+- **One name per address**: Each address can own at most one XNS name, ensuring clear identity mapping and simple reverse lookup.
+- **Fully on-chain**: All resolution is done via on-chain view functions and can be queried directly via **Etherscan**; no indexers required.
 
-XNS is intentionally simple:
+Registration works by **burning ETH**, supporting Ethereum's deflationary mechanism. Registrants receive DETH credits that can be used as burn attestations in downstream applications. See the [DETH contract repository](https://github.com/Walodja1987/deth) for details.
 
-* No expirations
-* No renewals
-* No transfers
-* No speculation
-* No off-chain dependencies
 
-Once a name is registered, it is **forever** linked to the owner’s address.
+## 🏷 Name Format
 
----
+XNS names follow the format `<label>.<namespace>`.
 
- ## 📚 Documentation
-  
-  - [API Reference](docs/API.md) - Complete function documentation
-  - [Audit Information](docs/AUDIT.md) - For auditors and code reviewers
+Examples:
 
----
+```
+vitalik.001
+alice.yolo
+nike.ape
+```
+
+
+XNS also supports **bare names**, i.e. names without a suffix (e.g., `nike`, `vitalik`, `alice`). Bare names are premium names costing 100 ETH per name.
+
 
 ## ✨ How It Works
 
@@ -56,20 +57,27 @@ If you're unsure of a namespace's price, retrieve it with `getNamespaceInfo("you
 
 **Important:** 
 - A valid label is:
-   - Non-empty
    - Length 1–20
    - Consists only of [a-z0-9-]
-   - Cannot start or end with '-'
-   - Cannot contain consecutive hyphens
-- A name (label.namespace) must not be registered yet.
-- Each address can own at most one name.
+   - Cannot start or end with `-`
+   - Cannot contain consecutive hyphens (`--`)
+
+- For a registration to succeed, 
+   - The name must not be registered yet
+   - The registering address does not have a name yet
+
 - With `registerName(label, namespace)`, names are always linked to the caller's address and cannot be assigned to another address.
 
-Valid Examples:
-✅ alice.xns
-✅ bob.yolo
-✅ vitalik.100x
-✅ garry.ape
+Examples:
+- ✅ `alice.xns`
+- ✅ `bob.yolo`
+- ✅ `vitalik.100x`
+- ✅ `garry.ape`
+- ❌ `thisisaveryverylongname.xns` (label length is greater than 20)
+- ❌ `Name.xns` (contains a capital letter)
+- ❌ `-name.gm` (starts with hyphen)
+- ❌ `name-.og` (ends with hyphen)
+- ❌ `my--name.888` (consecutive hyphens)
 
 
 ### 💤 Register a namespace
@@ -610,3 +618,11 @@ If you want next, we can:
 - Add a **“How to use XNS via Etherscan”** walkthrough
 - Write a **short protocol integration guide**
 - Or tighten the tone further (more playful vs more formal)
+
+
+---
+
+ ## 📚 Documentation
+  
+  - [API Reference](docs/API.md) - Complete function documentation
+  - [Audit Information](docs/AUDIT.md) - For auditors and code reviewers
