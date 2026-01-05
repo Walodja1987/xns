@@ -45,30 +45,23 @@ XNS also supports **bare names**, i.e. names without a suffix (e.g., `nike`, `vi
 
 ### ®️ Registering a Name
 
-1. Call the `registerName` function on the contract at [0x123..333](https://etherscan.io/) with the associated price tag for the chosen namespace.
-2. After submitting your transaction, wait a few blocks for confirmation.
-3. Then, use the `getAddress` and `getName` functions to ensure your chosen name correctly resolves to your address.
+To register an XNS name, follow the following steps:
 
-**Example:** To register `alice.xns`:
-- Call `registerName` with `label = "alice"` and `namespace = "xns"`.
-- Send the required price for the `"xns"` namespace (e.g., 0.001 ETH).
+1. Call `registerName` on the contract at [0x123..333](https://etherscan.io/) with the namespace's required price.
+2. Wait a few blocks for confirmation, then verify with `getAddress` and `getName`.
 
-If you're unsure of a namespace's price, retrieve it with `getNamespaceInfo("your_namespace")` by replacing `"your_namespace"` with your desired namespace.
+**Example:** 
+- To register `alice.xns`, call `registerName("alice", "xns")` with the required price (check with `getNamespaceInfo("xns")`).
 
-**Important:** 
-- A valid label is:
-   - Length 1–20
-   - Consists only of [a-z0-9-]
-   - Cannot start or end with `-`
+**Requirements:** 
+- **Registration**: Name must be unregistered, and your address must not already have a name.
+- **Label:**
+   - 1–20 characters
+   - Lowercase letters/digits/hypens only
+   - Cannot start/end with hyphen (`-`)
    - Cannot contain consecutive hyphens (`--`)
 
-- For a registration to succeed, 
-   - The name must not be registered yet
-   - The registering address does not have a name yet
-
-- With `registerName(label, namespace)`, names are always linked to the caller's address and cannot be assigned to another address.
-
-Examples:
+**Examples:**
 - ✅ `alice.xns`
 - ✅ `bob.yolo`
 - ✅ `vitalik.100x`
@@ -79,36 +72,44 @@ Examples:
 - ❌ `name-.og` (ends with hyphen)
 - ❌ `my--name.888` (consecutive hyphens)
 
+**Additional comments:**
+- If you're unsure of a namespace's price, check the [price list](#-xns-price-list) below or retrieve it with `getNamespaceInfo("your_namespace")` by replacing `"your_namespace"` with your desired namespace.
+- Calling `registerName(label, namespace)` always links names to the caller's address.
 
 ### 💤 Register a namespace
 
-1. Call the `registerNamespace` function on the contract at [0x123..333](https://etherscan.io/).
-2. After submitting your transaction, wait a few blocks for confirmation.
-3. Then, use the `getNamespaceInfo` function to verify your namespace was registered correctly with the intended price.
+To register a namespace, follow the following steps:
 
-**Example:** To register a namespace "yolo" with a price of 0.250 ETH per name:
-- Call `registerNamespace` with `namespace = "yolo"` and `pricePerName = 0.25 ether` (250000000000000000 wei).
-- Send 200 ETH as the namespace registration fee (any excess will be refunded).
+1. Call `registerNamespace` on the contract at [0x123..333](https://etherscan.io/) with 200 ETH (or 0 ETH if you're the contract owner in the first year).
+2. Wait a few blocks for confirmation, then verify with `getNamespaceInfo`.
 
->**Note:** During the first year after contract deployment, the contract owner can register namespaces for free.
+**Example:** 
+- To register namespace `"yolo"` with a price of 0.250 ETH per name, call `registerNamespace("yolo", 0.25 ether)` with 200 ETH (any excess will be refunded).
 
-**Important:** 
-- The price per name must be a multiple of 0.001 ETH (0.001, 0.002, 0.250, etc.).
-- Each price can only be assigned to one namespace (price uniqueness is enforced).
-- Namespaces must be 1–4 characters long and contain only lowercase letters and digits (`a-z`, `0-9`).
-- The namespace must not exist yet.
-- The namespace `"eth"` is forbidden to avoid confusion with ENS.
-- As the namespace creator, you'll receive 5% of all name registration fees for names registered in your namespace.
+**Requirements:** 
+- **Namespace:**
+   - 1–4 characters
+   - Lowercase letters/digits only (`a-z`, `0-9`)
+   - Must not exist yet
+   - Cannot be `"eth"` (forbidden to avoid confusion with ENS)
+- **Price per name:**
+   - Must be a multiple of 0.001 ETH (0.001, 0.002, 0.250, etc.)
+   - Each price can only be assigned to one namespace (price uniqueness is enforced)
+- **Fee:** 200 ETH registration fee (contract owner pays 0 ETH during the first year after deployment)
 
-Valid Examples:
-✅ 100x
-✅ bob.yolo
-✅ vitalik.100x
-✅ garry.ape
+**Examples:**
+- ✅ `yolo`
+- ✅ `100x`
+- ✅ `ape`
+- ✅ `001`
+- ❌ `YOLO` (uppercase)
+- ❌`toolong` (more than 4 characters)
+- ❌`eth` (forbidden)
+- ❌`my-n` (contains hyphen)
 
----
+**Additional comments:**
+- As the namespace creator, you'll receive 5% of all name registration fees for names registered in your namespace forever.
 
-### Price list
 
 ## 🔥 XNS Price list
 
@@ -134,152 +135,7 @@ Valid Examples:
 | io        | 0.055 ETH    |
 | 888       | 0.888 ETH    |
 
----
-
-### 🔥 ETH Burn–Based Registration
-
-Names are registered by burning ETH. The amount of ETH burned determines the namespace.
-
-- 90% of ETH sent is burned via the [DETH contract](https://github.com/Walodja1987/deth), contributing Ethereum's deflationary mechanism and ETH's value accrual
-- The sender is credited DETH 1:1
-
-There is no secondary market and no resale incentive.
-
----
-
-### 🧭 One Name per Address
-
-Each Ethereum address may own **at most one XNS name**.
-
-This guarantees:
-
-- Clear identity mapping
-- No name farming
-- Simple reverse lookup (`address → name`)
-
----
-
-### 🧠 Fully On-Chain Resolution
-
-XNS supports:
-
-- **Forward lookup:** name → address
-- **Reverse lookup:** address → name
-
-All resolution is done via on-chain view functions and can be queried directly via **Etherscan** — no indexers required.
-
----
-
-## 🏷 Names & Namespaces
-
-An XNS name consists of:
-
-```
-<label>.<namespace>
-```
-
-Examples:
-
-```
-vitalik.001
-alice.yolo
-nike.x
-```
-
----
-
-### 🔹 Labels
-
-The label is the user-chosen part of the name.
-
-Rules:
-
-- Length: **1–20 characters**
-- Allowed characters:
-  - `a–z`
-  - `0–9`
-  - `-` (hyphen)
-
-- Hyphen **cannot** be the first or last character
-- Hyphen **cannot** appear consecutively (e.g., `--`)
-
-Examples:
-
-- ✅ `vitalik`
-- ✅ `my-name`
-- ❌ `-name` (starts with hyphen)
-- ❌ `name-` (ends with hyphen)
-- ❌ `my--name` (consecutive hyphens)
-
----
-
-### 🔹 Namespaces
-
-Namespaces are determined **entirely by the ETH amount burned** during registration.
-
-- Namespaces are **permissionless**
-- Anyone can create a namespace by paying a one-time fee
-- Each namespace has a **fixed price per name**
-
-Namespace rules:
-
-- Length: **1–4 characters**
-- Allowed characters: `a–z`, `0–9`
-- The namespace `"eth"` is **forbidden** to avoid confusion with ENS
-
----
-
-## ⭐ The Special Namespace `.x`
-
-XNS includes a **special premium namespace**:
-
-```
-.x
-```
-
-This namespace represents **suffix-free names**.
-
-### How it works
-
-- Registering a label **without a dot** implicitly registers:
-
-  ```
-  label.x
-  ```
-
-- Resolution treats both forms as equivalent:
-
-  ```
-  getAddress("nike")  == getAddress("nike.x")
-  ```
-
-### Pricing
-
-- `.x` names cost **100 ETH**
-- Example:
-
-  ```
-  nike.x  → displayed simply as "nike"
-  ```
-
-The `.x` namespace is **not a default** — it is a **premium, scarce namespace**.
-
----
-
-## 🔥 Namespace Pricing Model
-
-Namespaces are mapped to **exact ETH amounts**, in increments of **0.001 ETH**.
-
-Examples:
-
-|  ETH Burn | Name                 |
-| --------: | -------------------- |
-| 0.001 ETH | alice.001            |
-| 0.250 ETH | alice.250            |
-| 0.999 ETH | alice.999            |
-|   100 ETH | alice (i.e. alice.x) |
-
-The ETH amount uniquely determines the namespace.
+Every namespace has a distinct price, always set as a multiple of 0.001 ETH.
 
 ---
 
