@@ -57,6 +57,7 @@ Front-running is possible but not considered a significant problem because:
 
 * Front-runners must burn ETH to register the name and cannot sell or transfer it (names are permanent, immutable, and non-transferable)
 * Users can choose alternative namespaces to secure their preferred name (e.g., if `vitalik.x` is taken, they can register `vitalik.yolo` or another namespace)
+* Users can use private RPCs.
 
 ### Front-Running during the First Year
 
@@ -79,3 +80,18 @@ Block reorganizations (reorgs) pose a risk to name registrations. If a registrat
 The contract intentionally does not implement protocol-level reorg mitigation, as such mechanisms would force additional complexity on users and interfaces, such as requiring multiple confirmation or registration steps.
 
 This is documented as a best practice recommendation rather than a protocol-level enforcement, as finality guarantees are ultimately a property of the underlying blockchain consensus mechanism.
+
+## Known Limitations
+
+### Gas Griefing in Signature Verification
+
+The contract uses OpenZeppelin's `SignatureChecker` which forwards all remaining gas to EIP-1271 contract wallets during signature verification. A malicious contract wallet could consume all gas, causing the transaction to fail.
+
+**Impact:**
+- Single registrations: Recipient would grief themselves (unlikely)
+- Batch registrations: One malicious recipient could cause entire batch to fail
+
+**Mitigation:**
+- Batch operations are expected to be rare and involve trusted recipients
+- Recipients should use trusted wallet implementations
+- If needed, gas limiting can be added in future versions

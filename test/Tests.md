@@ -29,6 +29,10 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should emit `NamespaceRegistered` event for special namespace.
 - Should emit `NameRegistered` event for contract's own name "xns".
 
+#### Reverts
+
+- Should revert with `XNS: 0x owner` error when owner is `address(0)`.
+
 ---
 
 ### isValidLabel

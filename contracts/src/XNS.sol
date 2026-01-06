@@ -176,6 +176,7 @@ contract XNS is EIP712 {
     /// and a price of 100 ETH per name. Additionally, registers the bare name "xns" for the XNS contract itself.
     /// @param owner Address that will own the contract and receive protocol fees.
     constructor(address owner) EIP712("XNS", "1") {
+        require(owner != address(0), "XNS: 0x owner");
         OWNER = owner;
         DEPLOYED_AT = uint64(block.timestamp);
 
@@ -740,6 +741,11 @@ contract XNS is EIP712 {
 
     /// @dev Internal function to verify EIP-712 signature for RegisterNameAuth.
     /// Used in `registerNameWithAuthorization` and `batchRegisterNameWithAuthorization`.
+    ///
+    /// Note: There is a risk of gas griefing by contract wallets that consume excessive gas during
+    /// signature verification may cause transactions to fail. This is a known limitation of EIP-1271.
+    /// Recipients should use trusted wallet implementations (Safe, Argent, etc.).
+    ///
     /// @param registerNameAuth The struct containing recipient, label, and namespace.
     /// @param signature The signature to verify.
     /// @return isValid True if the signature is valid, false otherwise.

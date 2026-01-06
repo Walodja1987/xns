@@ -181,6 +181,15 @@ describe("XNS", function () {
             .withArgs("xns", "x", contractAddress);
     });
 
+    it("Should revert with `XNS: 0x owner` error when owner is `address(0)`", async () => {
+        // ---------
+        // Act & Assert: Attempt to deploy contract with zero address as owner
+        // ---------
+        await expect(
+            ethers.deployContract("XNS", [ethers.ZeroAddress])
+        ).to.be.revertedWith("XNS: 0x owner");
+    });
+
     
   });
 
