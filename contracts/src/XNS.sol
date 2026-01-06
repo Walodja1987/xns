@@ -522,11 +522,6 @@ contract XNS is EIP712 {
     // =========================================================================
 
     /// @notice Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an address.
-    ///
-    /// **Requirements:**
-    /// - `fullName` must not be empty.
-    /// - `fullName` must be a valid name string (label.namespace).
-    ///
     /// @dev Returns `address(0)` for anything not registered or malformed.
     /// @param fullName The name string to resolve.
     /// @return addr The address associated with the name, or `address(0)` if not registered.
