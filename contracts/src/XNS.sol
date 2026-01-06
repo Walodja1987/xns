@@ -115,12 +115,12 @@ contract XNS is EIP712 {
     //     abi.encodePacked(
     //         "RegisterNameAuth(",
     //         "address recipient,",
-    //         "bytes32 labelHash,",
-    //         "bytes32 namespaceHash)"
+    //         "string label,",
+    //         "string namespace)"
     //     )
     // )
     bytes32 private constant _REGISTER_NAME_AUTH_TYPEHASH =
-        0xfed68b8c50be9d8c7775136bcef61eefc74849472c4e4e5c861277fbcbdcebd7;
+        0x3af1a3ccc0c04cc5d0dde28c2900c21fbae8e30149f4caf140b9223938975f04;
 
     // -------------------------------------------------------------------------
     // Constants

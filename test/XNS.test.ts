@@ -37,15 +37,15 @@ describe("XNS", function () {
     const types = {
       RegisterNameAuth: [
         { name: "recipient", type: "address" },
-        { name: "labelHash", type: "bytes32" },
-        { name: "namespaceHash", type: "bytes32" },
+        { name: "label", type: "string" },
+        { name: "namespace", type: "string" },
       ],
     };
 
     const value = {
       recipient: recipient,
-      labelHash: ethers.keccak256(ethers.toUtf8Bytes(label)),
-      namespaceHash: ethers.keccak256(ethers.toUtf8Bytes(namespace)),
+      label: label,
+      namespace: namespace,
     };
 
     return await signer.signTypedData(domain, types, value);
@@ -5846,6 +5846,42 @@ describe("XNS", function () {
       // ---------
       expect(name).to.equal("");
     });
+
+    it("Should return zero address for \"foo.bar.baz\" (parses as label=\"foo.bar\", namespace=\"baz\")", async () => {
+        // ---------
+        // Arrange
+        // ---------
+        // "foo.bar.baz" has length 11, so the function searches for '.' from the right
+        // within the last 5 characters (positions 6-10). It finds '.' at position 7,
+        // so it parses as label="foo.bar" (indices 0-6) and namespace="baz" (indices 8-10).
+        // Since "foo.bar.baz" is not registered, it should return address(0).
+        const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+  
+        // ---------
+        // Act & Assert
+        // ---------
+        // The name "foo.bar.baz" will be parsed as label="foo.bar" and namespace="baz",
+        // which is not registered, so it returns address(0).
+        expect(await getAddressByFullName("foo.bar.baz")).to.equal(ethers.ZeroAddress);
+      });
+
+      it("Should return zero address for \"foo.abcde\" (dot not in last 5 chars, treated as bare label)", async () => {
+        // ---------
+        // Arrange
+        // ---------
+        // "foo.abcde" has length 9, so the function searches for '.' from the right
+        // within the last 5 characters (positions 4-8). The dot is at position 3,
+        // which is outside this range, so no dot is found. It treats "foo.abcde"
+        // as a bare label and looks up "foo.abcde.x", which is not registered.
+        const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+        // ---------
+        // Act & Assert
+        // ---------
+        // The name "foo.abcde" will be treated as a bare label (no dot found in last 5 chars),
+        // so it looks up "foo.abcde.x", which is not registered, so it returns address(0).
+        expect(await getAddressByFullName("foo.abcde")).to.equal(ethers.ZeroAddress);
+      });
 
   });
 

@@ -327,6 +327,8 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should resolve fullnames with twenty-five characters.
 - Should return `address(0)` for unregistered names.
 - Should return `address(0)` for empty string.
+- Should return `address(0)` for "foo.bar.baz" (parses as label="foo.bar", namespace="baz").
+- Should return `address(0)` for "foo.abcde" (dot not in last 5 chars, treated as bare label).
 
 ---
 
