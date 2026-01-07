@@ -176,7 +176,13 @@ The XNS contract is deployed on Ethereum at the following address: [xxx](https:/
 
 <!-- [Contract deployment transaction](https://etherscan.io/tx/xxx) -->
 
-For testing purposes, you can use the deployed contract on Sepolia at: [0xf4c5641d5576f5Ef3343EdDb79439A39Ac08499C](https://sepolia.etherscan.io/address/0xf4c5641d5576f5Ef3343EdDb79439A39Ac08499C)
+For testing purposes, you can use the deployed contract on Sepolia at: [0x9D020C971bf8e4E5A8cc75eB9615F3A5B63f9fc4](https://sepolia.etherscan.io/address/0x9D020C971bf8e4E5A8cc75eB9615F3A5B63f9fc4)
+
+The testnet contract has been parametrized as follows:
+- Namespace registration fee: 0.1 ether (instead of 200 ether)
+- Namespace creator exclusive period: 60 seconds (instead of 30 days)
+- Initial owner namespace registration period: 60 seconds (instead of 365 days)
+- Bare name price: 0.2 ether (instead of 100 ether)
 
 ## 🔧 Key Functions
 
