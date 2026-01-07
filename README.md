@@ -47,7 +47,7 @@ XNS also supports **bare names**, i.e. names without a suffix (e.g., `nike`, `vi
 
 To register an XNS name, follow the following steps:
 
-1. Call `registerName` on the contract at [0x123..333](https://etherscan.io/) with the namespace's required price.
+1. Call `registerName` on the contract at [0x123..333](https://etherscan.io/) with the namespace's required price (see [price list](#🔥-xns-price-list) below).
 2. Wait a few blocks for confirmation, then verify with `getAddress` and `getName`.
 
 **Example:** 
@@ -169,6 +169,14 @@ After 30 days:
 - Anyone may sponsor name registrations via `registerNameWithAuthorization`
 
 ---
+
+## 🔗 Address
+
+The XNS contract is deployed on Ethereum at the following address: [xxx](https://etherscan.io/address/xxx)
+
+<!-- [Contract deployment transaction](https://etherscan.io/tx/xxx) -->
+
+For testing purposes, you can use the deployed contract on Sepolia at: [yyy](https://sepolia.etherscan.io/address/yyy)
 
 ## 🔧 Key Functions
 

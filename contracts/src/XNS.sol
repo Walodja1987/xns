@@ -159,7 +159,7 @@ contract XNS is EIP712 {
 
     /// @dev Emitted in `registerName`, `registerNameWithAuthorization`,
     /// and `batchRegisterNameWithAuthorization` functions.
-    event NameRegistered(string indexed label, string indexed namespace, address indexed owner); // @todo rename to nameOwner? Also in tests and IXNS?
+    event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
 
     /// @dev Emitted in constructor when "x" namespace is registered, and in `registerNamespace` function.
     event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator);

@@ -240,10 +240,6 @@ function claimFeesToSelf() external
 
 Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an address.
 
-**Requirements:**
-- `fullName` must not be empty.
-- `fullName` must be a valid name string (label.namespace).
-
 ```solidity
 function getAddress(string fullName) external view returns (address addr)
 ```
