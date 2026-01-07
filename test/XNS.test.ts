@@ -293,6 +293,7 @@ describe("XNS", function () {
         expect(await s.xns.isValidLabel("alice_bob")).to.be.false;
         expect(await s.xns.isValidLabel("test_label")).to.be.false;
         expect(await s.xns.isValidLabel("user_name_123")).to.be.false;
+        expect(await s.xns.isValidLabel("xns_deployer")).to.be.false;
     });
 
     it("Should return `false` for labels containing consecutive hyphens", async () => {

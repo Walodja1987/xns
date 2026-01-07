@@ -176,7 +176,7 @@ The XNS contract is deployed on Ethereum at the following address: [xxx](https:/
 
 <!-- [Contract deployment transaction](https://etherscan.io/tx/xxx) -->
 
-For testing purposes, you can use the deployed contract on Sepolia at: [yyy](https://sepolia.etherscan.io/address/yyy)
+For testing purposes, you can use the deployed contract on Sepolia at: [0xf4c5641d5576f5Ef3343EdDb79439A39Ac08499C](https://sepolia.etherscan.io/address/0xf4c5641d5576f5Ef3343EdDb79439A39Ac08499C)
 
 ## 🔧 Key Functions
 
