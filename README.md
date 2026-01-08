@@ -76,6 +76,14 @@ To register an XNS name, follow the following steps:
 - If you're unsure of a namespace's price, check the [price list](#-xns-price-list) below or retrieve it with `getNamespaceInfo("your_namespace")` by replacing `"your_namespace"` with your desired namespace.
 - Calling `registerName(label, namespace)` always links names to the caller's address.
 
+#### Registration via Etherscan
+
+<img width="670" height="301" alt="image" src="https://github.com/user-attachments/assets/2323cac5-060d-4cc8-abc6-0a27ea3f03d4" />
+
+<img width="664" height="296" alt="image" src="https://github.com/user-attachments/assets/a1fd1570-c946-4049-a812-528eed7c7878" />
+
+
+
 ### 💤 Register a namespace
 
 To register a namespace, follow the following steps:
