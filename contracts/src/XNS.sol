@@ -151,7 +151,7 @@ contract XNS is EIP712 {
     uint256 public constant SPECIAL_NAMESPACE_PRICE = 100 ether;
 
     /// @notice Address of DETH contract used to burn ETH and credit the recipient.
-    address public constant DETH = 0xeD204c6698167dB50c4da2AC23Fad8F59dc9087A; //0xE46861C9f28c46F27949fb471986d59B256500a7;
+    address public constant DETH = 0xE46861C9f28c46F27949fb471986d59B256500a7;
 
     // -------------------------------------------------------------------------
     // Events

@@ -169,7 +169,7 @@ const config: HardhatUserConfig = {
     },
     sepolia: {
       chainId: 11155111,
-      url: vars.get("ETH_EPOLIA_TESTNET_URL", "https://ethereum-sepolia-rpc.publicnode.com"),
+      url: vars.get("ETH_SEPOLIA_TESTNET_URL", "https://ethereum-sepolia-rpc.publicnode.com"),
       accounts,
       ledgerAccounts,
     },
