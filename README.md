@@ -43,7 +43,7 @@ XNS also supports **bare names**, i.e. names without a suffix (e.g., `nike`, `vi
 
 ## ✨ How It Works
 
-### ®️ Registering a Name
+### ®️ Name Registration
 
 To register an XNS name, follow the following steps:
 
@@ -76,11 +76,11 @@ To register an XNS name, follow the following steps:
 - If you're unsure of a namespace's price, check the [price list](#-xns-price-list) below or retrieve it with `getNamespaceInfo("your_namespace")` by replacing `"your_namespace"` with your desired namespace.
 - Calling `registerName(label, namespace)` always links names to the caller's address.
 
-#### Registration via Etherscan
+### Name Registration via Etherscan
 
 You can register your name directly via [Etherscan](https://sepolia.etherscan.io/address/0x04c9AafC2d30857781dd1B3540411e24FA536e39).
 
-> **Important:** Ensure you are connected to the wallet address that you want to associate with the name.
+> ⚠️**Important:** Ensure you are connected to the wallet address that you want to associate with the name.
 
 <img width="302" height="82" alt="image" src="https://github.com/user-attachments/assets/628791be-b647-4bcc-b85f-f75289afac1c" />
 
@@ -92,7 +92,7 @@ You can register your name directly via [Etherscan](https://sepolia.etherscan.io
 
 
 
-### 💤 Register a namespace
+### 💤 Namespace Registration
 
 To register a namespace, follow the following steps:
 
@@ -126,6 +126,13 @@ To register a namespace, follow the following steps:
 **Additional comments:**
 - As the namespace creator, you'll receive 5% of all name registration fees for names registered in your namespace forever.
 
+### Namespace Registration via Etherscan
+
+You can register your name directly via [Etherscan](https://sepolia.etherscan.io/address/0x04c9AafC2d30857781dd1B3540411e24FA536e39).
+
+<img width="666" height="302" alt="image" src="https://github.com/user-attachments/assets/1bcea62d-4591-42f5-8507-665c0b5e59e2" />
+
+> 💡**Note:** `2000000000000000` in the screenshots will be the registration price for the namespace.
 
 ## 🔥 XNS Price list
 
