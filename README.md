@@ -78,8 +78,16 @@ To register an XNS name, follow the following steps:
 
 #### Registration via Etherscan
 
+You can register your name directly via [Etherscan](https://sepolia.etherscan.io/address/0x04c9AafC2d30857781dd1B3540411e24FA536e39).
+
+> **Important:** Ensure you are connected to the wallet address that you want to associate with the name.
+
+[TODO: Add screenshot here]
+
+**Example 1:** Registering `bob.xns` in the `xns` namespace (costs 0.001 ETH):
 <img width="670" height="301" alt="image" src="https://github.com/user-attachments/assets/2323cac5-060d-4cc8-abc6-0a27ea3f03d4" />
 
+**Example 2:** Registering the bare name `vitalik` (costs 100 ETH):
 <img width="664" height="296" alt="image" src="https://github.com/user-attachments/assets/a1fd1570-c946-4049-a812-528eed7c7878" />
 
 
