@@ -132,7 +132,7 @@ You can register your name directly via [Etherscan](https://sepolia.etherscan.io
 
 <img width="666" height="302" alt="image" src="https://github.com/user-attachments/assets/1bcea62d-4591-42f5-8507-665c0b5e59e2" />
 
-> 💡**Note:** `2000000000000000` in the screenshots will be the registration price for the namespace.
+> 💡**Note:** In the screenshot, `2000000000000000` represents the registration price (in wei) for the namespace.
 
 ## 🔥 XNS Price list
 
