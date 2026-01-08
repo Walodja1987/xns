@@ -82,7 +82,7 @@ You can register your name directly via [Etherscan](https://sepolia.etherscan.io
 
 > **Important:** Ensure you are connected to the wallet address that you want to associate with the name.
 
-[TODO: Add screenshot here]
+<img width="302" height="82" alt="image" src="https://github.com/user-attachments/assets/628791be-b647-4bcc-b85f-f75289afac1c" />
 
 **Example 1:** Registering `bob.xns` in the `xns` namespace (costs 0.001 ETH):
 <img width="670" height="301" alt="image" src="https://github.com/user-attachments/assets/2323cac5-060d-4cc8-abc6-0a27ea3f03d4" />
