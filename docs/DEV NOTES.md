@@ -95,3 +95,23 @@ The contract uses OpenZeppelin's `SignatureChecker` which forwards all remaining
 - Batch operations are expected to be rare and involve trusted recipients
 - Recipients should use trusted wallet implementations
 - If needed, gas limiting can be added in future versions
+
+### EIP-712 Authorization Without Nonce or Deadline
+
+The `RegisterNameAuth` struct does not include a `nonce` or `deadline` field, meaning signatures can theoretically be used indefinitely after being issued. 
+
+**Why `nonce` is not needed:**
+
+Replay attacks are not considered a problem because:
+
+- **No financial loss for recipients**: If someone sponsors a registration for a recipient's name using an old signature, the recipient incurs no cost—the sponsor pays the registration fee. The worst that can happen is that the recipient address might get a name assigned, that they no longer want.
+- **One-name-per-address limit**: Each address can have exactly one name. Once a name is registered to an address, any subsequent authorization attempts for different names will fail due to the existing name check. Incrementing a nonce on successful use would not provide meaningful protection beyond what already exists.
+
+**Why `deadline` is not needed:**
+
+While adding an optional deadline field could provide users with additional control over signature validity, this would be primarily about user optionality rather than security. Even with an optional deadline, users could choose an "infinite" deadline, resulting in the same scenario.
+
+**Mitigation:**
+- Recipients should only sign authorizations they are comfortable with executing at any point in the future
+- Recipients can register a name themselves to prevent any sponsored registration attempts
+- The one-name-per-address constraint naturally limits the impact of replay attacks
