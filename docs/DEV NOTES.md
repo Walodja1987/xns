@@ -81,22 +81,7 @@ The contract intentionally does not implement protocol-level reorg mitigation, a
 
 This is documented as a best practice recommendation rather than a protocol-level enforcement, as finality guarantees are ultimately a property of the underlying blockchain consensus mechanism.
 
-## Known Limitations
-
-### Gas Griefing in Signature Verification
-
-The contract uses OpenZeppelin's `SignatureChecker` which forwards all remaining gas to EIP-1271 contract wallets during signature verification. A malicious contract wallet could consume all gas, causing the transaction to fail.
-
-**Impact:**
-- Single registrations: Recipient would grief themselves (unlikely)
-- Batch registrations: One malicious recipient could cause entire batch to fail
-
-**Mitigation:**
-- Batch operations are expected to be rare and involve trusted recipients
-- Recipients should use trusted wallet implementations
-- If needed, gas limiting can be added in future versions
-
-### EIP-712 Authorization Without Nonce or Deadline
+## EIP-712 Authorization Without Nonce or Deadline
 
 The `RegisterNameAuth` struct does not include a `nonce` or `deadline` field, meaning signatures can theoretically be used indefinitely after being issued. 
 
@@ -115,3 +100,28 @@ While adding an optional deadline field could provide users with additional cont
 - Recipients should only sign authorizations they are comfortable with executing at any point in the future
 - Recipients can register a name themselves to prevent any sponsored registration attempts
 - The one-name-per-address constraint naturally limits the impact of replay attacks
+
+## Refund Failure
+
+The refund logic requires that refunds succeed. If the sponsoring contract cannot accept ETH transfers (no `receive()`/`fallback()` or intentional revert), the refund will fail and cause the transaction to revert.
+
+This DoS scenario is acknowledged but not considered a critical issue given the following:
+
+- **Alternative sponsorship paths:** If a contract cannot accept ETH for refunds, sponsors can use an EOA or another contract that can receive ETH to sponsor registrations instead.
+
+A more robust alternative would be to implement a pending refunds mechanism, requiring `msg.sender` to explicitly claim any refund in a separate transaction. However, this approach introduces additional contract complexity and negatively impacts user experience. The current design is viewed as a reasonable trade-off.
+
+## Known Limitations
+
+### Gas Griefing in Signature Verification
+
+The contract uses OpenZeppelin's `SignatureChecker` which forwards all remaining gas to EIP-1271 contract wallets during signature verification. A malicious contract wallet could consume all gas, causing the transaction to fail.
+
+**Impact:**
+- Single registrations: Recipient would grief themselves (unlikely)
+- Batch registrations: One malicious recipient could cause entire batch to fail
+
+**Mitigation:**
+- Batch operations are expected to be rare and involve trusted recipients
+- Recipients should use trusted wallet implementations
+- If needed, gas limiting can be added in future versions
