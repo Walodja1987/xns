@@ -141,6 +141,8 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should credit correct amount of DETH to namespace creator (`msg.sender`) during exclusive period.
 - Should allow a contract to register a name for itself via `registerName` (in constructor).
 - Should allow a contract to register a name for itself via `registerName` (after deployment).
+- Should refund excess payment to contract when registering in constructor with excess payment.
+- Should refund excess payment to contract when registering via function with excess payment.
 
 #### Events
 

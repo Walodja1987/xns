@@ -435,6 +435,159 @@ Returns:
 
 ---
 
+## 🔧 Integration Guide for Contract Developers
+
+### Overview
+
+XNS can be integrated into your smart contracts. This allows your contract to register an XNS name (e.g., `myprotocol.xns`), making it easier for users to identify your contract address.
+
+Since XNS only exists on Ethereum mainnet, **your contract must be deployed on Ethereum** to use XNS. If your contract is deployed to the same address on other chains (e.g., using CREATE2 with the same salt), you can use the XNS name registered on Ethereum for those chains in your Address Book documentation, as the name will resolve to the correct address.
+
+### Integration on Ethereum
+
+For contracts deployed only on Ethereum, there are two ways to integrate XNS:
+
+#### Option 1: Register via Separate Function
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.28;
+
+import {IXNS} from "./interfaces/IXNS.sol";
+
+contract MyProtocol {
+    IXNS public immutable xns;
+
+    constructor(address _xns) {
+        xns = IXNS(_xns);
+    }
+
+    /// @notice Register an XNS name for this contract
+    /// @param label The label to register (e.g., "myprotocol")
+    /// @param namespace The namespace to register in (e.g., "xns")
+    function registerName(string calldata label, string calldata namespace) external payable {
+        xns.registerName{value: msg.value}(label, namespace);
+    }
+}
+```
+
+After deployment, call `registerName("myprotocol", "xns")` with the required payment to register the name.
+
+#### Option 2: Register via Constructor
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.28;
+
+import {IXNS} from "./interfaces/IXNS.sol";
+
+contract MyProtocol {
+    constructor(address _xns, string memory label, string memory namespace) payable {
+        IXNS(_xns).registerName{value: msg.value}(label, namespace);
+    }
+}
+```
+
+Deploy with the `label`, `namespace`, and required payment to register the name during contract creation.
+
+> **Note:** In both integration options, any excess payment is refunded by XNS to `msg.sender`, which will be your contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when calling `registerName`.
+
+
+### Multi-Chain Deployment Considerations
+
+If your protocol will be deployed across multiple chains, follow these best practices:
+
+#### 1. **Use a Separate Registration Function (Recommended)**
+
+Avoid registering names in the constructor. Instead, use a separate `registerName` function that can be called after deployment once you've confirmed your contract address on Ethereum:
+
+**Why?**
+- Deploying on the same address across multiple chains requires identical constructor arguments (e.g., using CREATE2 with the same salt)
+- If your contract has different addresses on different chains, registering in the constructor could bind a name to an address that doesn't match on other chains
+- A separate function allows you to verify address consistency before registration
+
+**Implementation:**
+
+To maintain the same address across chains, you must pass the same constructor arguments. Use a chainId check in the `registerName` function:
+
+```solidity
+IXNS public immutable xns;
+
+constructor(address _xns) {
+    // Pass the same XNS address (or address(0)) on all chains to maintain same address
+    require(address(_xns) != address(0), "XNS contract address not set");
+    xns = IXNS(_xns);
+}
+
+function registerName(string calldata label, string calldata namespace) external payable {
+    // Guard: XNS only exists on Ethereum mainnet
+    require(block.chainid == 1, "XNS only available on Ethereum mainnet");
+    xns.registerName{value: msg.value}(label, namespace);
+}
+```
+
+**Note:** If you want different addresses across chains, you can conditionally set `xns` in the constructor based on `block.chainid`, but this will result in different contract addresses.
+
+#### 3. **Constructor Registration (Alternative)**
+
+While less flexible, constructor registration is acceptable if you:
+- Ensure consistent deployment addresses across chains (e.g., using CREATE2 with same salt)
+- Document which chains share the same address
+- Accept that the name will only be meaningful on Ethereum and chains with the same address
+
+**Example:**
+```solidity
+IXNS public immutable xns;
+
+constructor(address _xns, string memory label, string memory namespace) payable {
+    // Only set xns on Ethereum mainnet
+    if (block.chainid == 1) {
+        xns = IXNS(_xns);
+        // Register name if label provided
+        if (bytes(label).length > 0) {
+            xns.registerName{value: msg.value}(label, namespace);
+        }
+    }
+}
+```
+
+### Documentation Strategy for Address Books
+
+When documenting your protocol's contract addresses across multiple chains:
+
+1. **For chains where the contract address matches the one on Ethereum:**
+   - Register the XNS name on Ethereum mainnet
+   - Use the XNS name in your documentation/address book (e.g., `myprotocol.xns`)
+   - Example: "Deployed on Ethereum, Polygon, Arbitrum, Optimism, and Base at `myprotocol.xns`"
+
+2. **For chains where the contract address differs:**
+   - Use the actual contract address (not the XNS name)
+   - Example: "Deployed on Avalanche at `0x1234...5678`"
+
+### Access Control
+
+Consider adding access control to your `registerName` function to prevent unauthorized registrations:
+
+```solidity
+address public owner;
+
+modifier onlyOwner() {
+    require(msg.sender == owner, "Not owner");
+    _;
+}
+
+function registerName(string calldata label, string calldata namespace) external payable onlyOwner {
+    require(address(xns) != address(0), "XNS not available on this chain");
+    xns.registerName{value: msg.value}(label, namespace);
+}
+```
+
+### Getting the XNS Contract Address
+
+After contract deployment, applications can query the address via `getAddress("myprotocol.xns")` on Ethereum.
+
+---
+
 ## ⚠️ Front-Running & Design Choice
 
 XNS **does not** use a commit–reveal pattern.

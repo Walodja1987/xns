@@ -1816,6 +1816,116 @@ describe("XNS", function () {
         expect(returnedNamespace).to.equal(namespace);
     });
 
+    it("Should refund excess payment to contract when registering in constructor with excess payment", async () => {
+        // ---------
+        // Arrange: Prepare parameters for contract deployment with excess payment
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const label = "refundconstructor";
+        const pricePerName = ethers.parseEther("0.001");
+        const excessPayment = ethers.parseEther("0.0005"); // Pay 0.0005 ETH more than required
+        const totalPayment = pricePerName + excessPayment; // 0.0015 ETH total
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Get deployer (user2) balance before deployment
+        const balanceBefore = await ethers.provider.getBalance(s.user2.address);
+
+        // ---------
+        // Act: Deploy contract that registers name in constructor with excess payment
+        // ---------
+        const SelfRegisteringContract = await ethers.getContractFactory("SelfRegisteringContract");
+        const deployTx = await SelfRegisteringContract.connect(s.user2).deploy(
+            await s.xns.getAddress(),
+            label,
+            namespace,
+            { value: totalPayment }
+        );
+        const receipt = await deployTx.waitForDeployment();
+        const deployReceipt = await deployTx.deploymentTransaction()!.wait();
+        
+        // Calculate gas cost
+        const gasUsed = deployReceipt!.gasUsed;
+        const gasPrice = deployReceipt!.gasPrice || deployTx.deploymentTransaction()!.gasPrice || 0n;
+        const gasCost = gasUsed * gasPrice;
+
+        const contractAddress = await deployTx.getAddress();
+
+        // ---------
+        // Assert: Verify excess payment was refunded to contract (not deployer)
+        // ---------
+        // Verify name was registered
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const ownerAddress = await getAddressByLabelAndNamespace(label, namespace);
+        expect(ownerAddress).to.equal(contractAddress);
+
+        // Get deployer balance after deployment
+        const balanceAfter = await ethers.provider.getBalance(s.user2.address);
+
+        // Get contract balance (should have excess payment, refund went to contract, not deployer)
+        // Note: When called from constructor, msg.sender in XNS is the contract address, so refund goes to contract
+        const contractBalance = await ethers.provider.getBalance(contractAddress);
+        expect(contractBalance).to.equal(excessPayment);
+
+        // Verify deployer paid: balance should decrease by totalPayment + gas costs
+        // balanceAfter should equal balanceBefore - totalPayment - gasCost
+        const expectedBalanceAfter = balanceBefore - totalPayment - gasCost;
+        // Allow small tolerance for gas estimation differences
+        expect(balanceAfter).to.be.closeTo(expectedBalanceAfter, ethers.parseEther("0.00001"));
+    });
+
+    it("Should refund excess payment to contract when registering via function with excess payment", async () => {
+        // ---------
+        // Arrange: Deploy contract and prepare excess payment
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const label = "refundfunction";
+        const pricePerName = ethers.parseEther("0.001");
+        const excessPayment = ethers.parseEther("0.0005"); // Pay 0.0005 ETH more than required
+        const totalPayment = pricePerName + excessPayment; // 0.0015 ETH total
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Deploy contract without registering (empty label)
+        const SelfRegisteringContract = await ethers.getContractFactory("SelfRegisteringContract");
+        const contract = await SelfRegisteringContract.deploy(
+            await s.xns.getAddress(),
+            "",
+            "",
+            { value: 0 }
+        );
+        await contract.waitForDeployment();
+        const contractAddress = await contract.getAddress();
+
+        // Get contract balance before registration (should be 0)
+        const contractBalanceBefore = await ethers.provider.getBalance(contractAddress);
+        expect(contractBalanceBefore).to.equal(0);
+
+        // ---------
+        // Act: Contract registers name for itself via function with excess payment
+        // ---------
+        await contract.registerName(label, namespace, { value: totalPayment });
+
+        // ---------
+        // Assert: Verify excess payment was refunded to contract (not caller)
+        // ---------
+        // Verify name was registered
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const ownerAddress = await getAddressByLabelAndNamespace(label, namespace);
+        expect(ownerAddress).to.equal(contractAddress);
+
+        // Get contract balance after registration
+        const contractBalanceAfter = await ethers.provider.getBalance(contractAddress);
+
+        // Verify refund went to contract: contract should have received the excess payment
+        // Note: The refund goes to msg.sender in XNS, which is the contract address when called from a function
+        expect(contractBalanceAfter).to.equal(excessPayment);
+    });
+
     // -----------------------
     // Events
     // -----------------------

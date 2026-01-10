@@ -27,5 +27,8 @@ contract SelfRegisteringContract {
     function registerName(string calldata label, string calldata namespace) external payable {
         xns.registerName{value: msg.value}(label, namespace);
     }
+
+    /// @notice Receive function to accept ETH refunds from XNS
+    receive() external payable {}
 }
 
