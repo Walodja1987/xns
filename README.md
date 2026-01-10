@@ -508,7 +508,7 @@ Avoid registering names in the constructor. Instead, use a separate `registerNam
 
 **Implementation:**
 
-To maintain the same address across chains, you must pass the same constructor arguments. Use a chainId check in the `registerName` function:
+To maintain the same address across chains, you must pass the same constructor arguments. As XNS does not exist outside of Ethereum and would revert when calling `registerName`, use a `chainId` check to fail gracefully on non-Ethereum chains:
 
 ```solidity
 IXNS public immutable xns;
@@ -525,8 +525,6 @@ function registerName(string calldata label, string calldata namespace) external
     xns.registerName{value: msg.value}(label, namespace);
 }
 ```
-
-**Note:** If you want different addresses across chains, you can conditionally set `xns` in the constructor based on `block.chainid`, but this will result in different contract addresses.
 
 #### 3. **Constructor Registration (Alternative)**
 
