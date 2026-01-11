@@ -29,16 +29,20 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - vitalik.100x
 /// - garry.ape
 ///
-/// ### Name registration (public namespaces)
-/// - Users call `registerName(label, namespace)` and send ETH.
-/// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
+/// ### Name registration
+/// - To register a name, users call `registerName(label, namespace)` and send ETH.
+/// - The amount of ETH sent must be >= the namespace's registered price (excess will be refunded).
+/// - For example, if the "100x" namespace was registered with price 0.1 ETH, then calling
+///   `registerName("vitalik", "100x")` with 0.1 ETH registers "vitalik.100x".
 /// - Each address can own at most one name.
+/// - With `registerName(label, namespace)`, names are always linked to the caller's address and cannot
+///   be assigned to another address.
 ///
 /// ### Sponsorship via authorization (EIP-712 + EIP-1271)
-/// - `registerNameWithAuthorization` allows a sponsor to pay and register a name for a recipient
+/// - `registerNameWithAuthorization` allows a sponsor (`msg.sender`) to pay and register a name for a recipient
 ///   who explicitly authorized it via signature.
-/// - Public namespaces: during the creator's 30-day exclusivity window, only the creator may sponsor.
-/// - Private namespaces: only the creator may sponsor forever (public registration disabled).
+/// - During the namespace creator exclusivity window, only the namespace creator may sponsor registrations
+///   in that namespace (public `registerName` is disabled for non-creators).
 /// - Recipients sign an EIP-712 message authorizing the specific name registration, providing opt-in consent.
 /// - Supports both EOA signatures and EIP-1271 contract wallet signatures (Safe, Argent, etc.).
 ///
@@ -49,27 +53,18 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - Bare names are considered premium names and cost 100 ETH per name.
 ///
 /// ### Namespace registration
-/// - Anyone can register new namespaces by paying a one-time fee.
-/// - Namespaces can be public or private. Public namespaces are open to the public for registrations,
-///   while private namespaces are only open to the namespace creator and their authorized recipients.
-/// - **Public namespaces:**
-///   - Fee: 200 ETH
-///   - Namespace creators receive a 30-day exclusive window for registering paid names within the registered namespace.
-///   - During this period, the creator can use `registerName` to register a name for themselves and sponsor registrations via
-///     `registerNameWithAuthorization` for others.
-///   - After the exclusivity period, the namespace is opened to the public for registrations.
-/// - **Private namespaces:**
-///   - Fee: 10 ETH
-///   - Only the namespace creator may register names within their private namespace forever.
+/// - Anyone can register new namespaces by paying a one-time fee of 200 ETH.
+/// - Namespace creators receive a 30-day exclusive window for registering paid names within the registered namespace.
+///   During this period, only the creator can use `registerName` for themselves or sponsor registrations via
+///   `registerNameWithAuthorization` for others.
 /// - The XNS contract owner can register namespaces for free in the first year following contract deployment.
 /// - The XNS contract owner is set as the creator of the "x" namespace (bare names) at contract deployment.
-/// - "eth" namespace is disallowed for both public and private namespaces to avoid confusion with ENS.
+/// - "eth" namespace is disallowed to avoid confusion with ENS.
 ///
-/// ### Economics
-/// - 90% of ETH sent is burnt via DETH.
-/// - 10% is credited as fees.
-///   - Public namespaces: 5% to namespace creator + 5% to XNS owner
-///   - Private namespaces: 10% to XNS owner (creator share redirected to owner)
+/// ### Ethereum-native economics
+/// - 90% of ETH sent during name / namespace registration is burnt via the DETH contract,
+///   supporting Ethereum's deflationary mechanism and ETH's value accrual.
+/// - 10% is credited as fees to the namespace creator and the XNS contract owner (5% each).
 contract XNS is EIP712 {
     // -------------------------------------------------------------------------
     // Types
@@ -80,7 +75,6 @@ contract XNS is EIP712 {
         uint256 pricePerName;
         address creator;
         uint64 createdAt;
-        bool isPrivate;
     }
 
     /// @dev Data structure to store a name (label, namespace) associated with an address.
@@ -109,6 +103,9 @@ contract XNS is EIP712 {
     // Mapping from keccak256(namespace) to namespace metadata.
     mapping(bytes32 => NamespaceData) private _namespaces;
 
+    // Mapping from price-per-name to namespace string.
+    mapping(uint256 => string) private _priceToNamespace;
+
     // Mapping from address to pending fees that can be claimed.
     mapping(address => uint256) private _pendingFees;
 
@@ -135,13 +132,10 @@ contract XNS is EIP712 {
     /// @notice XNS contract deployment timestamp.
     uint64 public immutable DEPLOYED_AT;
 
-    /// @notice Fee to register a public namespace.
-    uint256 public constant PUBLIC_NAMESPACE_REGISTRATION_FEE = 200 ether;
+    /// @notice Fee to register a new namespace.
+    uint256 public constant NAMESPACE_REGISTRATION_FEE = 200 ether;
 
-    /// @notice Fee to register a private namespace.
-    uint256 public constant PRIVATE_NAMESPACE_REGISTRATION_FEE = 10 ether;
-
-    /// @notice Duration of the exclusive namespace-creator window for paid registrations (relevant for public only).
+    /// @notice Duration of the exclusive namespace-creator window for paid registrations.
     uint256 public constant NAMESPACE_CREATOR_EXCLUSIVE_PERIOD = 30 days;
 
     /// @notice Period after contract deployment during which the owner pays no namespace registration fee.
@@ -167,8 +161,8 @@ contract XNS is EIP712 {
     /// and `batchRegisterNameWithAuthorization` functions.
     event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
 
-    /// @dev Emitted in constructor when "x" namespace is registered, and in namespace registration functions.
-    event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator, bool isPrivate);
+    /// @dev Emitted in constructor when "x" namespace is registered, and in `registerNamespace` function.
+    event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator);
 
     /// @dev Emitted in `claimFees` and `claimFeesToSelf` functions.
     event FeesClaimed(address indexed recipient, uint256 amount);
@@ -178,7 +172,7 @@ contract XNS is EIP712 {
     // -------------------------------------------------------------------------
 
     /// @dev Initializes the contract by setting the immutable owner and deployment timestamp.
-    /// Also pre-registers the special public namespace "x" (bare names) with the given owner as its creator
+    /// Also pre-registers the special namespace "x" (bare names) with the given owner as its creator
     /// and a price of 100 ETH per name. Additionally, registers the bare name "xns" for the XNS contract itself.
     /// @param owner Address that will own the contract and receive protocol fees.
     constructor(address owner) EIP712("XNS", "1") {
@@ -187,15 +181,16 @@ contract XNS is EIP712 {
         OWNER = owner;
         DEPLOYED_AT = uint64(block.timestamp);
 
-        // Register special public namespace "x" as the very first namespace.
+        // Register special namespace "x" as the very first namespace.
         _namespaces[keccak256(bytes(SPECIAL_NAMESPACE))] = NamespaceData({
             pricePerName: SPECIAL_NAMESPACE_PRICE,
             creator: owner,
-            createdAt: uint64(block.timestamp),
-            isPrivate: false
+            createdAt: uint64(block.timestamp)
         });
 
-        emit NamespaceRegistered(SPECIAL_NAMESPACE, SPECIAL_NAMESPACE_PRICE, owner, false);
+        _priceToNamespace[SPECIAL_NAMESPACE_PRICE] = SPECIAL_NAMESPACE;
+
+        emit NamespaceRegistered(SPECIAL_NAMESPACE, SPECIAL_NAMESPACE_PRICE, owner);
 
         // Register bare name "xns" for the XNS contract itself.
         string memory contractLabel = "xns";
@@ -205,7 +200,7 @@ contract XNS is EIP712 {
             label: contractLabel,
             namespace: SPECIAL_NAMESPACE
         });
-
+        
         emit NameRegistered(contractLabel, SPECIAL_NAMESPACE, address(this));
     }
 
@@ -213,20 +208,21 @@ contract XNS is EIP712 {
     // STATE-MODIFYING FUNCTIONS
     // =========================================================================
 
-    /// @notice Function to register a paid name for `msg.sender` in a public namespace. To register a bare name
-    /// (e.g., "vitalik"), use "x" as the namespace parameter. Namespace creators have a 30-day exclusivity window
-    /// to register a name for themselves within their public namespace. Registrations are opened to the public after the 30-day
-    /// exclusivity period.
+    /// @notice Function to register a paid name for `msg.sender`. To register a bare name
+    /// (e.g., "vitalik"), use "x" as the namespace parameter. Namespace creators
+    /// have a 30-day exclusivity window to register a name for themselves within their
+    /// registered namespace, following namespace registration. Registrations are
+    /// opened to the public after the 30-day exclusivity period.
     ///
     /// **Requirements:**
     /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-',
     ///   cannot contain consecutive hyphens)
-    /// - Namespace must exist and must be a public namespace.
+    /// - Namespace must be valid and exist.
     /// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
     /// - Caller must be namespace creator if called during the 30-day exclusivity period.
     /// - Caller must not already have a name.
     /// - Name must not already be registered.
-    /// 
+    ///
     /// **Note:** Due to block reorganization risks, users should wait for a few blocks and verify
     /// the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
     ///
@@ -235,16 +231,21 @@ contract XNS is EIP712 {
     function registerName(string calldata label, string calldata namespace) external payable {
         require(_isValidLabel(label), "XNS: invalid label");
 
+        // Verify namespace exists.
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
-        require(!ns.isPrivate, "XNS: private namespace");
 
+        // Verify `msg.value` is sufficient (excess will be refunded).
         require(msg.value >= ns.pricePerName, "XNS: insufficient payment");
 
+        // Following namespace registration, the namespace creator has a 30-day exclusivity window for registering
+        // one paid name for themselves within the registered namespace. Can register more names on behalf
+        // of others using the `registerNameWithAuthorization` / `batchRegisterNameWithAuthorization` function.
         if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
             require(msg.sender == ns.creator, "XNS: not namespace creator");
         }
 
+        // Enforce one-name-per-address globally.
         require(bytes(_addressToName[msg.sender].label).length == 0, "XNS: address already has a name");
 
         bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
@@ -256,28 +257,27 @@ contract XNS is EIP712 {
         emit NameRegistered(label, namespace, msg.sender);
 
         // Process payment: burn 90%, credit fees, and refund excess.
-        _processETHPayment(ns.pricePerName, ns.creator, false);
+        _processETHPayment(ns.pricePerName, ns.creator);
     }
 
     /// @notice Function to sponsor a paid name registration for `recipient` who explicitly authorized it via
-    /// signature. Allows a third party to pay gas and registration fees while the recipient explicitly approves
-    /// via EIP-712 signature. 
-    /// For public namespaces, only namespace creator may sponsor registrations during exclusivity period. 
-    /// For private namespaces, only namespace creator may sponsor registrations forever.
-    /// Supports both EOA signatures and EIP-1271 contract wallet signatures.
+    /// signature. Allows a third party to pay gas and registration fees while the recipient explicitly
+    /// approves via EIP-712 signature. During the namespace creator exclusivity period, only the namespace creator
+    /// may sponsor registrations in that namespace.
     ///
     /// **Requirements:**
-    /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-').
+    /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-')
     /// - `recipient` must not be the zero address.
-    /// - Namespace must exist (public or private).
     /// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
+    /// - Namespace must exist.
+    /// - During exclusivity: only namespace creator can call this function.
     /// - Recipient must not already have a name.
     /// - Name must not already be registered.
-    /// - Signature must be valid EIP-712 signature from `recipient` (EOA) or EIP-1271 contract signature.
+    /// - Signature must be valid EIP-712 signature from `recipient`.
     ///
     /// **Note:** Due to block reorganization risks, users should wait for a few blocks and verify
     /// the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
-    /// 
+    ///
     /// @param registerNameAuth The argument for the function, including label, namespace, and recipient.
     /// @param signature EIP-712 signature by `recipient` (EOA) or EIP-1271 contract signature.
     function registerNameWithAuthorization(
@@ -287,21 +287,20 @@ contract XNS is EIP712 {
         require(_isValidLabel(registerNameAuth.label), "XNS: invalid label");
         require(registerNameAuth.recipient != address(0), "XNS: 0x recipient");
 
+        // Verify namespace exists.
         bytes32 nsHash = keccak256(bytes(registerNameAuth.namespace));
         NamespaceData storage ns = _namespaces[nsHash];
         require(ns.creator != address(0), "XNS: namespace not found");
 
+        // Verify `msg.value` is sufficient (excess will be refunded).
         require(msg.value >= ns.pricePerName, "XNS: insufficient payment");
 
-        // Enforce sponsorship rules:
-        // - Public namespace: creator-only during exclusivity.
-        // - Private namespace: creator-only forever.
-        if (ns.isPrivate) {
-            require(msg.sender == ns.creator, "XNS: not namespace creator");
-        } else if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
+        // During exclusivity, only namespace creator may sponsor registrations.
+        if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
             require(msg.sender == ns.creator, "XNS: not namespace creator");
         }
 
+        // Enforce one-name-per-address globally.
         require(
             bytes(_addressToName[registerNameAuth.recipient].label).length == 0,
             "XNS: recipient already has a name"
@@ -310,8 +309,10 @@ contract XNS is EIP712 {
         bytes32 key = keccak256(abi.encodePacked(registerNameAuth.label, ".", registerNameAuth.namespace));
         require(_nameHashToAddress[key] == address(0), "XNS: name already registered");
 
+        // Verify that the signature is valid.
         require(_isValidSignature(registerNameAuth, signature), "XNS: bad authorization");
 
+        // Register name to recipient (not msg.sender).
         _nameHashToAddress[key] = registerNameAuth.recipient;
         _addressToName[registerNameAuth.recipient] = Name({
             label: registerNameAuth.label,
@@ -321,7 +322,7 @@ contract XNS is EIP712 {
         emit NameRegistered(registerNameAuth.label, registerNameAuth.namespace, registerNameAuth.recipient);
 
         // Process payment: burn 90%, credit fees, and refund excess.
-        _processETHPayment(ns.pricePerName, ns.creator, ns.isPrivate);
+        _processETHPayment(ns.pricePerName, ns.creator);
     }
 
     /// @notice Batch version of `registerNameWithAuthorization` to register multiple names with a single transaction.
@@ -340,7 +341,7 @@ contract XNS is EIP712 {
     ///
     /// @param registerNameAuths Array of `RegisterNameAuth` structs, each including label, namespace, and recipient.
     /// @param signatures Array of EIP-712 signatures by recipients (EOA) or EIP-1271 contract signatures.
-    /// @return successfulCount The number of names successfully registered.
+    /// @return successfulCount The number of names successfully registered (may be 0 if all registrations were skipped).
     function batchRegisterNameWithAuthorization(
         RegisterNameAuth[] calldata registerNameAuths,
         bytes[] calldata signatures
@@ -348,21 +349,19 @@ contract XNS is EIP712 {
         require(registerNameAuths.length == signatures.length, "XNS: length mismatch");
         require(registerNameAuths.length > 0, "XNS: empty array");
 
+        // Cache the namespace of the first registration (used to verify that all
+        // other items reference the same namespace).
         bytes32 firstNsHash = keccak256(bytes(registerNameAuths[0].namespace));
         NamespaceData storage ns = _namespaces[firstNsHash];
         require(ns.creator != address(0), "XNS: namespace not found");
 
-        // Enforce sponsorship rules:
-        // - Private namespace: creator-only forever.
-        // - Public namespace: creator-only during exclusivity.
-        if (ns.isPrivate) {
-            require(msg.sender == ns.creator, "XNS: not namespace creator");
-        } else if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
+        // Check whether within exclusivity period.
+        if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
             require(msg.sender == ns.creator, "XNS: not namespace creator");
         }
 
         // Validate and register all names, skipping where the recipient already has a name
-        // or the name is already registered.
+       // or the name is already registered.
         uint256 successful = 0;
         for (uint256 i = 0; i < registerNameAuths.length; i++) {
             RegisterNameAuth calldata auth = registerNameAuths[i];
@@ -372,6 +371,7 @@ contract XNS is EIP712 {
             require(auth.recipient != address(0), "XNS: 0x recipient");
 
             // Skip if recipient already has a name (resistant to griefing attacks).
+            // Check early to avoid expensive operations below.
             if (bytes(_addressToName[auth.recipient].label).length > 0) {
                 continue;
             }
@@ -381,15 +381,18 @@ contract XNS is EIP712 {
             require(nsHash == firstNsHash, "XNS: namespace mismatch");
 
             bytes32 key = keccak256(abi.encodePacked(auth.label, ".", auth.namespace));
-
+            
             // Skip if name is already registered (resistant to griefing attacks).
+            // Check early to avoid expensive signature validation below.
             if (_nameHashToAddress[key] != address(0)) {
                 continue;
             }
 
             // Verify that the signature is valid.
+            // Doing this expensive check only if we're not skipping.
             require(_isValidSignature(auth, signatures[i]), "XNS: bad authorization");
 
+            // Register name to recipient (not msg.sender).
             _nameHashToAddress[key] = auth.recipient;
             _addressToName[auth.recipient] = Name({
                 label: auth.label,
@@ -400,34 +403,35 @@ contract XNS is EIP712 {
             successful++;
         }
 
+        // Process payment only for successful registrations: burn 90%, credit fees, and refund excess.
         if (successful > 0) {
             uint256 actualTotal = ns.pricePerName * successful;
             require(msg.value >= actualTotal, "XNS: insufficient payment");
-            _processETHPayment(actualTotal, ns.creator, ns.isPrivate);
+            _processETHPayment(actualTotal, ns.creator);
             return successful;
         }
 
         // If no registrations succeeded, refund all payment and return 0.
         if (msg.value > 0) {
-            (bool ok, ) = msg.sender.call{value: msg.value}("");
-            require(ok, "XNS: refund failed");
+            (bool success, ) = msg.sender.call{value: msg.value}("");
+            require(success, "XNS: refund failed");
         }
         return 0;
     }
 
-    /// @notice Register a new public namespace.
+    /// @notice Function to register a new namespace and assign a price-per-name.
     ///
     /// **Requirements:**
-    /// - Namespace must be valid as a public namespace (length 1–4, consists only of [a-z0-9]).
-    /// - `msg.value` must be >= 200 ETH (excess refunded), except OWNER pays 0 ETH during initial period.
-    /// - Namespace must not already exist.
+    /// - Namespace must be valid (non-empty, length 1–4, consists only of [a-z0-9])
+    /// - `msg.value` must be >= 200 ETH (excess will be refunded). Owner pays 0 ETH during initial period.
+    /// - Price per name must be a multiple of 0.001 ETH.
+    /// - Price per name must not already be in use.
     /// - Namespace must not equal "eth".
-    /// - `pricePerName` must be a multiple of 0.001 ETH.
     ///
     /// **Note:**
     /// - During the initial owner namespace registration period (1 year following contract deployment),
     ///   the owner pays no namespace registration fee.
-    /// - Anyone can register a namespace for a 200 ETH fee within the initial owner
+    /// - Anyone can register a namespace for a 200 ETH fee, even within the initial owner
     ///   namespace registration period.
     /// - Front-running namespace registrations by the owner during the initial owner namespace
     ///   registration period provides no economic benefit: the owner would only receive 5% of name
@@ -435,9 +439,9 @@ contract XNS is EIP712 {
     ///   after the 1-year period. This is an accepted design trade-off for simplicity.
     ///
     /// @param namespace The namespace to register.
-    /// @param pricePerName The price per name for the namespace.
-    function registerPublicNamespace(string calldata namespace, uint256 pricePerName) external payable {
-        require(_isValidPublicNamespace(namespace), "XNS: invalid namespace");
+    /// @param pricePerName The price per name to assign to the namespace.
+    function registerNamespace(string calldata namespace, uint256 pricePerName) external payable {
+        require(_isValidNamespace(namespace), "XNS: invalid namespace");
 
         // Forbid "eth" namespace to avoid confusion with ENS.
         require(keccak256(bytes(namespace)) != keccak256(bytes("eth")), "XNS: 'eth' namespace forbidden");
@@ -445,89 +449,38 @@ contract XNS is EIP712 {
         require(pricePerName > 0, "XNS: pricePerName must be > 0");
         require(pricePerName % PRICE_STEP == 0, "XNS: price must be multiple of 0.001 ETH");
 
-        bytes32 nsHash = keccak256(bytes(namespace));
-        require(_namespaces[nsHash].creator == address(0), "XNS: namespace already exists");
+        // Prevent the same price from being mapped to multiple namespaces.
+        require(bytes(_priceToNamespace[pricePerName]).length == 0, "XNS: price already in use");
 
+        bytes32 nsHash = keccak256(bytes(namespace));
+        NamespaceData storage existing = _namespaces[nsHash];
+        require(existing.creator == address(0), "XNS: namespace already exists");
+
+        // Determine required payment amount.
         uint256 requiredAmount = 0;
         if (!(block.timestamp < DEPLOYED_AT + INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD && msg.sender == OWNER)) {
-            requiredAmount = PUBLIC_NAMESPACE_REGISTRATION_FEE;
+            requiredAmount = NAMESPACE_REGISTRATION_FEE;
             require(msg.value >= requiredAmount, "XNS: insufficient namespace fee");
         }
 
         _namespaces[nsHash] = NamespaceData({
             pricePerName: pricePerName,
             creator: msg.sender,
-            createdAt: uint64(block.timestamp),
-            isPrivate: false
+            createdAt: uint64(block.timestamp)
         });
 
-        emit NamespaceRegistered(namespace, pricePerName, msg.sender, false);
+        _priceToNamespace[pricePerName] = namespace;
+
+        emit NamespaceRegistered(namespace, pricePerName, msg.sender);
 
         // Process payment: burn 90%, credit fees, and refund excess (if any).
         // `requiredAmount` = 0 within initial owner namespace registration period (1 year after contract deployment).
         if (requiredAmount > 0) {
-            _processETHPayment(requiredAmount, msg.sender, false);
+            _processETHPayment(requiredAmount, msg.sender);
         } else if (msg.value > 0) {
             // Refund if owner sent ETH during free period.
-            (bool ok, ) = msg.sender.call{value: msg.value}("");
-            require(ok, "XNS: refund failed");
-        }
-    }
-
-    /// @notice Register a new private namespace.
-    ///
-    /// **Requirements:**
-    /// - Namespace must be valid as a private namespace (length 1–16, consists only of [a-z0-9-],
-    ///   cannot start or end with '-', cannot contain consecutive hyphens).
-    /// - `msg.value` must be >= 10 ETH (excess refunded), except OWNER pays 0 ETH during initial period.
-    /// - Namespace must not already exist.
-    /// - Namespace must not equal "eth".
-    /// - `pricePerName` must be >= 0.001 ETH and a multiple of 0.001 ETH.
-    ///
-    /// **Note:**
-    /// - During the initial owner namespace registration period (1 year following contract deployment),
-    ///   the owner pays no namespace registration fee.
-    /// - Anyone can register a namespace for a 10 ETH fee within the initial owner
-    ///   namespace registration period.
-    /// - Front-running namespace registrations by the owner during the initial owner namespace
-    ///   registration period provides no economic benefit: the owner would only receive 10% of name
-    ///   registration fees (vs 10 ETH upfront fee), and users can mitigate this by waiting until
-    ///   after the 1-year period. This is an accepted design trade-off for simplicity.
-    ///
-    /// @param namespace The namespace to register.
-    /// @param pricePerName The price per name for the namespace.
-    function registerPrivateNamespace(string calldata namespace, uint256 pricePerName) external payable {
-        require(_isValidPrivateNamespace(namespace), "XNS: invalid namespace");
-
-        // Forbid "eth" namespace to avoid confusion with ENS.
-        require(keccak256(bytes(namespace)) != keccak256(bytes("eth")), "XNS: 'eth' namespace forbidden");
-
-        require(pricePerName >= PRICE_STEP, "XNS: pricePerName too low");
-        require(pricePerName % PRICE_STEP == 0, "XNS: price must be multiple of 0.001 ETH");
-
-        bytes32 nsHash = keccak256(bytes(namespace));
-        require(_namespaces[nsHash].creator == address(0), "XNS: namespace already exists");
-
-        uint256 requiredAmount = 0;
-        if (!(block.timestamp < DEPLOYED_AT + INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD && msg.sender == OWNER)) {
-            requiredAmount = PRIVATE_NAMESPACE_REGISTRATION_FEE;
-            require(msg.value >= requiredAmount, "XNS: insufficient namespace fee");
-        }
-
-        _namespaces[nsHash] = NamespaceData({
-            pricePerName: pricePerName,
-            creator: msg.sender,
-            createdAt: uint64(block.timestamp),
-            isPrivate: true
-        });
-
-        emit NamespaceRegistered(namespace, pricePerName, msg.sender, true);
-
-        if (requiredAmount > 0) {
-            _processETHPayment(requiredAmount, msg.sender, true);
-        } else if (msg.value > 0) {
-            (bool ok, ) = msg.sender.call{value: msg.value}("");
-            require(ok, "XNS: refund failed");
+            (bool success, ) = msg.sender.call{value: msg.value}("");
+            require(success, "XNS: refund failed");
         }
     }
 
@@ -546,6 +499,9 @@ contract XNS is EIP712 {
 
     /// @notice Function to claim accumulated fees for `msg.sender` and send to `msg.sender`.
     /// Withdraws all pending fees. Partial claims are not possible.
+    ///
+    /// **Requirements:**
+    /// - `msg.sender` must have pending fees to claim.
     function claimFeesToSelf() external {
         _claimFees(msg.sender);
     }
@@ -567,10 +523,8 @@ contract XNS is EIP712 {
     // GETTER / VIEW FUNCTIONS
     // =========================================================================
 
-    /// @notice Function to resolve a name string like "nike", "nike.x", "vitalik.001", "alice.my-private" to an address.
-    /// @dev Returns `address(0)` for anything not registered or malformed. 
-    /// If `fullName` contains no '.', it is treated as a bare name.
-    ///
+    /// @notice Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an address.
+    /// @dev Returns `address(0)` for anything not registered or malformed.
     /// @param fullName The name string to resolve.
     /// @return addr The address associated with the name, or `address(0)` if not registered.
     function getAddress(string calldata fullName) external view returns (address addr) {
@@ -578,13 +532,16 @@ contract XNS is EIP712 {
         uint256 len = b.length;
         if (len == 0) return address(0);
 
-        // Find the last '.' by scanning from the end (handles both public and private namespaces).
+        // Search for '.' from the right within the last 5 characters (".xxxx")
+        uint256 endInclusive = (len > 5) ? (len - 5) : 0;
         uint256 dotIndex = type(uint256).max; // Sentinel: no dot found
-        for (uint256 i = len; i > 0; i--) {
-            if (b[i - 1] == 0x2E) { // '.'
-                dotIndex = i - 1;
+
+        for (uint256 i = len - 1; i >= endInclusive; i--) {
+            if (b[i] == 0x2E) {
+                dotIndex = i;
                 break;
             }
+            if (i == endInclusive) break; // For bare names like "nike", "snoopy", etc. that do not have a dot
         }
 
         if (dotIndex == type(uint256).max) {
@@ -592,7 +549,7 @@ contract XNS is EIP712 {
             return _getAddress(fullName, SPECIAL_NAMESPACE);
         }
 
-        // Extract label and namespace.
+        // Extract label and namespace
         bytes memory labelBytes = new bytes(dotIndex);
         for (uint256 j = 0; j < dotIndex; j++) labelBytes[j] = b[j];
 
@@ -616,6 +573,7 @@ contract XNS is EIP712 {
     /// @dev Helper function for `getAddress(fullName)` and `getAddress(label, namespace)`.
     function _getAddress(string memory label, string memory namespace) private view returns (address addr) {
         bytes32 key = keccak256(abi.encodePacked(label, ".", namespace));
+
         return _nameHashToAddress[key];
     }
 
@@ -637,6 +595,7 @@ contract XNS is EIP712 {
             return n.label;
         }
 
+        // Regular name: return "label.namespace"
         return string.concat(n.label, ".", n.namespace);
     }
 
@@ -645,13 +604,30 @@ contract XNS is EIP712 {
     /// @return pricePerName The price per name for the namespace.
     /// @return creator The creator of the namespace.
     /// @return createdAt The timestamp when the namespace was created.
-    /// @return isPrivate Whether the namespace is private.
     function getNamespaceInfo(
         string calldata namespace
-    ) external view returns (uint256 pricePerName, address creator, uint64 createdAt, bool isPrivate) {
+    ) external view returns (uint256 pricePerName, address creator, uint64 createdAt) {
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
-        return (ns.pricePerName, ns.creator, ns.createdAt, ns.isPrivate);
+
+        return (ns.pricePerName, ns.creator, ns.createdAt);
+    }
+
+    /// @notice Function to retrieve the namespace metadata associated with `price`.
+    /// @param price The price to retrieve the namespace metadata for.
+    /// @return namespace The namespace string.
+    /// @return pricePerName The price per name for the namespace.
+    /// @return creator The creator of the namespace.
+    /// @return createdAt The timestamp when the namespace was created.
+    function getNamespaceInfo(
+        uint256 price
+    ) external view returns (string memory namespace, uint256 pricePerName, address creator, uint64 createdAt) {
+        namespace = _priceToNamespace[price];
+        require(bytes(namespace).length != 0, "XNS: namespace not found");
+
+        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
+
+        return (namespace, ns.pricePerName, ns.creator, ns.createdAt);
     }
 
     /// @notice Function to check if a label is valid (returns bool, does not revert).
@@ -667,28 +643,15 @@ contract XNS is EIP712 {
         return _isValidLabel(label);
     }
 
-    /// @notice Function to check if a namespace is a valid public namespace (returns bool, does not revert).
+    /// @notice Function to check if a namespace is valid (returns bool, does not revert).
     ///
     /// **Requirements:**
     /// - Namespace must be 1–4 characters long
     /// - Namespace must consist only of [a-z0-9] (lowercase letters and digits)
     /// @param namespace The namespace to check if is valid.
     /// @return isValid True if the namespace is valid, false otherwise.
-    function isValidPublicNamespace(string memory namespace) external pure returns (bool isValid) {
-        return _isValidPublicNamespace(namespace);
-    }
-
-    /// @notice Function to check if a namespace is a valid private namespace (returns bool, does not revert).
-    ///
-    /// **Requirements:**
-    /// - Namespace must be 1–16 characters long
-    /// - Namespace must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
-    /// - Namespace cannot start or end with '-'
-    /// - Namespace cannot contain consecutive hyphens ('--')
-    /// @param namespace The namespace to check if is valid.
-    /// @return isValid True if the namespace is valid, false otherwise.
-    function isValidPrivateNamespace(string memory namespace) external pure returns (bool isValid) {
-        return _isValidPrivateNamespace(namespace);
+    function isValidNamespace(string memory namespace) external pure returns (bool isValid) {
+        return _isValidNamespace(namespace);
     }
 
     /// @notice Function to check if a signature, to be used in `registerNameWithAuthorization`
@@ -714,17 +677,12 @@ contract XNS is EIP712 {
     // INTERNAL MULTI-USE HELPER FUNCTIONS
     // =========================================================================
 
-    /// @dev Helper function to process ETH payment (used in `registerName`, `registerNameWithAuthorization`,
-    /// `batchRegisterNameWithAuthorization`, `registerPublicNamespace`, and `registerPrivateNamespace`):
-    /// - Burn 90% via DETH (credits `msg.sender` with DETH)
-    /// - Credit fees:
-    ///   - Public namespace: 5% to namespace creator, 5% to OWNER
-    ///   - Private namespace: 10% to OWNER
-    /// - Refund any excess payment
+    /// @dev Helper function to process ETH payment: burn 90% via DETH, credit 5% to namespace creator and 5% to
+    /// contract owner, and refund any excess payment. Used in `registerName`, `registerNameWithAuthorization`,
+    /// `batchRegisterNameWithAuthorization`, and `registerNamespace`.
     /// @param requiredAmount The required amount of ETH for the operation (excess will be refunded).
     /// @param namespaceCreator The address of the namespace creator that shall receive a portion of the fees.
-    /// @param isPrivateNamespace Whether the namespace is private.
-    function _processETHPayment(uint256 requiredAmount, address namespaceCreator, bool isPrivateNamespace) private {
+    function _processETHPayment(uint256 requiredAmount, address namespaceCreator) private {
         uint256 burnAmount = (requiredAmount * 90) / 100;
         uint256 creatorFee = (requiredAmount * 5) / 100;
         uint256 ownerFee = requiredAmount - burnAmount - creatorFee;
@@ -732,13 +690,9 @@ contract XNS is EIP712 {
         // Burn 90% via DETH contract and credit `msg.sender` (payer/sponsor) with DETH.
         IDETH(DETH).burn{value: burnAmount}(msg.sender);
 
-        // Credit fees.
-        if (isPrivateNamespace) {
-            _pendingFees[OWNER] += (creatorFee + ownerFee);
-        } else {
-            _pendingFees[namespaceCreator] += creatorFee;
-            _pendingFees[OWNER] += ownerFee;
-        }
+        // Credit fees to namespace creator and contract owner.
+        _pendingFees[namespaceCreator] += creatorFee;
+        _pendingFees[OWNER] += ownerFee;
 
         // Refund excess payment.
         uint256 excess = msg.value - requiredAmount;
@@ -753,69 +707,61 @@ contract XNS is EIP712 {
         bytes memory b = bytes(label);
         uint256 len = b.length;
         if (len == 0 || len > 20) return false;
-
+    
         for (uint256 i = 0; i < len; i++) {
             bytes1 c = b[i];
             bool isLowercaseLetter = (c >= 0x61 && c <= 0x7A); // 'a'..'z'
             bool isDigit = (c >= 0x30 && c <= 0x39); // '0'..'9'
             bool isHyphen = (c == 0x2D); // '-'
             if (!(isLowercaseLetter || isDigit || isHyphen)) return false;
-
+            
             // Disallow consecutive hyphens
             if (isHyphen && i > 0 && b[i - 1] == 0x2D) return false;
         }
 
         if (b[0] == 0x2D || b[len - 1] == 0x2D) return false; // no leading/trailing '-'
+
         return true;
     }
 
-    /// @dev Helper function to check if a public namespace is valid. Used in `registerPublicNamespace` and `isValidPublicNamespace`.
-    function _isValidPublicNamespace(string memory namespace) private pure returns (bool isValid) {
+    /// @dev Helper function to check if a namespace is valid. Used in `registerNamespace` and `isValidNamespace`.
+    function _isValidNamespace(string memory namespace) private pure returns (bool isValid) {
         bytes memory b = bytes(namespace);
         uint256 len = b.length;
         if (len == 0 || len > 4) return false;
 
         for (uint256 i = 0; i < len; i++) {
             bytes1 c = b[i];
-            bool isLowercaseLetter = (c >= 0x61 && c <= 0x7A);
-            bool isDigit = (c >= 0x30 && c <= 0x39);
+            bool isLowercaseLetter = (c >= 0x61 && c <= 0x7A); // 'a'..'z'
+            bool isDigit = (c >= 0x30 && c <= 0x39); // '0'..'9'
             if (!(isLowercaseLetter || isDigit)) return false;
         }
 
         return true;
     }
 
-    /// @dev Helper function to check if a private namespace is valid. Used in `registerPrivateNamespace` and `isValidPrivateNamespace`.
-    function _isValidPrivateNamespace(string memory namespace) private pure returns (bool isValid) {
-        bytes memory b = bytes(namespace);
-        uint256 len = b.length;
-        if (len == 0 || len > 16) return false;
-
-        for (uint256 i = 0; i < len; i++) {
-            bytes1 c = b[i];
-            bool isLowercaseLetter = (c >= 0x61 && c <= 0x7A);
-            bool isDigit = (c >= 0x30 && c <= 0x39);
-            bool isHyphen = (c == 0x2D);
-            if (!(isLowercaseLetter || isDigit || isHyphen)) return false;
-
-            // Disallow consecutive hyphens
-            if (isHyphen && i > 0 && b[i - 1] == 0x2D) return false;
-        }
-
-        if (b[0] == 0x2D || b[len - 1] == 0x2D) return false; // no leading/trailing '-'
-        return true;
-    }
-
     /// @dev Internal function to verify EIP-712 signature for RegisterNameAuth.
+    /// Used in `registerNameWithAuthorization` and `batchRegisterNameWithAuthorization`.
+    ///
+    /// Note: There is a risk of gas griefing by contract wallets that consume excessive gas during
+    /// signature verification may cause transactions to fail. This is a known limitation of EIP-1271.
+    /// Recipients should use trusted wallet implementations (Safe, Argent, etc.).
+    ///
+    /// @param registerNameAuth The struct containing recipient, label, and namespace.
+    /// @param signature The signature to verify.
+    /// @return isValid True if the signature is valid, false otherwise.
     function _isValidSignature(
         RegisterNameAuth calldata registerNameAuth,
         bytes calldata signature
     ) private view returns (bool isValid) {
+        // Compute EIP-712 digest.
         bytes32 digest = _hashTypedDataV4(_getRegisterNameAuthHash(registerNameAuth));
+
+        // Verify signature using OpenZeppelin's SignatureChecker (supports EOA and EIP-1271).
         return SignatureChecker.isValidSignatureNow(registerNameAuth.recipient, digest, signature);
     }
 
-    /// @dev Helper function to return hash of RegisterNameAuth details.
+    /// @dev Helper function to return hash of registerNameAuth details. Used in `_isValidSignature`.
     function _getRegisterNameAuthHash(
         RegisterNameAuth memory registerNameAuth
     ) private pure returns (bytes32 registerNameAuthHash) {
