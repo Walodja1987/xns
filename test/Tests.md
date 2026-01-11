@@ -1,3 +1,7 @@
+# TODOs/Open questions:
+* Do we need to test delegate call?
+* Do we need to test EIP-7702 (smart accounts)?
+
 # Test cases
 
 The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
@@ -28,6 +32,10 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 - Should emit `NamespaceRegistered` event for special namespace.
 - Should emit `NameRegistered` event for contract's own name "xns".
+
+#### Reverts
+
+- Should revert with `XNS: 0x owner` error when owner is `address(0)`.
 
 ---
 
@@ -137,6 +145,8 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should credit correct amount of DETH to namespace creator (`msg.sender`) during exclusive period.
 - Should allow a contract to register a name for itself via `registerName` (in constructor).
 - Should allow a contract to register a name for itself via `registerName` (after deployment).
+- Should refund excess payment to contract when registering in constructor with excess payment.
+- Should refund excess payment to contract when registering via function with excess payment.
 
 #### Events
 
@@ -327,6 +337,8 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should resolve fullnames with twenty-five characters.
 - Should return `address(0)` for unregistered names.
 - Should return `address(0)` for empty string.
+- Should return `address(0)` for "foo.bar.baz" (parses as label="foo.bar", namespace="baz").
+- Should return `address(0)` for "foo.abcde" (dot not in last 5 chars, treated as bare label).
 
 ---
 

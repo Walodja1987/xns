@@ -86,3 +86,6 @@ deployments-zk
 # Miscellaneous files
 bin
 out
+
+# Directory including context files
+context

@@ -115,12 +115,12 @@ contract XNS is EIP712 {
     //     abi.encodePacked(
     //         "RegisterNameAuth(",
     //         "address recipient,",
-    //         "bytes32 labelHash,",
-    //         "bytes32 namespaceHash)"
+    //         "string label,",
+    //         "string namespace)"
     //     )
     // )
     bytes32 private constant _REGISTER_NAME_AUTH_TYPEHASH =
-        0xfed68b8c50be9d8c7775136bcef61eefc74849472c4e4e5c861277fbcbdcebd7;
+        0x3af1a3ccc0c04cc5d0dde28c2900c21fbae8e30149f4caf140b9223938975f04;
 
     // -------------------------------------------------------------------------
     // Constants
@@ -159,7 +159,7 @@ contract XNS is EIP712 {
 
     /// @dev Emitted in `registerName`, `registerNameWithAuthorization`,
     /// and `batchRegisterNameWithAuthorization` functions.
-    event NameRegistered(string indexed label, string indexed namespace, address indexed owner); // @todo rename to nameOwner? Also in tests and IXNS?
+    event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
 
     /// @dev Emitted in constructor when "x" namespace is registered, and in `registerNamespace` function.
     event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator);
@@ -176,6 +176,8 @@ contract XNS is EIP712 {
     /// and a price of 100 ETH per name. Additionally, registers the bare name "xns" for the XNS contract itself.
     /// @param owner Address that will own the contract and receive protocol fees.
     constructor(address owner) EIP712("XNS", "1") {
+        require(owner != address(0), "XNS: 0x owner");
+
         OWNER = owner;
         DEPLOYED_AT = uint64(block.timestamp);
 
@@ -213,12 +215,16 @@ contract XNS is EIP712 {
     /// opened to the public after the 30-day exclusivity period.
     ///
     /// **Requirements:**
-    /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-', cannot contain consecutive hyphens)
+    /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-',
+    ///   cannot contain consecutive hyphens)
     /// - Namespace must be valid and exist.
     /// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
     /// - Caller must be namespace creator if called during the 30-day exclusivity period.
     /// - Caller must not already have a name.
     /// - Name must not already be registered.
+    ///
+    /// **Note:** Due to block reorganization risks, users should wait for a few blocks and verify
+    /// the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
     ///
     /// @param label The label part of the name to register.
     /// @param namespace The namespace part of the name to register.
@@ -268,6 +274,9 @@ contract XNS is EIP712 {
     /// - Recipient must not already have a name.
     /// - Name must not already be registered.
     /// - Signature must be valid EIP-712 signature from `recipient`.
+    ///
+    /// **Note:** Due to block reorganization risks, users should wait for a few blocks and verify
+    /// the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
     ///
     /// @param registerNameAuth The argument for the function, including label, namespace, and recipient.
     /// @param signature EIP-712 signature by `recipient` (EOA) or EIP-1271 contract signature.
@@ -515,11 +524,6 @@ contract XNS is EIP712 {
     // =========================================================================
 
     /// @notice Function to resolve a name string like "nike", "nike.x", "vitalik.001" to an address.
-    ///
-    /// **Requirements:**
-    /// - `fullName` must not be empty.
-    /// - `fullName` must be a valid name string (label.namespace).
-    ///
     /// @dev Returns `address(0)` for anything not registered or malformed.
     /// @param fullName The name string to resolve.
     /// @return addr The address associated with the name, or `address(0)` if not registered.
@@ -738,6 +742,11 @@ contract XNS is EIP712 {
 
     /// @dev Internal function to verify EIP-712 signature for RegisterNameAuth.
     /// Used in `registerNameWithAuthorization` and `batchRegisterNameWithAuthorization`.
+    ///
+    /// Note: There is a risk of gas griefing by contract wallets that consume excessive gas during
+    /// signature verification may cause transactions to fail. This is a known limitation of EIP-1271.
+    /// Recipients should use trusted wallet implementations (Safe, Argent, etc.).
+    ///
     /// @param registerNameAuth The struct containing recipient, label, and namespace.
     /// @param signature The signature to verify.
     /// @return isValid True if the signature is valid, false otherwise.

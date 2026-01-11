@@ -37,15 +37,15 @@ describe("XNS", function () {
     const types = {
       RegisterNameAuth: [
         { name: "recipient", type: "address" },
-        { name: "labelHash", type: "bytes32" },
-        { name: "namespaceHash", type: "bytes32" },
+        { name: "label", type: "string" },
+        { name: "namespace", type: "string" },
       ],
     };
 
     const value = {
       recipient: recipient,
-      labelHash: ethers.keccak256(ethers.toUtf8Bytes(label)),
-      namespaceHash: ethers.keccak256(ethers.toUtf8Bytes(namespace)),
+      label: label,
+      namespace: namespace,
     };
 
     return await signer.signTypedData(domain, types, value);
@@ -181,6 +181,15 @@ describe("XNS", function () {
             .withArgs("xns", "x", contractAddress);
     });
 
+    it("Should revert with `XNS: 0x owner` error when owner is `address(0)`", async () => {
+        // ---------
+        // Act & Assert: Attempt to deploy contract with zero address as owner
+        // ---------
+        await expect(
+            ethers.deployContract("XNS", [ethers.ZeroAddress])
+        ).to.be.revertedWith("XNS: 0x owner");
+    });
+
     
   });
 
@@ -284,6 +293,7 @@ describe("XNS", function () {
         expect(await s.xns.isValidLabel("alice_bob")).to.be.false;
         expect(await s.xns.isValidLabel("test_label")).to.be.false;
         expect(await s.xns.isValidLabel("user_name_123")).to.be.false;
+        expect(await s.xns.isValidLabel("xns_deployer")).to.be.false;
     });
 
     it("Should return `false` for labels containing consecutive hyphens", async () => {
@@ -1804,6 +1814,116 @@ describe("XNS", function () {
         const [returnedLabel, returnedNamespace] = returnedName.split(".");
         expect(returnedLabel).to.equal(label);
         expect(returnedNamespace).to.equal(namespace);
+    });
+
+    it("Should refund excess payment to contract when registering in constructor with excess payment", async () => {
+        // ---------
+        // Arrange: Prepare parameters for contract deployment with excess payment
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const label = "refundconstructor";
+        const pricePerName = ethers.parseEther("0.001");
+        const excessPayment = ethers.parseEther("0.0005"); // Pay 0.0005 ETH more than required
+        const totalPayment = pricePerName + excessPayment; // 0.0015 ETH total
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Get deployer (user2) balance before deployment
+        const balanceBefore = await ethers.provider.getBalance(s.user2.address);
+
+        // ---------
+        // Act: Deploy contract that registers name in constructor with excess payment
+        // ---------
+        const SelfRegisteringContract = await ethers.getContractFactory("SelfRegisteringContract");
+        const deployTx = await SelfRegisteringContract.connect(s.user2).deploy(
+            await s.xns.getAddress(),
+            label,
+            namespace,
+            { value: totalPayment }
+        );
+        const receipt = await deployTx.waitForDeployment();
+        const deployReceipt = await deployTx.deploymentTransaction()!.wait();
+        
+        // Calculate gas cost
+        const gasUsed = deployReceipt!.gasUsed;
+        const gasPrice = deployReceipt!.gasPrice || deployTx.deploymentTransaction()!.gasPrice || 0n;
+        const gasCost = gasUsed * gasPrice;
+
+        const contractAddress = await deployTx.getAddress();
+
+        // ---------
+        // Assert: Verify excess payment was refunded to contract (not deployer)
+        // ---------
+        // Verify name was registered
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const ownerAddress = await getAddressByLabelAndNamespace(label, namespace);
+        expect(ownerAddress).to.equal(contractAddress);
+
+        // Get deployer balance after deployment
+        const balanceAfter = await ethers.provider.getBalance(s.user2.address);
+
+        // Get contract balance (should have excess payment, refund went to contract, not deployer)
+        // Note: When called from constructor, msg.sender in XNS is the contract address, so refund goes to contract
+        const contractBalance = await ethers.provider.getBalance(contractAddress);
+        expect(contractBalance).to.equal(excessPayment);
+
+        // Verify deployer paid: balance should decrease by totalPayment + gas costs
+        // balanceAfter should equal balanceBefore - totalPayment - gasCost
+        const expectedBalanceAfter = balanceBefore - totalPayment - gasCost;
+        // Allow small tolerance for gas estimation differences
+        expect(balanceAfter).to.be.closeTo(expectedBalanceAfter, ethers.parseEther("0.00001"));
+    });
+
+    it("Should refund excess payment to contract when registering via function with excess payment", async () => {
+        // ---------
+        // Arrange: Deploy contract and prepare excess payment
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const label = "refundfunction";
+        const pricePerName = ethers.parseEther("0.001");
+        const excessPayment = ethers.parseEther("0.0005"); // Pay 0.0005 ETH more than required
+        const totalPayment = pricePerName + excessPayment; // 0.0015 ETH total
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Deploy contract without registering (empty label)
+        const SelfRegisteringContract = await ethers.getContractFactory("SelfRegisteringContract");
+        const contract = await SelfRegisteringContract.deploy(
+            await s.xns.getAddress(),
+            "",
+            "",
+            { value: 0 }
+        );
+        await contract.waitForDeployment();
+        const contractAddress = await contract.getAddress();
+
+        // Get contract balance before registration (should be 0)
+        const contractBalanceBefore = await ethers.provider.getBalance(contractAddress);
+        expect(contractBalanceBefore).to.equal(0);
+
+        // ---------
+        // Act: Contract registers name for itself via function with excess payment
+        // ---------
+        await contract.registerName(label, namespace, { value: totalPayment });
+
+        // ---------
+        // Assert: Verify excess payment was refunded to contract (not caller)
+        // ---------
+        // Verify name was registered
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const ownerAddress = await getAddressByLabelAndNamespace(label, namespace);
+        expect(ownerAddress).to.equal(contractAddress);
+
+        // Get contract balance after registration
+        const contractBalanceAfter = await ethers.provider.getBalance(contractAddress);
+
+        // Verify refund went to contract: contract should have received the excess payment
+        // Note: The refund goes to msg.sender in XNS, which is the contract address when called from a function
+        expect(contractBalanceAfter).to.equal(excessPayment);
     });
 
     // -----------------------
@@ -5846,6 +5966,42 @@ describe("XNS", function () {
       // ---------
       expect(name).to.equal("");
     });
+
+    it("Should return zero address for \"foo.bar.baz\" (parses as label=\"foo.bar\", namespace=\"baz\")", async () => {
+        // ---------
+        // Arrange
+        // ---------
+        // "foo.bar.baz" has length 11, so the function searches for '.' from the right
+        // within the last 5 characters (positions 6-10). It finds '.' at position 7,
+        // so it parses as label="foo.bar" (indices 0-6) and namespace="baz" (indices 8-10).
+        // Since "foo.bar.baz" is not registered, it should return address(0).
+        const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+  
+        // ---------
+        // Act & Assert
+        // ---------
+        // The name "foo.bar.baz" will be parsed as label="foo.bar" and namespace="baz",
+        // which is not registered, so it returns address(0).
+        expect(await getAddressByFullName("foo.bar.baz")).to.equal(ethers.ZeroAddress);
+      });
+
+      it("Should return zero address for \"foo.abcde\" (dot not in last 5 chars, treated as bare label)", async () => {
+        // ---------
+        // Arrange
+        // ---------
+        // "foo.abcde" has length 9, so the function searches for '.' from the right
+        // within the last 5 characters (positions 4-8). The dot is at position 3,
+        // which is outside this range, so no dot is found. It treats "foo.abcde"
+        // as a bare label and looks up "foo.abcde.x", which is not registered.
+        const getAddressByFullName = s.xns.getFunction("getAddress(string)");
+
+        // ---------
+        // Act & Assert
+        // ---------
+        // The name "foo.abcde" will be treated as a bare label (no dot found in last 5 chars),
+        // so it looks up "foo.abcde.x", which is not registered, so it returns address(0).
+        expect(await getAddressByFullName("foo.abcde")).to.equal(ethers.ZeroAddress);
+      });
 
   });
 

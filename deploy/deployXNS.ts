@@ -86,7 +86,7 @@ export default async function main(hre: HardhatRuntimeEnvironment) {
       );
 
       // Owner registers without fee during initial period (90 days)
-      const tx = await xns.registerNamespace(tier.namespace, priceWei, {
+      const tx = await xns.connect(deployer).registerNamespace(tier.namespace, priceWei, {
         value: 0,
       });
       await tx.wait();
