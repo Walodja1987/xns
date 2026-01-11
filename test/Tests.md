@@ -1,3 +1,7 @@
+# TODOs/Open questions:
+* Do we need to test delegate call?
+* Do we need to test EIP-7702 (smart accounts)?
+
 # Test cases
 
 The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.

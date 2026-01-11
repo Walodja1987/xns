@@ -177,6 +177,7 @@ contract XNS is EIP712 {
     /// @param owner Address that will own the contract and receive protocol fees.
     constructor(address owner) EIP712("XNS", "1") {
         require(owner != address(0), "XNS: 0x owner");
+
         OWNER = owner;
         DEPLOYED_AT = uint64(block.timestamp);
 

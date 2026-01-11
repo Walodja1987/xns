@@ -492,6 +492,54 @@ Deploy with the `label`, `namespace`, and required payment to register the name 
 
 > **Note:** In both integration options, any excess payment is refunded by XNS to `msg.sender`, which will be your contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when calling `registerName`.
 
+#### Option 3: Sponsored Registration via EIP-1271
+
+For contracts that implement EIP-1271 (like contract wallets), someone else can sponsor the name registration:
+
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.28;
+
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
+contract MyContractWallet {
+    using ECDSA for bytes32;
+    
+    address public owner;
+    bytes4 public constant MAGIC_VALUE = bytes4(0x1626ba7e);
+    bytes4 public constant INVALID_SIGNATURE = bytes4(0xffffffff);
+
+    constructor(address _owner) {
+        owner = _owner;
+    }
+
+    /// @notice EIP-1271 function to validate signatures
+    /// @param hash The message hash that was signed
+    /// @param signature The signature to validate
+    /// @return magicValue Returns MAGIC_VALUE if signature is valid
+    function isValidSignature(bytes32 hash, bytes memory signature) 
+        external 
+        view 
+        returns (bytes4 magicValue) 
+    {
+        address signer = hash.recover(signature);
+        if (signer == owner) {
+            return MAGIC_VALUE;
+        }
+        return INVALID_SIGNATURE;
+    }
+}
+**How it works:**
+1. The contract (or its owner) signs an EIP-712 message authorizing the name registration
+2. A sponsor calls `registerNameWithAuthorization` on XNS, providing the contract as the recipient
+3. XNS validates the signature via the contract's `isValidSignature` function
+4. The sponsor pays the registration fee
+
+**Use cases:**
+- Contract wallets (Safe, Argent, etc.) that want to be named
+- Contracts that can't send transactions themselves
+- Allow others to pay for your contract's name registration
+
+**Note:** The contract must implement EIP-1271's `isValidSignature` function. The sponsor pays all fees and gas costs.
 
 ### Multi-Chain Deployment Considerations
 
