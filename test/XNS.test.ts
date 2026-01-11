@@ -2345,7 +2345,7 @@ describe("XNS", function () {
     
   });
 
-  describe("registerName", function () {
+  describe.only("registerName", function () {
     let s: SetupOutput;
 
     beforeEach(async () => {
@@ -2356,7 +2356,7 @@ describe("XNS", function () {
     // Functionality
     // -----------------------
 
-    it("Should register a name correctly", async () => {
+    it("Should register a name correctly in public namespace", async () => {
         // ---------
         // Arrange: Prepare name registration parameters (namespace "xns" is already registered in setup)
         // ---------
@@ -2400,7 +2400,7 @@ describe("XNS", function () {
         expect(returnedNamespace).to.equal(namespace);
     });
 
-    it("Should allow namespace creator to register a paid name during exclusive period", async () => {
+    it("Should allow namespace creator to register a paid name in public namespace during exclusive period", async () => {
         // ---------
         // Arrange: Prepare name registration parameters (namespace "xns" is already registered in setup by user1)
         // ---------
@@ -2459,7 +2459,7 @@ describe("XNS", function () {
         expect(balanceAfter).to.equal(expectedBalanceAfter);
     });
 
-    it("Should allow anyone to register paid names after exclusive period (30 days)", async () => {
+    it("Should allow anyone to register paid names in public namespace after exclusive period (30 days)", async () => {
         // ---------
         // Arrange: Fast-forward time past the exclusivity period
         // ---------
@@ -3040,6 +3040,30 @@ describe("XNS", function () {
         await expect(
             s.xns.connect(s.user2).registerName(label, namespace, { value: pricePerName })
         ).to.be.revertedWith("XNS: namespace not found");
+    });
+
+    it("Should revert with `XNS: private namespace` error when trying to register in private namespace", async () => {
+        // ---------
+        // Arrange: Register a private namespace first
+        // ---------
+        const namespace = "private";
+        const label = "test";
+        const pricePerName = ethers.parseEther("0.001");
+        const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
+
+        // Register private namespace
+        await s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: privateNamespaceFee });
+
+        // Fast-forward time past the exclusivity period so anyone can register (if it were public)
+        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // ---------
+        // Act & Assert: Try to register name in private namespace and expect revert
+        // ---------
+        await expect(
+            s.xns.connect(s.user2).registerName(label, namespace, { value: pricePerName })
+        ).to.be.revertedWith("XNS: private namespace");
     });
 
     it("Should revert with `XNS: insufficient payment` error when `msg.value` is less than namespace price", async () => {
