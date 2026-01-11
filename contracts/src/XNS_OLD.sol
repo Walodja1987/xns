@@ -65,7 +65,7 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - 90% of ETH sent during name / namespace registration is burnt via the DETH contract,
 ///   supporting Ethereum's deflationary mechanism and ETH's value accrual.
 /// - 10% is credited as fees to the namespace creator and the XNS contract owner (5% each).
-contract XNS is EIP712 {
+contract XNS_OLD is EIP712 {
     // -------------------------------------------------------------------------
     // Types
     // -------------------------------------------------------------------------

@@ -76,8 +76,8 @@ describe("XNS", function () {
     // Register "xns" namespace for testing registerName functionality
     const testNamespace = "xns";
     const testNamespacePricePerName = ethers.parseEther("0.001");
-    const namespaceFee = await xns.NAMESPACE_REGISTRATION_FEE();
-    await xns.connect(user1).registerNamespace(testNamespace, testNamespacePricePerName, { value: namespaceFee });
+    const namespaceFee = await xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
+    await xns.connect(user1).registerPublicNamespace(testNamespace, testNamespacePricePerName, { value: namespaceFee });
 
     // Deploy EIP-1271 wallet with user2 as the owner
     const EIP1271Wallet = await ethers.getContractFactory("EIP1271Wallet");
@@ -118,7 +118,7 @@ describe("XNS", function () {
 
         // Retrieve namespace info for "x" namespace
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
-        const [pricePerName, creator, createdAt] = await getNamespaceInfoByString("x");
+        const [pricePerName, creator, createdAt, isPrivate] = await getNamespaceInfoByString("x");
 
         // Should register special namespace "x" with correct price (100 ETH)
         expect(pricePerName).to.equal(ethers.parseEther("100"));
@@ -129,10 +129,8 @@ describe("XNS", function () {
         // Should set special namespace createdAt to deployment timestamp
         expect(createdAt).to.equal(s.deploymentBlockTimestamp);
 
-        // Should map SPECIAL_NAMESPACE_PRICE to "x" namespace
-        const getNamespaceInfoByPrice = s.xns.getFunction("getNamespaceInfo(uint256)");
-        const [namespace] = await getNamespaceInfoByPrice(ethers.parseEther("100"));
-        expect(namespace).to.equal("x");
+        // Should set special namespace as public (isPrivate = false)
+        expect(isPrivate).to.equal(false);
 
         // Should register bare name "xns" for the XNS contract itself
         const contractAddress = await s.xns.getAddress();
@@ -142,8 +140,11 @@ describe("XNS", function () {
     });
 
     it("Should have correct constants", async () => {
-        // Should have correct NAMESPACE_REGISTRATION_FEE (200 ether)
-        expect(await s.xns.NAMESPACE_REGISTRATION_FEE()).to.equal(ethers.parseEther("200"));
+        // Should have correct PUBLIC_NAMESPACE_REGISTRATION_FEE (200 ether)
+        expect(await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE()).to.equal(ethers.parseEther("200"));
+
+        // Should have correct PRIVATE_NAMESPACE_REGISTRATION_FEE (10 ether)
+        expect(await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE()).to.equal(ethers.parseEther("10"));
 
         // Should have correct NAMESPACE_CREATOR_EXCLUSIVE_PERIOD (30 days)
         expect(await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD()).to.equal(30 * 24 * 60 * 60);
@@ -171,7 +172,7 @@ describe("XNS", function () {
     it("Should emit `NamespaceRegistered` event for special namespace", async () => {
         await expect(s.xns.deploymentTransaction())
             .to.emit(s.xns, "NamespaceRegistered")
-            .withArgs("x", ethers.parseEther("100"), s.owner.address);
+            .withArgs("x", ethers.parseEther("100"), s.owner.address, false);
     });
 
     it("Should emit `NameRegistered` event for contract's own name 'xns'", async () => {
@@ -306,7 +307,7 @@ describe("XNS", function () {
     
   });
 
-  describe("isValidNamespace", function () {
+  describe("isValidPublicNamespace", function () {
     let s: SetupOutput;
 
     beforeEach(async () => {
@@ -317,37 +318,37 @@ describe("XNS", function () {
     // Functionality
     // -----------------------
 
-    it("Should return `true` for valid namespaces with lowercase letters", async () => {
-        expect(await s.xns.isValidNamespace("a")).to.be.true;
-        expect(await s.xns.isValidNamespace("ab")).to.be.true;
-        expect(await s.xns.isValidNamespace("abc")).to.be.true;
-        expect(await s.xns.isValidNamespace("defi")).to.be.true;
+    it("Should return `true` for valid public namespaces with lowercase letters", async () => {
+        expect(await s.xns.isValidPublicNamespace("a")).to.be.true;
+        expect(await s.xns.isValidPublicNamespace("ab")).to.be.true;
+        expect(await s.xns.isValidPublicNamespace("abc")).to.be.true;
+        expect(await s.xns.isValidPublicNamespace("defi")).to.be.true;
     });
 
-    it("Should return `true` for valid namespaces with digits", async () => {
-        expect(await s.xns.isValidNamespace("0")).to.be.true;
-        expect(await s.xns.isValidNamespace("1")).to.be.true;
-        expect(await s.xns.isValidNamespace("001")).to.be.true;
-        expect(await s.xns.isValidNamespace("1234")).to.be.true;
+    it("Should return `true` for valid public namespaces with digits", async () => {
+        expect(await s.xns.isValidPublicNamespace("0")).to.be.true;
+        expect(await s.xns.isValidPublicNamespace("1")).to.be.true;
+        expect(await s.xns.isValidPublicNamespace("001")).to.be.true;
+        expect(await s.xns.isValidPublicNamespace("1234")).to.be.true;
     });
 
-    it("Should return `true` for valid namespaces combining letters and digits", async () => {
-        expect(await s.xns.isValidNamespace("a1")).to.be.true;
-        expect(await s.xns.isValidNamespace("1a")).to.be.true;
-        expect(await s.xns.isValidNamespace("ab1")).to.be.true;
-        expect(await s.xns.isValidNamespace("1ab2")).to.be.true;
+    it("Should return `true` for valid public namespaces combining letters and digits", async () => {
+        expect(await s.xns.isValidPublicNamespace("a1")).to.be.true;
+        expect(await s.xns.isValidPublicNamespace("1a")).to.be.true;
+        expect(await s.xns.isValidPublicNamespace("ab1")).to.be.true;
+        expect(await s.xns.isValidPublicNamespace("1ab2")).to.be.true;
     });
 
     it("Should return `true` for minimum length (1 character)", async () => {
-        expect(await s.xns.isValidNamespace("a")).to.be.true;
-        expect(await s.xns.isValidNamespace("1")).to.be.true;
-        expect(await s.xns.isValidNamespace("x")).to.be.true;
+        expect(await s.xns.isValidPublicNamespace("a")).to.be.true;
+        expect(await s.xns.isValidPublicNamespace("1")).to.be.true;
+        expect(await s.xns.isValidPublicNamespace("x")).to.be.true;
     });
 
     it("Should return `true` for maximum length (4 characters)", async () => {
-        expect(await s.xns.isValidNamespace("abcd")).to.be.true;
-        expect(await s.xns.isValidNamespace("1234")).to.be.true;
-        expect(await s.xns.isValidNamespace("a1b2")).to.be.true;
+        expect(await s.xns.isValidPublicNamespace("abcd")).to.be.true;
+        expect(await s.xns.isValidPublicNamespace("1234")).to.be.true;
+        expect(await s.xns.isValidPublicNamespace("a1b2")).to.be.true;
     });
 
     // -----------------------
@@ -355,43 +356,165 @@ describe("XNS", function () {
     // -----------------------
 
     it("Should return `false` for empty string", async () => {
-        expect(await s.xns.isValidNamespace("")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("")).to.be.false;
     });
 
-    it("Should return `false` for namespaces longer than 4 characters", async () => {
-        expect(await s.xns.isValidNamespace("abcde")).to.be.false;
-        expect(await s.xns.isValidNamespace("12345")).to.be.false;
-        expect(await s.xns.isValidNamespace("verylong")).to.be.false;
+    it("Should return `false` for public namespaces longer than 4 characters", async () => {
+        expect(await s.xns.isValidPublicNamespace("abcde")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("12345")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("verylong")).to.be.false;
     });
 
-    it("Should return `false` for namespaces containing uppercase letters", async () => {
-        expect(await s.xns.isValidNamespace("A")).to.be.false;
-        expect(await s.xns.isValidNamespace("ABC")).to.be.false;
-        expect(await s.xns.isValidNamespace("aBc")).to.be.false;
-        expect(await s.xns.isValidNamespace("defI")).to.be.false;
+    it("Should return `false` for public namespaces containing uppercase letters", async () => {
+        expect(await s.xns.isValidPublicNamespace("A")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("ABC")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("aBc")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("defI")).to.be.false;
     });
 
-    it("Should return `false` for namespaces containing hyphens", async () => {
-        expect(await s.xns.isValidNamespace("a-b")).to.be.false;
-        expect(await s.xns.isValidNamespace("test-1")).to.be.false;
-        expect(await s.xns.isValidNamespace("-ab")).to.be.false;
-        expect(await s.xns.isValidNamespace("ab-")).to.be.false;
+    it("Should return `false` for public namespaces containing hyphens", async () => {
+        expect(await s.xns.isValidPublicNamespace("a-b")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("test-1")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("-ab")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("ab-")).to.be.false;
     });
 
-    it("Should return `false` for namespaces containing spaces", async () => {
-        expect(await s.xns.isValidNamespace("a b")).to.be.false;
-        expect(await s.xns.isValidNamespace("test 1")).to.be.false;
-        expect(await s.xns.isValidNamespace(" ab")).to.be.false;
-        expect(await s.xns.isValidNamespace("ab ")).to.be.false;
+    it("Should return `false` for public namespaces containing spaces", async () => {
+        expect(await s.xns.isValidPublicNamespace("a b")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("test 1")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace(" ab")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("ab ")).to.be.false;
     });
 
-    it("Should return `false` for namespaces containing special characters", async () => {
-        expect(await s.xns.isValidNamespace("a@b")).to.be.false;
-        expect(await s.xns.isValidNamespace("test#1")).to.be.false;
-        expect(await s.xns.isValidNamespace("user$name")).to.be.false;
-        expect(await s.xns.isValidNamespace("test.label")).to.be.false;
-        expect(await s.xns.isValidNamespace("a!b")).to.be.false;
-        expect(await s.xns.isValidNamespace("a_b")).to.be.false;
+    it("Should return `false` for public namespaces containing special characters", async () => {
+        expect(await s.xns.isValidPublicNamespace("a@b")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("test#1")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("user$name")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("test.label")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("a!b")).to.be.false;
+        expect(await s.xns.isValidPublicNamespace("a_b")).to.be.false;
+    });
+
+    
+  });
+
+  describe.only("isValidPrivateNamespace", function () {
+    let s: SetupOutput;
+
+    beforeEach(async () => {
+      s = await loadFixture(setup);
+    });
+
+    // -----------------------
+    // Functionality
+    // -----------------------
+
+    it("Should return `true` for valid private namespaces with lowercase letters", async () => {
+        expect(await s.xns.isValidPrivateNamespace("a")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("ab")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("abc")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("defi")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("myprivate")).to.be.true;
+    });
+
+    it("Should return `true` for valid private namespaces with digits", async () => {
+        expect(await s.xns.isValidPrivateNamespace("0")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("1")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("001")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("1234")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("1234567890123456")).to.be.true; // 16 chars
+    });
+
+    it("Should return `true` for valid private namespaces with hyphens", async () => {
+        expect(await s.xns.isValidPrivateNamespace("a-b")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("test-1")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("my-private")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("my-private-names")).to.be.true; // 16 chars
+    });
+
+    it("Should return `true` for valid private namespaces combining letters, digits, and hyphens", async () => {
+        expect(await s.xns.isValidPrivateNamespace("a1")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("1a")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("ab1")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("1ab2")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("test-123")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("my-123-namespace")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("a1b2-c3d4-e5f6")).to.be.true;
+    });
+
+    it("Should return `true` for minimum length (1 character)", async () => {
+        expect(await s.xns.isValidPrivateNamespace("a")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("1")).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("x")).to.be.true;
+    });
+
+    it("Should return `true` for maximum length (16 characters)", async () => {
+        expect(await s.xns.isValidPrivateNamespace("a".repeat(16))).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("1".repeat(16))).to.be.true;
+        expect(await s.xns.isValidPrivateNamespace("my-private-ns")).to.be.true; // 14 chars
+        expect(await s.xns.isValidPrivateNamespace("myprivate123456")).to.be.true; // 16 chars
+        expect(await s.xns.isValidPrivateNamespace("a1b2c3d4e5f6g7h8")).to.be.true; // 16 chars
+    });
+
+    // -----------------------
+    // Reverts
+    // -----------------------
+
+    it("Should return `false` for empty string", async () => {
+        expect(await s.xns.isValidPrivateNamespace("")).to.be.false;
+    });
+
+    it("Should return `false` for private namespaces longer than 16 characters", async () => {
+        expect(await s.xns.isValidPrivateNamespace("a".repeat(17))).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("1".repeat(17))).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("myprivate12345678")).to.be.false; // 17 chars
+        expect(await s.xns.isValidPrivateNamespace("verylongnamespace")).to.be.false;
+    });
+
+    it("Should return `false` for private namespaces containing uppercase letters", async () => {
+        expect(await s.xns.isValidPrivateNamespace("A")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("ABC")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("aBc")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("my-Private")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("privateNamespace")).to.be.false;
+    });
+
+    it("Should return `false` for private namespaces containing spaces", async () => {
+        expect(await s.xns.isValidPrivateNamespace("a b")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("test 1")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace(" myprivate")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("myprivate ")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("my private namespace")).to.be.false;
+    });
+
+    it("Should return `false` for private namespaces containing special characters (except hyphen)", async () => {
+        expect(await s.xns.isValidPrivateNamespace("a@b")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("test#1")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("user$name")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("test.label")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("a!b")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("a_b")).to.be.false;
+    });
+
+    it("Should return `false` for private namespaces starting with hyphen", async () => {
+        expect(await s.xns.isValidPrivateNamespace("-a")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("-test")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("-123")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("-my-private")).to.be.false;
+    });
+
+    it("Should return `false` for private namespaces ending with hyphen", async () => {
+        expect(await s.xns.isValidPrivateNamespace("a-")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("test-")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("123-")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("my-private-")).to.be.false;
+    });
+
+    it("Should return `false` for private namespaces containing consecutive hyphens", async () => {
+        expect(await s.xns.isValidPrivateNamespace("a--b")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("test--1")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("my---private")).to.be.false;
+        expect(await s.xns.isValidPrivateNamespace("a--b--c")).to.be.false;
     });
 
     

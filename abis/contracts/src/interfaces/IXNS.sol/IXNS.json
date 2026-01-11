@@ -1,20 +1,21 @@
 [
   "event FeesClaimed(address indexed,uint256)",
   "event NameRegistered(string indexed,string indexed,address indexed)",
-  "event NamespaceRegistered(string indexed,uint256,address indexed)",
+  "event NamespaceRegistered(string indexed,uint256,address indexed,bool)",
   "function batchRegisterNameWithAuthorization(tuple(address,string,string)[],bytes[]) payable returns (uint256)",
   "function claimFees(address)",
   "function claimFeesToSelf()",
   "function getAddress(string,string) view returns (address)",
   "function getAddress(string) view returns (address)",
   "function getName(address) view returns (string)",
-  "function getNamespaceInfo(string) view returns (uint256, address, uint64)",
-  "function getNamespaceInfo(uint256) view returns (string, uint256, address, uint64)",
+  "function getNamespaceInfo(string) view returns (uint256, address, uint64, bool)",
   "function getPendingFees(address) view returns (uint256)",
   "function isValidLabel(string) pure returns (bool)",
-  "function isValidNamespace(string) pure returns (bool)",
+  "function isValidPrivateNamespace(string) pure returns (bool)",
+  "function isValidPublicNamespace(string) pure returns (bool)",
   "function isValidSignature(tuple(address,string,string),bytes) view returns (bool)",
   "function registerName(string,string) payable",
   "function registerNameWithAuthorization(tuple(address,string,string),bytes) payable",
-  "function registerNamespace(string,uint256) payable"
+  "function registerPrivateNamespace(string,uint256) payable",
+  "function registerPublicNamespace(string,uint256) payable"
 ]
