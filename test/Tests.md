@@ -90,23 +90,23 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- [NEW] Should return `true` for valid private namespaces with lowercase letters.
-- [NEW] Should return `true` for valid private namespaces with digits.
-- [NEW] Should return `true` for valid private namespaces with hyphens.
-- [NEW] Should return `true` for valid private namespaces combining letters, digits, and hyphens.
-- [NEW] Should return `true` for minimum length (1 character).
-- [NEW] Should return `true` for maximum length (16 characters).
+- Should return `true` for valid private namespaces with lowercase letters.
+- Should return `true` for valid private namespaces with digits.
+- Should return `true` for valid private namespaces with hyphens.
+- Should return `true` for valid private namespaces combining letters, digits, and hyphens.
+- Should return `true` for minimum length (1 character).
+- Should return `true` for maximum length (16 characters).
 
 #### Reverts
 
-- [NEW] Should return `false` for empty string.
-- [NEW] Should return `false` for private namespaces longer than 16 characters.
-- [NEW] Should return `false` for private namespaces containing uppercase letters.
-- [NEW] Should return `false` for private namespaces containing spaces.
-- [NEW] Should return `false` for private namespaces containing special characters (except hyphen).
-- [NEW] Should return `false` for private namespaces starting with hyphen.
-- [NEW] Should return `false` for private namespaces ending with hyphen.
-- [NEW] Should return `false` for private namespaces containing consecutive hyphens.
+- Should return `false` for empty string.
+- Should return `false` for private namespaces longer than 16 characters.
+- Should return `false` for private namespaces containing uppercase letters.
+- Should return `false` for private namespaces containing spaces.
+- Should return `false` for private namespaces containing special characters (except hyphen).
+- Should return `false` for private namespaces starting with hyphen.
+- Should return `false` for private namespaces ending with hyphen.
+- Should return `false` for private namespaces containing consecutive hyphens.
 
 ---
 
@@ -131,7 +131,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should credit correct amount of DETH to non-owner registrant during initial period.
 - Should credit correct amount of DETH to owner after initial period.
 - Should credit correct amount of DETH to non-owner registrant after initial period.
-- [NEW] Should allow multiple public namespaces with the same price (no price uniqueness).
+- Should allow multiple public namespaces with the same price (no price uniqueness).
 
 #### Events
 
@@ -145,7 +145,6 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: 'eth' namespace forbidden` error when trying to register "eth" namespace.
 - Should revert with `XNS: pricePerName must be > 0` error for zero price.
 - Should revert with `XNS: price must be multiple of 0.001 ETH` error for non-multiple price.
-- [REMOVE] Should revert with `XNS: price already in use` error when price is already mapped to another namespace.
 - Should revert with `XNS: namespace already exists` error when namespace already exists.
 - Should revert with `XNS: insufficient namespace fee` error when non-owner pays incorrect fee during initial period.
 - Should revert with `XNS: insufficient namespace fee` error when non-owner pays incorrect fee after initial period.
@@ -157,44 +156,44 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- [NEW] Should register a new private namespace correctly
+- Should register a new private namespace correctly
   - Should create namespace with correct price.
   - Should set namespace creator to `msg.sender`.
   - Should set `isPrivate = true`.
   - Should set `createdAt` timestamp.
-- [NEW] Should allow owner to register private namespace without fee (`msg.value = 0`) during initial period (1 year).
-- [NEW] Should require owner to pay fee after 1 year.
-- [NEW] Should refund all ETH to owner if owner sends ETH during initial period.
-- [NEW] Should allow anyone (non-owner) to register private namespace with fee during initial period.
-- [NEW] Should allow anyone (non-owner) to register private namespace with fee after initial period.
-- [NEW] Should refund excess payment when non-owner pays more than 10 ETH.
-- [NEW] Should refund excess payment when owner pays more than required fee after initial period.
-- [NEW] Should process the ETH payment correctly (90% burnt, 10% to contract owner, 0% to namespace creator) when fee is paid.
-- [NEW] Should not distribute fees when owner registers with `msg.value > 0` during initial period.
-- [NEW] Should credit correct amount of DETH to non-owner registrant during initial period.
-- [NEW] Should credit correct amount of DETH to owner after initial period.
-- [NEW] Should credit correct amount of DETH to non-owner registrant after initial period.
-- [NEW] Should allow multiple private namespaces with the same price (no price uniqueness).
+- Should allow owner to register private namespace without fee (`msg.value = 0`) during initial period (1 year).
+- Should require owner to pay fee after 1 year.
+- Should refund all ETH to owner if owner sends ETH during initial period.
+- Should allow anyone (non-owner) to register private namespace with fee during initial period.
+- Should allow anyone (non-owner) to register private namespace with fee after initial period.
+- Should refund excess payment when non-owner pays more than 10 ETH.
+- Should refund excess payment when owner pays more than required fee after initial period.
+- Should process the ETH payment correctly (90% burnt, 10% to contract owner, 0% to namespace creator) when fee is paid.
+- Should not distribute fees when owner registers with `msg.value > 0` during initial period.
+- Should credit correct amount of DETH to non-owner registrant during initial period.
+- Should credit correct amount of DETH to owner after initial period.
+- Should credit correct amount of DETH to non-owner registrant after initial period.
+- Should allow multiple private namespaces with the same price (no price uniqueness).
 
 #### Events
 
-- [NEW] Should emit `NamespaceRegistered` event with correct parameters and `isPrivate = true`.
+- Should emit `NamespaceRegistered` event with correct parameters and `isPrivate = true`.
 
 #### Reverts
 
-- [NEW] Should revert with `XNS: invalid namespace` error for empty namespace.
-- [NEW] Should revert with `XNS: invalid namespace` error for private namespace longer than 16 characters.
-- [NEW] Should revert with `XNS: invalid namespace` error for private namespace with invalid characters.
-- [NEW] Should revert with `XNS: invalid namespace` error for private namespace starting with hyphen.
-- [NEW] Should revert with `XNS: invalid namespace` error for private namespace ending with hyphen.
-- [NEW] Should revert with `XNS: invalid namespace` error for private namespace with consecutive hyphens.
-- [NEW] Should revert with `XNS: 'eth' namespace forbidden` error when trying to register "eth" namespace.
-- [NEW] Should revert with `XNS: pricePerName too low` error for price less than 0.001 ETH.
-- [NEW] Should revert with `XNS: price must be multiple of 0.001 ETH` error for non-multiple price.
-- [NEW] Should revert with `XNS: namespace already exists` error when namespace already exists.
-- [NEW] Should revert with `XNS: insufficient namespace fee` error when non-owner pays incorrect fee during initial period.
-- [NEW] Should revert with `XNS: insufficient namespace fee` error when non-owner pays incorrect fee after initial period.
-- [NEW] Should revert with `XNS: refund failed` error if refund to owner fails during initial period.
+- Should revert with `XNS: invalid namespace` error for empty namespace.
+- Should revert with `XNS: invalid namespace` error for private namespace longer than 16 characters.
+- Should revert with `XNS: invalid namespace` error for private namespace with invalid characters.
+- Should revert with `XNS: invalid namespace` error for private namespace starting with hyphen.
+- Should revert with `XNS: invalid namespace` error for private namespace ending with hyphen.
+- Should revert with `XNS: invalid namespace` error for private namespace with consecutive hyphens.
+- Should revert with `XNS: 'eth' namespace forbidden` error when trying to register "eth" namespace.
+- Should revert with `XNS: pricePerName too low` error for price less than 0.001 ETH.
+- Should revert with `XNS: price must be multiple of 0.001 ETH` error for non-multiple price.
+- Should revert with `XNS: namespace already exists` error when namespace already exists.
+- Should revert with `XNS: insufficient namespace fee` error when non-owner pays incorrect fee during initial period.
+- Should revert with `XNS: insufficient namespace fee` error when non-owner pays incorrect fee after initial period.
+- Should revert with `XNS: refund failed` error if refund to owner fails during initial period.
 
 ---
 
@@ -227,7 +226,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 - Should revert with `XNS: invalid label` error for invalid label.
 - Should revert with `XNS: namespace not found` error when namespace doesn't exist.
-- [NEW] Should revert with `XNS: private namespace` error when trying to register in private namespace.
+- Should revert with `XNS: private namespace` error when trying to register in private namespace.
 - Should revert with `XNS: insufficient payment` error when `msg.value` is less than namespace price.
 - Should revert with `XNS: not namespace creator` error when non-creator tries to register during exclusive period.
 - Should revert with `XNS: address already has a name` error when address already owns a name.
@@ -246,10 +245,9 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
   - Should set correct label and namespace.
 - Should allow namespace creator to sponsor registrations in public namespace during exclusive period (30 days).
 - Should allow anyone to sponsor registrations in public namespace after exclusive period (30 days).
-- [NEW] Should allow namespace creator to sponsor registrations in private namespace (creator-only forever).
-- [NEW] Should revert when non-creator tries to sponsor in private namespace (even after exclusivity period).
+- Should allow namespace creator to sponsor registrations in private namespace (creator-only forever).
 - Should process the ETH payment correctly for public namespace (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
-- [NEW] Should process the ETH payment correctly for private namespace (90% burnt, 10% to contract owner, 0% to namespace creator) when fee is paid.
+- Should process the ETH payment correctly for private namespace (90% burnt, 10% to contract owner, 0% to namespace creator) when fee is paid.
 - Should allow sponsoring a name registration for an EIP-1271 contract wallet recipient.
 - Should refund excess payment when `msg.value` exceeds namespace price.
 - Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (100 ETH) after the exclusive period ends.
@@ -265,7 +263,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: namespace not found` error for non-existent namespace.
 - Should revert with `XNS: insufficient payment` error when msg.value is less than namespace price.
 - Should revert with `XNS: not namespace creator` error when non-creator tries to sponsor during exclusive period in public namespace.
-- [NEW] Should revert with `XNS: not namespace creator` error when non-creator tries to sponsor in private namespace.
+- Should revert with `XNS: not namespace creator (private)` error when non-creator tries to sponsor in private namespace.
 - Should revert with `XNS: recipient already has a name` error when recipient already owns a name.
 - Should revert with `XNS: name already registered` error when name is already registered.
 - Should revert with `XNS: bad authorization` error for invalid signature.
@@ -287,12 +285,11 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should skip registrations where name is already registered.
 - Should return 0 if no registrations succeed and refund all payment.
 - Should process the ETH payment correctly for public namespace (90% burnt via DETH, 5% to namespace creator, 5% to contract owner) only for successful registrations.
-- [NEW] Should process the ETH payment correctly for private namespace (90% burnt via DETH, 10% to contract owner, 0% to namespace creator) only for successful registrations.
+- Should process the ETH payment correctly for private namespace (90% burnt via DETH, 10% to contract owner, 0% to namespace creator) only for successful registrations.
 - Should credit correct amount of DETH to sponsor, not recipients.
 - Should allow namespace creator to sponsor batch registrations in public namespace during exclusive period (30 days).
 - Should allow anyone to sponsor batch registrations in public namespace after exclusive period (30 days).
-- [NEW] Should allow namespace creator to sponsor batch registrations in private namespace (creator-only forever).
-- [NEW] Should revert when non-creator tries to sponsor batch in private namespace (even after exclusivity period).
+- Should allow namespace creator to sponsor batch registrations in private namespace (creator-only forever).
 - Should allow sponsoring name registrations including an EIP-1271 contract wallet recipient.
 - Should permit anyone (non-namespace-creator) to register multiple names in the special "x" namespace (100 ETH) after the exclusive period ends.
 
@@ -307,7 +304,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: namespace not found` error for non-existent namespace.
 - Should revert with `XNS: insufficient payment` error when `msg.value` is less than `pricePerName * successfulCount`.
 - Should revert with `XNS: not namespace creator` error when non-creator tries to sponsor during exclusive period in public namespace.
-- [NEW] Should revert with `XNS: not namespace creator` error when non-creator tries to sponsor batch in private namespace.
+- Should revert with `XNS: not namespace creator (private)` error when non-creator tries to sponsor batch in private namespace.
 - Should revert with `XNS: namespace mismatch` error when registrations are in different namespaces.
 - Should revert with `XNS: invalid label` error for invalid label in any registration.
 - Should revert with `XNS: 0x recipient` error when any recipient is address(0).
@@ -327,14 +324,14 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should allow public namespace creator to claim all pending fees for `msg.sender` and transfer to recipient (non-namespace-creator)
   - Should transfer correct amount to recipient.
   - Should reset pending fees to zero after claiming.
-- [NEW] Should allow owner to claim all pending fees from private namespace registrations (10% of private namespace fees go to owner).
+- Should allow owner to claim all pending fees from private namespace registrations (10% of private namespace fees go to owner).
 - Should allow owner to claim all pending fees to themselves
   - Should transfer correct amount to `msg.sender`.
   - Should reset pending fees to zero after claiming.
 - Should allow public namespace creator to claim all pending fees to themselves
   - Should transfer correct amount to `msg.sender`.
   - Should reset pending fees to zero after claiming.
-- [NEW] Should return zero fees for private namespace creator (private namespace creators receive 0% fees).
+- Should return zero fees for private namespace creator (private namespace creators receive 0% fees).
 - Should allow claiming fees multiple times as they accumulate.
 
 #### Events
@@ -359,7 +356,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should allow public namespace creator to claim all pending fees to themselves
   - Should transfer correct amount to `msg.sender`.
   - Should reset pending fees to zero after claiming.
-- [NEW] Should return zero fees for private namespace creator when claiming to self (private namespace creators receive 0% fees).
+- Should return zero fees for private namespace creator when claiming to self (private namespace creators receive 0% fees).
 
 #### Events
 
@@ -392,6 +389,9 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should return correct owner address for registered name.
 - Should return `address(0)` for unregistered name.
 - Should handle special namespace "x" correctly.
+- Should return correct recipient address for sponsored name in private namespace.
+- Should return `address(0)` for unregistered name in private namespace.
+- Should return correct address for long private namespace (up to 16 characters).
 
 ---
 
@@ -418,12 +418,11 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should resolve fullnames with six characters.
 - Should resolve fullnames with seven characters.
 - Should resolve fullnames with twenty-five characters.
-- [NEW] Should resolve correctly for long private namespaces (e.g., "label.my-private-namespace" with namespace up to 16 characters).
+- Should resolve correctly for long private namespaces (e.g., "label.my-private-namespace" with namespace up to 16 characters).
 - Should return `address(0)` for unregistered names.
 - Should return `address(0)` for empty string.
-- [NEW] Should return `address(0)` for "foo.bar.baz" (parses correctly with full reverse scan as label="foo.bar", namespace="baz").
-- [NEW] Should return correct address for "label.my-private" (correctly parses long private namespace with full reverse scan).
-- [REMOVE] Should return `address(0)` for "foo.abcde" (dot not in last 5 chars, treated as bare label).
+- Should return `address(0)` for "foo.bar.baz" (parses correctly with full reverse scan as label="foo.bar", namespace="baz").
+- Should return correct address for "label.my-private" (correctly parses long private namespace with full reverse scan).
 
 ---
 
@@ -445,27 +444,11 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
   - Should return correct `pricePerName`.
   - Should return correct creator address.
   - Should return correct `createdAt` timestamp.
-  - [NEW] Should return correct `isPrivate` boolean.
+  - Should return correct `isPrivate` boolean.
 
 #### Reverts
 
 - Should revert with `XNS: namespace not found` error for non-existent namespace.
-
----
-
-### getNamespaceInfo(price)
-
-#### Functionality
-
-- [REMOVE] Should return correct details
-  - [REMOVE] Should return correct namespace string.
-  - [REMOVE] Should return correct `pricePerName`.
-  - [REMOVE] Should return correct creator address.
-  - [REMOVE] Should return correct `createdAt` timestamp.
-
-#### Reverts
-
-- [REMOVE] Should revert with `XNS: namespace not found` error for unmapped price.
 
 ---
 

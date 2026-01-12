@@ -297,7 +297,7 @@ contract XNS is EIP712 {
         // - Public namespace: creator-only during exclusivity.
         // - Private namespace: creator-only forever.
         if (ns.isPrivate) {
-            require(msg.sender == ns.creator, "XNS: not namespace creator");
+            require(msg.sender == ns.creator, "XNS: not namespace creator (private)");
         } else if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
             require(msg.sender == ns.creator, "XNS: not namespace creator");
         }
@@ -356,7 +356,7 @@ contract XNS is EIP712 {
         // - Private namespace: creator-only forever.
         // - Public namespace: creator-only during exclusivity.
         if (ns.isPrivate) {
-            require(msg.sender == ns.creator, "XNS: not namespace creator");
+            require(msg.sender == ns.creator, "XNS: not namespace creator (private)");
         } else if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
             require(msg.sender == ns.creator, "XNS: not namespace creator");
         }
