@@ -75,6 +75,7 @@ To register an XNS name, follow the following steps:
 **Additional comments:**
 - If you're unsure of a namespace's price, check the [price list](#-xns-price-list) below or retrieve it with `getNamespaceInfo("your_namespace")` by replacing `"your_namespace"` with your desired namespace.
 - Calling `registerName(label, namespace)` always links names to the caller's address.
+- **Note:** `registerName` only works for public namespaces. Private namespaces require sponsorship via `registerNameWithAuthorization`.
 
 ### Name Registration via Etherscan
 
@@ -94,13 +95,17 @@ You can register your name directly via [Etherscan](https://sepolia.etherscan.io
 
 ### 💤 Namespace Registration
 
-To register a namespace, follow the following steps:
+XNS supports two types of namespaces: **public** and **private**. Each has different rules, fees, and use cases.
 
-1. Call `registerNamespace` on the contract at [0x123..333](https://etherscan.io/) with 200 ETH (or 0 ETH if you're the contract owner in the first year).
+#### Public Namespaces
+
+To register a public namespace, follow these steps:
+
+1. Call `registerPublicNamespace` on the contract at [0x123..333](https://etherscan.io/) with 200 ETH (or 0 ETH if you're the contract owner in the first year).
 2. Wait a few blocks for confirmation, then verify with `getNamespaceInfo`.
 
 **Example:** 
-- To register namespace `"yolo"` with a price of 0.250 ETH per name, call `registerNamespace("yolo", 0.25 ether)` with 200 ETH (any excess will be refunded).
+- To register public namespace `"yolo"` with a price of 0.250 ETH per name, call `registerPublicNamespace("yolo", 0.25 ether)` with 200 ETH (any excess will be refunded).
 
 **Requirements:** 
 - **Namespace:**
@@ -110,7 +115,7 @@ To register a namespace, follow the following steps:
    - Cannot be `"eth"` (forbidden to avoid confusion with ENS)
 - **Price per name:**
    - Must be a multiple of 0.001 ETH (0.001, 0.002, 0.250, etc.)
-   - Each price can only be assigned to one namespace (price uniqueness is enforced)
+   - Multiple namespaces can share the same price (price uniqueness is not enforced)
 - **Fee:** 200 ETH registration fee (contract owner pays 0 ETH during the first year after deployment)
 
 **Examples:**
@@ -124,7 +129,49 @@ To register a namespace, follow the following steps:
 - ❌`my-n` (contains hyphen)
 
 **Additional comments:**
-- As the namespace creator, you'll receive 5% of all name registration fees for names registered in your namespace forever.
+- As the public namespace creator, you'll receive 5% of all name registration fees for names registered in your namespace forever.
+- After a 30-day exclusivity period, anyone can register names in your public namespace via `registerName`.
+
+#### Private Namespaces
+
+To register a private namespace, follow these steps:
+
+1. Call `registerPrivateNamespace` on the contract at [0x123..333](https://etherscan.io/) with 10 ETH (or 0 ETH if you're the contract owner in the first year).
+2. Wait a few blocks for confirmation, then verify with `getNamespaceInfo`.
+
+**Example:** 
+- To register private namespace `"my-org"` with a price of 0.001 ETH per name, call `registerPrivateNamespace("my-org", 0.001 ether)` with 10 ETH (any excess will be refunded).
+
+**Requirements:** 
+- **Namespace:**
+   - 1–16 characters
+   - Lowercase letters/digits/hyphens only (`a-z`, `0-9`, `-`)
+   - Cannot start or end with hyphen (`-`)
+   - Cannot contain consecutive hyphens (`--`)
+   - Must not exist yet
+   - Cannot be `"eth"` (forbidden to avoid confusion with ENS)
+- **Price per name:**
+   - Must be >= 0.001 ETH
+   - Must be a multiple of 0.001 ETH (0.001, 0.002, 0.250, etc.)
+   - Multiple namespaces can share the same price (price uniqueness is not enforced)
+- **Fee:** 10 ETH registration fee (contract owner pays 0 ETH during the first year after deployment)
+
+**Examples:**
+- ✅ `my-org`
+- ✅ `private-ns`
+- ✅ `test123`
+- ✅ `a-b-c-d-e-f`
+- ❌ `My-Org` (uppercase)
+- ❌`this-is-too-long-namespace` (more than 16 characters)
+- ❌`eth` (forbidden)
+- ❌`-myorg` (starts with hyphen)
+- ❌`myorg-` (ends with hyphen)
+- ❌`my--org` (consecutive hyphens)
+
+**Additional comments:**
+- Private namespace creators receive **0%** of name registration fees (contract owner receives 10%).
+- Names in private namespaces can **only** be registered via sponsorship (`registerNameWithAuthorization`), never via public `registerName`.
+- The namespace creator has **permanent exclusive rights** to sponsor name registrations in their private namespace (no 30-day limit).
 
 ### Namespace Registration via Etherscan
 
@@ -158,7 +205,7 @@ You can register your name directly via [Etherscan](https://sepolia.etherscan.io
 | io        | 0.055 ETH    |
 | 888       | 0.888 ETH    |
 
-Every namespace has a distinct price, always set as a multiple of 0.001 ETH.
+Namespaces can share the same price (price uniqueness is not enforced). All prices must be multiples of 0.001 ETH.
 
 ---
 
@@ -168,17 +215,28 @@ Every namespace has a distinct price, always set as a multiple of 0.001 ETH.
 
 - Creator privileges are tied to the specific address that created the namespace
 - These privileges are **immutable** and cannot be transferred
+
+### Public Namespace Creators
+
 - During the 30-day exclusivity period, only the creator can:
   - Register paid names for themselves via `registerName`
   - Sponsor paid name registrations for others via `registerNameWithAuthorization`
+- After 30 days, anyone can register names in the public namespace
+- Public namespace creators receive **5%** of all name registration fees forever
 
-This ensures that namespace creators maintain full control over their namespaces during the exclusivity period.
+### Private Namespace Creators
+
+- **Permanent exclusive rights**: Only the creator can sponsor name registrations forever (no time limit)
+- Names in private namespaces can **only** be registered via sponsorship (`registerNameWithAuthorization`), never via public `registerName`
+- Private namespace creators receive **0%** of name registration fees (contract owner receives 10%)
 
 ---
 
 ## ⏳ Exclusive Period
 
-For the first **30 days** after a namespace is created:
+### Public Namespaces
+
+For the first **30 days** after a public namespace is created:
 
 - **Only the namespace creator** may register paid names under that namespace
 - The creator can:
@@ -191,6 +249,12 @@ After 30 days:
 - Anyone may register paid names via `registerName`
 - Anyone may sponsor name registrations via `registerNameWithAuthorization`
 
+### Private Namespaces
+
+- **Permanent exclusivity**: Only the namespace creator can sponsor name registrations forever
+- Public `registerName` is **always disabled** for private namespaces (even for the creator)
+- All name registrations in private namespaces must be done via `registerNameWithAuthorization` with the creator as the sponsor
+
 ---
 
 ## 🔗 Address
@@ -202,7 +266,8 @@ The XNS contract is deployed on Ethereum at the following address: [xxx](https:/
 For testing purposes, you can use the deployed contract on Sepolia at: [0x04c9AafC2d30857781dd1B3540411e24FA536e39](https://sepolia.etherscan.io/address/0x04c9AafC2d30857781dd1B3540411e24FA536e39)
 
 The testnet contract has been parametrized as follows:
-- Namespace registration fee: 0.1 ether (instead of 200 ether)
+- Public namespace registration fee: 0.1 ether (instead of 200 ether)
+- Private namespace registration fee: 0.005 ether (instead of 10 ether)
 - Namespace creator exclusive period: 60 seconds (instead of 30 days)
 - Initial owner namespace registration period: 60 seconds (instead of 365 days)
 - Bare name price: 0.2 ether (instead of 100 ether)
@@ -218,7 +283,8 @@ registerName(string label, string namespace) payable
 - Burns `msg.value` ETH (must be >= the namespace's registered price)
 - Registers `label.namespace` for `msg.sender`
 - Excess payment is refunded
-- During the 30-day exclusivity period, only the namespace creator can use this function
+- **Only works for public namespaces** (reverts for private namespaces)
+- During the 30-day exclusivity period, only the namespace creator can use this function for public namespaces
 
 Example:
 
@@ -240,7 +306,9 @@ registerNameWithAuthorization(
 - Allows a sponsor (tx sender) to pay and register a name for a recipient
 - Recipient must explicitly authorize via EIP-712 signature
 - Supports both EOA signatures and EIP-1271 contract wallet signatures (Safe, Argent, etc.)
-- During the 30-day exclusivity period, only the namespace creator can sponsor registrations
+- Works for both **public** and **private** namespaces
+- For **public namespaces**: During the 30-day exclusivity period, only the namespace creator can sponsor registrations. After 30 days, anyone can sponsor.
+- For **private namespaces**: Only the namespace creator can sponsor registrations forever (permanent exclusivity)
 - Burns `msg.value` ETH (must match namespace price)
 - Registers name to `recipient`, not `msg.sender`
 
@@ -277,8 +345,12 @@ batchRegisterNameWithAuthorization(
 - If no registrations succeed, refunds all payment and returns 0
 - Skips registrations where recipient already has a name or name is already registered (griefing resistance)
 - More gas efficient than calling `registerNameWithAuthorization` multiple times
-- During the 30-day exclusivity period, only the namespace creator can sponsor batch registrations
-- Burns ETH only for successful registrations (90% burnt, 5% to namespace creator, 5% to contract owner)
+- Works for both **public** and **private** namespaces
+- For **public namespaces**: During the 30-day exclusivity period, only the namespace creator can sponsor batch registrations. After 30 days, anyone can sponsor.
+- For **private namespaces**: Only the namespace creator can sponsor batch registrations forever (permanent exclusivity)
+- Burns ETH only for successful registrations:
+  - **Public namespaces**: 90% burnt, 5% to namespace creator, 5% to contract owner
+  - **Private namespaces**: 90% burnt, 10% to contract owner, 0% to namespace creator
 - Registers names to recipients, not `msg.sender`
 - Resistant to griefing attacks: if someone front-runs and registers a name for one recipient, that registration is skipped and others proceed
 
@@ -289,16 +361,30 @@ Use cases:
 
 ---
 
-### Register a Namespace
+### Register a Public Namespace
 
 ```solidity
-registerNamespace(string namespace, uint256 pricePerName) payable
+registerPublicNamespace(string namespace, uint256 pricePerName) payable
 ```
 
-- Registers a new namespace
+- Registers a new **public** namespace
 - Binds it to `pricePerName`
-- During the initial 1-year period, the contract owner can register namespaces for free
-- All others must pay the namespace registration fee (200 ETH)
+- During the initial 1-year period, the contract owner can register public namespaces for free
+- All others must pay the public namespace registration fee (200 ETH)
+- Namespace must be 1–4 characters, lowercase letters/digits only (`a-z`, `0-9`)
+
+### Register a Private Namespace
+
+```solidity
+registerPrivateNamespace(string namespace, uint256 pricePerName) payable
+```
+
+- Registers a new **private** namespace
+- Binds it to `pricePerName`
+- During the initial 1-year period, the contract owner can register private namespaces for free
+- All others must pay the private namespace registration fee (10 ETH)
+- Namespace must be 1–16 characters, lowercase letters/digits/hyphens (`a-z`, `0-9`, `-`), cannot start/end with hyphen or contain consecutive hyphens
+- Names in private namespaces can only be registered via sponsorship (`registerNameWithAuthorization`), never via public `registerName`
 
 ---
 
@@ -310,8 +396,14 @@ When names are registered (via `registerName` or `registerNameWithAuthorization`
 
 - **90%** of ETH is burned via DETH contract
 - The payer/sponsor is credited DETH 1:1 for the burned amount
+
+**For public namespaces:**
 - **5%** is credited to the namespace creator
 - **5%** is credited to the contract owner
+
+**For private namespaces:**
+- **10%** is credited to the contract owner
+- **0%** is credited to the namespace creator (private namespace creators receive no fees)
 
 Fees accumulate and must be explicitly claimed.
 
@@ -417,21 +509,7 @@ Returns:
 - `pricePerName`
 - `creator`
 - `createdAt`
-
----
-
-### Query by Price
-
-```solidity
-getNamespaceInfo(uint256 price)
-```
-
-Returns:
-
-- `namespace`
-- `pricePerName`
-- `creator`
-- `createdAt`
+- `isPrivate` (boolean indicating if the namespace is private)
 
 ---
 
@@ -669,11 +747,12 @@ Emitted on paid or free registration.
 event NamespaceRegistered(
   string namespace,
   uint256 pricePerName,
-  address creator
+  address creator,
+  bool isPrivate
 );
 ```
 
-Emitted when a namespace is created.
+Emitted when a namespace is created. The `isPrivate` parameter indicates whether the namespace is private (`true`) or public (`false`).
 
 ---
 
