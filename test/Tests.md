@@ -15,12 +15,12 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should initialize the contract correctly
   - Should initialize owner correctly.
   - Should set `deployedAt` to current block timestamp.
-  - Should register special namespace "x" with correct price (100 ETH).
+  - Should register special namespace "x" with correct price (10 ETH).
   - Should set special namespace creator to owner.
   - Should set special namespace as public (`isPrivate = false`).
   - Should register bare name "xns" for the XNS contract itself.
 - Should have correct constants
-  - Should have correct `PUBLIC_NAMESPACE_REGISTRATION_FEE` (200 ether).
+  - Should have correct `PUBLIC_NAMESPACE_REGISTRATION_FEE` (50 ether).
   - Should have correct `PRIVATE_NAMESPACE_REGISTRATION_FEE` (10 ether).
   - Should have correct `EXCLUSIVITY_PERIOD` (30 days).
   - Should have correct `ONBOARDING_PERIOD` (1 year).
@@ -78,7 +78,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should refund all ETH to owner if owner sends ETH during initial period.
 - Should allow anyone (non-owner) to register public namespace with fee during initial period.
 - Should allow anyone (non-owner) to register public namespace with fee after initial period.
-- Should refund excess payment when non-owner pays more than 200 ETH.
+- Should refund excess payment when non-owner pays more than 50 ETH.
 - Should refund excess payment when owner pays more than required fee after initial period.
 - Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
 - Should not distribute fees when owner registers with `msg.value > 0` during initial period.
@@ -168,7 +168,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should allow anyone to register paid names in public namespace after exclusive period (30 days).
 - Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
 - Should refund excess payment when `msg.value` exceeds namespace price.
-- Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (100 ETH) after the exclusive period ends.
+- Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (10 ETH) after the exclusive period ends.
 - Should credit correct amount of DETH to `msg.sender`.
 - Should credit correct amount of DETH to namespace creator (`msg.sender`) during exclusive period.
 - Should allow a contract to register a name for itself via `registerName` (in constructor).
@@ -208,7 +208,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should process the ETH payment correctly for private namespace (90% burnt, 10% to contract owner, 0% to namespace creator) when fee is paid.
 - Should allow sponsoring a name registration for an EIP-1271 contract wallet recipient.
 - Should refund excess payment when `msg.value` exceeds namespace price.
-- Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (100 ETH) after the exclusive period ends.
+- Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (10 ETH) after the exclusive period ends.
 
 #### Events
 
@@ -249,7 +249,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should allow anyone to sponsor batch registrations in public namespace after exclusive period (30 days).
 - Should allow namespace creator to sponsor batch registrations in private namespace (creator-only forever).
 - Should allow sponsoring name registrations including an EIP-1271 contract wallet recipient.
-- Should permit anyone (non-namespace-creator) to register multiple names in the special "x" namespace (100 ETH) after the exclusive period ends.
+- Should permit anyone (non-namespace-creator) to register multiple names in the special "x" namespace (10 ETH) after the exclusive period ends.
 
 #### Events
 

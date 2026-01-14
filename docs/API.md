@@ -16,31 +16,36 @@ Examples:
 - vitalik.100x
 - garry.ape
 
-### Name registration (public namespaces)
+Rules for label and namespace:
+- Must be 1–20 characters long
+- Must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
+- Cannot start or end with '-'
+- Cannot contain consecutive hyphens ('--')
+
+### Name registration with public namespaces
 - Users call `registerName(label, namespace)` and send ETH.
 - `msg.value` must be >= the namespace's registered price (excess will be refunded).
 - Each address can own at most one name.
 
 ### Sponsorship via authorization (EIP-712 + EIP-1271)
 - `registerNameWithAuthorization` allows a sponsor to pay and register a name for a recipient
-  who explicitly authorized it via signature.
+  who explicitly authorized it via an EIP-712 signature.
 - Public namespaces: during the creator's 30-day exclusivity window, only the creator may sponsor.
 - Private namespaces: only the creator may sponsor forever (public registration disabled).
-- Recipients sign an EIP-712 message authorizing the specific name registration, providing opt-in consent.
-- Supports both EOA signatures and EIP-1271 contract wallet signatures (Safe, Argent, etc.).
+- Supports both EOA signatures and EIP-1271 contract wallet signatures.
 
 ### Bare names
 - A bare name is a name without a namespace (e.g., "vitalik" or "bankless").
 - Bare names are equivalent to names in the special "x" namespace, i.e., "vitalik" = "vitalik.x"
-  or "bankless" = "bankless.x".
-- Bare names are considered premium names and cost 100 ETH per name.
+  or "bankless" = "bankless.x". That is, both "vitalik" and "vitalik.x" resolve to the same address.
+- Bare names are considered premium names and cost 10 ETH per name.
 
 ### Namespace registration
 - Anyone can register new namespaces by paying a one-time fee.
 - Namespaces can be public or private. Public namespaces are open to the public for registrations,
   while private namespaces are only open to the namespace creator and their authorized recipients.
 - **Public namespaces:**
-  - Fee: 200 ETH
+  - Fee: 50 ETH
   - Namespace creators receive a 30-day exclusive window for registering paid names within the registered namespace.
   - During this period, the creator can use `registerName` to register a name for themselves and sponsor registrations via
     `registerNameWithAuthorization` for others.
@@ -56,7 +61,7 @@ Examples:
 - 90% of ETH sent is burnt via DETH.
 - 10% is credited as fees.
   - Public namespaces: 5% to namespace creator + 5% to XNS owner
-  - Private namespaces: 10% to XNS owner (creator share redirected to owner)
+  - Private namespaces: 10% to XNS owner
 
 
 
@@ -174,7 +179,7 @@ Register a new public namespace.
 
 **Requirements:**
 - Namespace must be valid (length 1–20, consists only of [a-z0-9-], cannot start or end with '-', cannot contain consecutive hyphens).
-- `msg.value` must be >= 200 ETH (excess refunded), except OWNER pays 0 ETH during initial period.
+- `msg.value` must be >= 50 ETH (excess refunded), except OWNER pays 0 ETH during initial period.
 - Namespace must not already exist.
 - Namespace must not equal "eth".
 - `pricePerName` must be a multiple of 0.001 ETH.
@@ -182,10 +187,10 @@ Register a new public namespace.
 **Note:**
 - During the onboarding period (1 year following contract deployment),
   the owner pays no namespace registration fee.
-- Anyone can register a namespace for a 200 ETH fee within the onboarding period.
+- Anyone can register a namespace for a 50 ETH fee within the onboarding period.
 - Front-running namespace registrations by the owner during the onboarding period
   provides no economic benefit: the owner would only receive 5% of name
-  registration fees (vs 200 ETH upfront fee), and users can mitigate this by waiting until
+  registration fees (vs 50 ETH upfront fee), and users can mitigate this by waiting until
   after the 1-year period. This is an accepted design trade-off for simplicity.
 
 ```solidity
@@ -369,6 +374,29 @@ function getNamespaceInfo(string namespace) external view returns (uint256 price
 | creator | address | The creator of the namespace. |
 | createdAt | uint64 | The timestamp when the namespace was created. |
 | isPrivate | bool | Whether the namespace is private. |
+
+### getNamespacePrice
+
+
+Function to retrieve only the price per name for a given namespace.
+
+```solidity
+function getNamespacePrice(string namespace) external view returns (uint256 pricePerName)
+```
+
+_More gas efficient than `getNamespaceInfo` if only the price is needed._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| namespace | string | The namespace to retrieve the price for. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| pricePerName | uint256 | The price per name for the namespace. |
 
 ### isValidSlug
 

@@ -37,8 +37,13 @@ alice.yolo
 nike.ape
 ```
 
+Rules for label and namespace:
+- Must be 1–20 characters long
+- Must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
+- Cannot start or end with '-'
+- Cannot contain consecutive hyphens ('--')
 
-XNS also supports **bare names**, i.e. names without a suffix (e.g., `nike`, `vitalik`, `alice`). Bare names are premium names costing 100 ETH per name.
+XNS also supports **bare names**, i.e. names without a suffix (e.g., `nike`, `vitalik`, `alice`). Bare names are premium names costing 10 ETH per name.
 
 > **Note:** Labels and namespaces (both public and private) follow the same format rules: 1–20 characters, lowercase letters/digits/hyphens only (`a-z`, `0-9`, `-`), cannot start/end with hyphen, and cannot contain consecutive hyphens.
 
@@ -90,7 +95,7 @@ You can register your name directly via [Etherscan](https://sepolia.etherscan.io
 **Example 1:** Registering `bob.xns` in the `xns` namespace (costs 0.001 ETH):
 <img width="670" height="301" alt="image" src="https://github.com/user-attachments/assets/2323cac5-060d-4cc8-abc6-0a27ea3f03d4" />
 
-**Example 2:** Registering the bare name `vitalik` (costs 100 ETH):
+**Example 2:** Registering the bare name `vitalik` (costs 10 ETH):
 <img width="664" height="296" alt="image" src="https://github.com/user-attachments/assets/a1fd1570-c946-4049-a812-528eed7c7878" />
 
 
@@ -103,11 +108,11 @@ XNS supports two types of namespaces: **public** and **private**. Each has diffe
 
 To register a public namespace, follow these steps:
 
-1. Call `registerPublicNamespace` on the contract at [0x123..333](https://etherscan.io/) with 200 ETH (or 0 ETH if you're the contract owner in the first year).
+1. Call `registerPublicNamespace` on the contract at [0x123..333](https://etherscan.io/) with 50 ETH (or 0 ETH if you're the contract owner in the first year).
 2. Wait a few blocks for confirmation, then verify with `getNamespaceInfo`.
 
 **Example:** 
-- To register public namespace `"yolo"` with a price of 0.250 ETH per name, call `registerPublicNamespace("yolo", 0.25 ether)` with 200 ETH (any excess will be refunded).
+- To register public namespace `"yolo"` with a price of 0.250 ETH per name, call `registerPublicNamespace("yolo", 0.25 ether)` with 50 ETH (any excess will be refunded).
 
 **Requirements:** 
 - **Namespace:**
@@ -120,7 +125,7 @@ To register a public namespace, follow these steps:
 - **Price per name:**
    - Must be a multiple of 0.001 ETH (0.001, 0.002, 0.250, etc.)
    - Multiple namespaces can share the same price (price uniqueness is not enforced)
-- **Fee:** 200 ETH registration fee (contract owner pays 0 ETH during the first year after deployment)
+- **Fee:** 50 ETH registration fee (contract owner pays 0 ETH during the first year after deployment)
 
 **Examples:**
 - ✅ `yolo`
@@ -275,11 +280,11 @@ The XNS contract is deployed on Ethereum at the following address: [xxx](https:/
 For testing purposes, you can use the deployed contract on Sepolia at: [0x04c9AafC2d30857781dd1B3540411e24FA536e39](https://sepolia.etherscan.io/address/0x04c9AafC2d30857781dd1B3540411e24FA536e39)
 
 The testnet contract has been parametrized as follows:
-- Public namespace registration fee: 0.1 ether (instead of 200 ether)
+- Public namespace registration fee: 0.1 ether (instead of 50 ether)
 - Private namespace registration fee: 0.005 ether (instead of 10 ether)
 - Namespace creator exclusive period: 60 seconds (instead of 30 days)
 - Onboarding period: 60 seconds (instead of 365 days)
-- Bare name price: 0.2 ether (instead of 100 ether)
+- Bare name price: 0.2 ether (instead of 10 ether)
 
 ## 🔧 Key Functions
 
@@ -379,7 +384,7 @@ registerPublicNamespace(string namespace, uint256 pricePerName) payable
 - Registers a new **public** namespace
 - Binds it to `pricePerName`
 - During the initial 1-year period, the contract owner can register public namespaces for free
-- All others must pay the public namespace registration fee (200 ETH)
+- All others must pay the public namespace registration fee (50 ETH)
 - Namespace must be 1–20 characters, lowercase letters/digits/hyphens only (`a-z`, `0-9`, `-`), cannot start/end with hyphen or contain consecutive hyphens
 
 ### Register a Private Namespace

@@ -120,8 +120,8 @@ describe("XNS", function () {
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
         const [pricePerName, creator, createdAt, isPrivate] = await getNamespaceInfoByString("x");
 
-        // Should register special namespace "x" with correct price (100 ETH)
-        expect(pricePerName).to.equal(ethers.parseEther("100"));
+        // Should register special namespace "x" with correct price (10 ETH)
+        expect(pricePerName).to.equal(ethers.parseEther("10"));
 
         // Should set special namespace creator to owner
         expect(creator).to.equal(s.owner.address);
@@ -140,8 +140,8 @@ describe("XNS", function () {
     });
 
     it("Should have correct constants", async () => {
-        // Should have correct PUBLIC_NAMESPACE_REGISTRATION_FEE (200 ether)
-        expect(await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE()).to.equal(ethers.parseEther("200"));
+        // Should have correct PUBLIC_NAMESPACE_REGISTRATION_FEE (50 ether)
+        expect(await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE()).to.equal(ethers.parseEther("50"));
 
         // Should have correct PRIVATE_NAMESPACE_REGISTRATION_FEE (10 ether)
         expect(await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE()).to.equal(ethers.parseEther("10"));
@@ -169,7 +169,7 @@ describe("XNS", function () {
     it("Should emit `NamespaceRegistered` event for special namespace", async () => {
         await expect(s.xns.deploymentTransaction())
             .to.emit(s.xns, "NamespaceRegistered")
-            .withArgs("x", ethers.parseEther("100"), s.owner.address, false);
+            .withArgs("x", ethers.parseEther("10"), s.owner.address, false);
     });
 
     it("Should emit `NameRegistered` event for contract's own name 'xns'", async () => {
@@ -513,7 +513,7 @@ describe("XNS", function () {
         // ---------
         const namespace = "bro";
         const pricePerName = ethers.parseEther("0.003");
-        const ethToSend = ethers.parseEther("200"); // Owner sends ETH even though it's free
+        const ethToSend = ethers.parseEther("50"); // Owner sends ETH even though it's free
         
         // Confirm that this registration is within the ONBOARDING_PERIOD
         const latestBlock = await ethers.provider.getBlock("latest");
@@ -639,7 +639,7 @@ describe("XNS", function () {
 
     });
 
-    it("Should refund excess payment when non-owner pays more than 200 ETH", async () => {
+    it("Should refund excess payment when non-owner pays more than 50 ETH", async () => {
         // ---------
         // Arrange: Prepare parameters with excess payment
         // ---------
@@ -681,7 +681,7 @@ describe("XNS", function () {
         expect(isPrivate).to.equal(false);
 
 
-        // Verify refund: balance should decrease by fee (200 ETH) + gas costs (excess was refunded)
+        // Verify refund: balance should decrease by fee (50 ETH) + gas costs (excess was refunded)
         // balanceAfter should equal balanceBefore - fee - gasCost
         const expectedBalanceAfter = balanceBefore - fee - gasCost;
         expect(balanceAfter).to.equal(expectedBalanceAfter);
@@ -740,7 +740,7 @@ describe("XNS", function () {
         expect(isPrivate).to.equal(false);
 
 
-        // Verify refund: balance should decrease by fee (200 ETH) + gas costs (excess was refunded)
+        // Verify refund: balance should decrease by fee (50 ETH) + gas costs (excess was refunded)
         // balanceAfter should equal balanceBefore - fee - gasCost
         const expectedBalanceAfter = balanceBefore - fee - gasCost;
         expect(balanceAfter).to.equal(expectedBalanceAfter);
@@ -797,7 +797,7 @@ describe("XNS", function () {
         // ---------
         const namespace = "fee";
         const pricePerName = ethers.parseEther("0.009");
-        const ethToSend = ethers.parseEther("200"); // Owner sends ETH even though it's free
+        const ethToSend = ethers.parseEther("50"); // Owner sends ETH even though it's free
         
         // Confirm that this registration is within the ONBOARDING_PERIOD
         const latestBlock = await ethers.provider.getBlock("latest");
@@ -1253,7 +1253,7 @@ describe("XNS", function () {
 
         const namespace = "rfnd";
         const pricePerName = ethers.parseEther("0.019");
-        const ethToSend = ethers.parseEther("200"); // Owner sends ETH during free period
+        const ethToSend = ethers.parseEther("50"); // Owner sends ETH during free period
 
         // Impersonate the reverting receiver address and fund it so it can send transactions
         await impersonateAccount(revertingReceiverAddress);
@@ -2486,14 +2486,14 @@ describe("XNS", function () {
         expect(balanceAfter).to.equal(expectedBalanceAfter);
     });
 
-    it("Should permit anyone (non-namespace-creator) to register a name in the special \"x\" namespace (100 ETH) after the exclusive period ends", async () => {
+    it("Should permit anyone (non-namespace-creator) to register a name in the special \"x\" namespace (10 ETH) after the exclusive period ends", async () => {
         // ---------
         // Arrange: Prepare parameters for special namespace "x"
         // ---------
         const namespace = "x";
         const label = "frank";
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
-        const [specialNamespacePrice] = await getNamespaceInfoByString(namespace); // 100 ETH
+        const [specialNamespacePrice] = await getNamespaceInfoByString(namespace); // 10 ETH
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
@@ -3523,7 +3523,7 @@ describe("XNS", function () {
         expect(balanceAfter).to.equal(expectedBalanceAfter);
     });
 
-    it("Should permit anyone (non-namespace-creator) to register a name in the special \"x\" namespace (100 ETH) after the exclusive period ends", async () => {
+    it("Should permit anyone (non-namespace-creator) to register a name in the special \"x\" namespace (10 ETH) after the exclusive period ends", async () => {
         // ---------
         // Arrange: Prepare parameters for special namespace "x"
         // ---------
@@ -3531,7 +3531,7 @@ describe("XNS", function () {
         const label = "specialsponsored";
         const recipient = s.user2.address; // user2 is the recipient
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
-        const [specialNamespacePrice] = await getNamespaceInfoByString(namespace); // 100 ETH
+        const [specialNamespacePrice] = await getNamespaceInfoByString(namespace); // 10 ETH
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
@@ -5105,13 +5105,13 @@ describe("XNS", function () {
         expect(await getName(s.user1.address)).to.equal(`${registrations[1].label}.${namespace}`);
     });
 
-    it("Should permit anyone (non-namespace-creator) to register multiple names in the special \"x\" namespace (100 ETH) after the exclusive period ends", async () => {
+    it("Should permit anyone (non-namespace-creator) to register multiple names in the special \"x\" namespace (10 ETH) after the exclusive period ends", async () => {
         // ---------
         // Arrange: Prepare parameters for special namespace "x"
         // ---------
         const namespace = "x"; // Special namespace
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
-        const [specialNamespacePrice] = await getNamespaceInfoByString(namespace); // 100 ETH
+        const [specialNamespacePrice] = await getNamespaceInfoByString(namespace); // 10 ETH
         const pricePerName = specialNamespacePrice;
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
@@ -5161,7 +5161,7 @@ describe("XNS", function () {
             signatures.push(signature);
         }
 
-        // Calculate total payment (2 * 100 ETH = 200 ETH)
+        // Calculate total payment (2 * 10 ETH = 20 ETH)
         const totalPayment = pricePerName * BigInt(registrations.length);
 
         // Note: We'll use user1 (not namespace creator) as the sponsor to verify anyone can sponsor
@@ -5203,8 +5203,8 @@ describe("XNS", function () {
         expect(ownerAddress2).to.equal(s.user2.address); // user2 is recipient for second registration
         expect(ownerAddress2).to.not.equal(s.user1.address); // sponsor (user1) should not own user2's name
 
-        // Verify that the special namespace price (100 ETH) was used
-        // This is implicitly verified by the successful transaction with totalPayment = 2 * 100 ETH
+        // Verify that the special namespace price (10 ETH) was used
+        // This is implicitly verified by the successful transaction with totalPayment = 2 * 10 ETH
         expect(totalPayment).to.equal(specialNamespacePrice * 2n);
     });
 
@@ -7004,7 +7004,7 @@ describe("XNS", function () {
         // Arrange: Register a name in the special "x" namespace (bare name)
         // ---------
         const namespace = "x";
-        const pricePerName = ethers.parseEther("100"); // Special namespace price
+        const pricePerName = ethers.parseEther("10"); // Special namespace price
         const label = "vitalik";
 
         // Fast-forward time past the exclusivity period so anyone can register
@@ -7190,7 +7190,7 @@ describe("XNS", function () {
       // ---------
       // Arrange
       // ---------
-      const specialNamespacePrice = ethers.parseEther("100");
+      const specialNamespacePrice = ethers.parseEther("10");
       const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
@@ -7211,7 +7211,7 @@ describe("XNS", function () {
       // ---------
       // Arrange
       // ---------
-      const specialNamespacePrice = ethers.parseEther("100");
+      const specialNamespacePrice = ethers.parseEther("10");
       const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
@@ -7232,7 +7232,7 @@ describe("XNS", function () {
       // ---------
       // Arrange
       // ---------
-      const specialNamespacePrice = ethers.parseEther("100");
+      const specialNamespacePrice = ethers.parseEther("10");
       const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
@@ -7253,7 +7253,7 @@ describe("XNS", function () {
       // ---------
       // Arrange
       // ---------
-      const specialNamespacePrice = ethers.parseEther("100");
+      const specialNamespacePrice = ethers.parseEther("10");
       const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
@@ -7274,7 +7274,7 @@ describe("XNS", function () {
       // ---------
       // Arrange
       // ---------
-      const specialNamespacePrice = ethers.parseEther("100");
+      const specialNamespacePrice = ethers.parseEther("10");
       const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
@@ -7295,7 +7295,7 @@ describe("XNS", function () {
       // ---------
       // Arrange
       // ---------
-      const specialNamespacePrice = ethers.parseEther("100");
+      const specialNamespacePrice = ethers.parseEther("10");
       const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
@@ -7316,7 +7316,7 @@ describe("XNS", function () {
       // ---------
       // Arrange
       // ---------
-      const specialNamespacePrice = ethers.parseEther("100");
+      const specialNamespacePrice = ethers.parseEther("10");
       const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
@@ -7337,7 +7337,7 @@ describe("XNS", function () {
       // ---------
       // Arrange
       // ---------
-      const specialNamespacePrice = ethers.parseEther("100");
+      const specialNamespacePrice = ethers.parseEther("10");
       const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
@@ -7702,7 +7702,7 @@ describe("XNS", function () {
       // Arrange
       // ---------
       const namespace = "x";
-      const pricePerName = ethers.parseEther("100"); // Special namespace price
+      const pricePerName = ethers.parseEther("10"); // Special namespace price
       const label = "vitalik";
       const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
@@ -8011,7 +8011,7 @@ describe("XNS", function () {
       // Arrange: Special namespace "x" is registered in constructor
       // ---------
       const namespace = "x";
-      const expectedPrice = ethers.parseEther("100");
+      const expectedPrice = ethers.parseEther("10");
 
       // ---------
       // Act: Get namespace price
@@ -8020,7 +8020,7 @@ describe("XNS", function () {
       const returnedPrice = await getNamespacePriceByString(namespace);
 
       // ---------
-      // Assert: Verify price is correct (100 ETH for bare names)
+      // Assert: Verify price is correct (10 ETH for bare names)
       // ---------
       expect(returnedPrice).to.equal(expectedPrice);
     });
