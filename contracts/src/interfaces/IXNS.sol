@@ -9,7 +9,7 @@ interface IXNS {
     }
 
     event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
-    event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator);
+    event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator, bool isPrivate);
     event FeesClaimed(address indexed recipient, uint256 amount);
 
     function registerName(string calldata label, string calldata namespace) external payable;
@@ -21,17 +21,17 @@ interface IXNS {
         RegisterNameAuth[] calldata registerNameAuths,
         bytes[] calldata signatures
     ) external payable returns (uint256 successfulCount);
-    function registerNamespace(string calldata namespace, uint256 pricePerName) external payable;
+    function registerPublicNamespace(string calldata namespace, uint256 pricePerName) external payable;
+    function registerPrivateNamespace(string calldata namespace, uint256 pricePerName) external payable;
     function claimFees(address recipient) external;
     function claimFeesToSelf() external;
 
     function getAddress(string calldata label, string calldata namespace) external view returns (address addr);
     function getAddress(string calldata fullName) external view returns (address addr);
     function getName(address addr) external view returns (string memory);
-    function getNamespaceInfo(string calldata namespace) external view returns (uint256 pricePerName, address creator, uint64 createdAt);
-    function getNamespaceInfo(uint256 price) external view returns (string memory namespace, uint256 pricePerName, address creator, uint64 createdAt);
-    function isValidLabel(string memory label) external pure returns (bool isValid);
-    function isValidNamespace(string memory namespace) external pure returns (bool isValid);
+    function getNamespaceInfo(string calldata namespace) external view returns (uint256 pricePerName, address creator, uint64 createdAt, bool isPrivate);
+    function getNamespacePrice(string calldata namespace) external view returns (uint256 pricePerName);
+    function isValidSlug(string memory slug) external pure returns (bool isValid);
     function isValidSignature(
         RegisterNameAuth calldata registerNameAuth,
         bytes calldata signature

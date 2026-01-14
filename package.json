@@ -37,6 +37,7 @@
     "xdeploy": "npx hardhat xdeploy",
     "abi": "npx hardhat export-abi",
     "vars:path": "npx hardhat vars path",
+    "lines": "cloc contracts/src/XNS.sol",
     "evm": "npx hardhat evm",
     "docs:generate": "hardhat docgen",
     "docs:clear": "rm -rf docs",

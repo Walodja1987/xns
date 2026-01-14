@@ -79,6 +79,9 @@ devDependencies:
   chai:
     specifier: ^4.5.0
     version: 4.5.0
+  cloc:
+    specifier: 2.6.0-cloc
+    version: 2.6.0-cloc
   eslint:
     specifier: ^9.13.0
     version: 9.39.2
@@ -4724,6 +4727,11 @@ packages:
       string-width: 4.2.3
       strip-ansi: 6.0.1
       wrap-ansi: 7.0.0
+    dev: true
+
+  /cloc@2.6.0-cloc:
+    resolution: {integrity: sha512-fCHPvFN6I7WmC005u99WqLxqWnWhEra0YCppc2k8lpRZrPFIEaHaNxgJ+funlSRIZMSIOqxwpt7pmEKDPFCz2g==}
+    hasBin: true
     dev: true
 
   /clone-response@1.0.3:
