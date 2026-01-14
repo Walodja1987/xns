@@ -205,25 +205,25 @@ describe("XNS", function () {
     // Functionality
     // -----------------------
 
-    it("Should return `true` for valid labels with lowercase letters", async () => {
+    it("Should return `true` for valid slugs with lowercase letters", async () => {
         expect(await s.xns.isValidSlug("alice")).to.be.true;
         expect(await s.xns.isValidSlug("bob")).to.be.true;
         expect(await s.xns.isValidSlug("charlie")).to.be.true;
     });
 
-    it("Should return `true` for valid labels with digits", async () => {
+    it("Should return `true` for valid slugs with digits", async () => {
         expect(await s.xns.isValidSlug("123")).to.be.true;
         expect(await s.xns.isValidSlug("0")).to.be.true;
         expect(await s.xns.isValidSlug("999")).to.be.true;
     });
 
-    it("Should return `true` for valid labels with hyphens", async () => {
+    it("Should return `true` for valid slugs with hyphens", async () => {
         expect(await s.xns.isValidSlug("alice-bob")).to.be.true;
         expect(await s.xns.isValidSlug("test-label")).to.be.true;
         expect(await s.xns.isValidSlug("my-name")).to.be.true;
     });
 
-    it("Should return `true` for valid labels combining letters, digits, and hyphens", async () => {
+    it("Should return `true` for valid slugs combining letters, digits, and hyphens", async () => {
         expect(await s.xns.isValidSlug("alice123")).to.be.true;
         expect(await s.xns.isValidSlug("test-123")).to.be.true;
         expect(await s.xns.isValidSlug("user-42-name")).to.be.true;
@@ -250,39 +250,39 @@ describe("XNS", function () {
         expect(await s.xns.isValidSlug("")).to.be.false;
     });
 
-    it("Should return `false` for labels longer than 20 characters", async () => {
+    it("Should return `false` for slugs longer than 20 characters", async () => {
         expect(await s.xns.isValidSlug("a".repeat(21))).to.be.false;
         expect(await s.xns.isValidSlug("abcdefghijklmnopqrstu")).to.be.false;
         expect(await s.xns.isValidSlug("verylonglabelname12345")).to.be.false;
     });
 
-    it("Should return `false` for labels starting with hyphen", async () => {
+    it("Should return `false` for slugs starting with hyphen", async () => {
         expect(await s.xns.isValidSlug("-alice")).to.be.false;
         expect(await s.xns.isValidSlug("-test")).to.be.false;
         expect(await s.xns.isValidSlug("-123")).to.be.false;
     });
 
-    it("Should return `false` for labels ending with hyphen", async () => {
+    it("Should return `false` for slugs ending with hyphen", async () => {
         expect(await s.xns.isValidSlug("alice-")).to.be.false;
         expect(await s.xns.isValidSlug("test-")).to.be.false;
         expect(await s.xns.isValidSlug("123-")).to.be.false;
     });
 
-    it("Should return `false` for labels containing uppercase letters", async () => {
+    it("Should return `false` for slugs containing uppercase letters", async () => {
         expect(await s.xns.isValidSlug("Alice")).to.be.false;
         expect(await s.xns.isValidSlug("TEST")).to.be.false;
         expect(await s.xns.isValidSlug("aliceBob")).to.be.false;
         expect(await s.xns.isValidSlug("test-Label")).to.be.false;
     });
 
-    it("Should return `false` for labels containing spaces", async () => {
+    it("Should return `false` for slugs containing spaces", async () => {
         expect(await s.xns.isValidSlug("alice bob")).to.be.false;
         expect(await s.xns.isValidSlug("test label")).to.be.false;
         expect(await s.xns.isValidSlug(" alice")).to.be.false;
         expect(await s.xns.isValidSlug("alice ")).to.be.false;
     });
 
-    it("Should return `false` for labels containing special characters (except hyphen)", async () => {
+    it("Should return `false` for slugs containing special characters (except hyphen)", async () => {
         expect(await s.xns.isValidSlug("alice@bob")).to.be.false;
         expect(await s.xns.isValidSlug("test#label")).to.be.false;
         expect(await s.xns.isValidSlug("user$name")).to.be.false;
@@ -290,14 +290,14 @@ describe("XNS", function () {
         expect(await s.xns.isValidSlug("alice!bob")).to.be.false;
     });
 
-    it("Should return `false` for labels containing underscores", async () => {
+    it("Should return `false` for slugs containing underscores", async () => {
         expect(await s.xns.isValidSlug("alice_bob")).to.be.false;
         expect(await s.xns.isValidSlug("test_label")).to.be.false;
         expect(await s.xns.isValidSlug("user_name_123")).to.be.false;
         expect(await s.xns.isValidSlug("xns_deployer")).to.be.false;
     });
 
-    it("Should return `false` for labels containing consecutive hyphens", async () => {
+    it("Should return `false` for slugs containing consecutive hyphens", async () => {
         expect(await s.xns.isValidSlug("alice--bob")).to.be.false;
         expect(await s.xns.isValidSlug("test--label")).to.be.false;
         expect(await s.xns.isValidSlug("my---name")).to.be.false;
@@ -402,6 +402,34 @@ describe("XNS", function () {
 
         // Verify both namespaces have the same price (no uniqueness check)
         expect(returnedPrice1).to.equal(returnedPrice2);
+    });
+
+    it("Should allow public namespace with hyphens (e.g., 'my-public-ns')", async () => {
+        // ---------
+        // Arrange: Prepare parameters for public namespace with hyphens
+        // ---------
+        const namespace = "my-public-ns";
+        const pricePerName = ethers.parseEther("0.002");
+        const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
+
+        // ---------
+        // Act: Register public namespace with hyphens
+        // ---------
+        const tx = await s.xns.connect(s.user1).registerPublicNamespace(namespace, pricePerName, { value: fee });
+        const receipt = await tx.wait();
+        const block = await ethers.provider.getBlock(receipt!.blockNumber);
+        const createdAt = block!.timestamp;
+
+        // ---------
+        // Assert: Verify namespace was registered correctly
+        // ---------
+        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
+        const [returnedPrice, creator, returnedCreatedAt, isPrivate] = await getNamespaceInfoByString(namespace);
+
+        expect(returnedPrice).to.equal(pricePerName);
+        expect(creator).to.equal(s.user1.address);
+        expect(returnedCreatedAt).to.equal(createdAt);
+        expect(isPrivate).to.equal(false);
     });
 
     it("Should allow owner to register namespace without fee (`msg.value = 0`) during initial period (1 year)", async () => {
@@ -1005,11 +1033,11 @@ describe("XNS", function () {
         ).to.be.revertedWith("XNS: invalid namespace");
     });
 
-    it("Should revert with `XNS: invalid namespace` error for namespace longer than 4 characters", async () => {
+    it("Should revert with `XNS: invalid namespace` error for namespace longer than 20 characters", async () => {
         // ---------
-        // Arrange: Prepare parameters with namespace longer than 4 characters
+        // Arrange: Prepare parameters with namespace longer than 20 characters
         // ---------
-        const namespace = "abcde"; // 5 characters
+        const namespace = "a".repeat(21); // 21 characters
         const pricePerName = ethers.parseEther("0.001");
         const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
 
@@ -1031,6 +1059,54 @@ describe("XNS", function () {
 
         // ---------
         // Act & Assert: Attempt to register namespace and expect revert
+        // ---------
+        await expect(
+            s.xns.connect(s.user1).registerPublicNamespace(namespace, pricePerName, { value: fee })
+        ).to.be.revertedWith("XNS: invalid namespace");
+    });
+
+    it("Should revert with `XNS: invalid namespace` error for public namespace starting with hyphen", async () => {
+        // ---------
+        // Arrange: Prepare parameters with public namespace starting with hyphen
+        // ---------
+        const namespace = "-public";
+        const pricePerName = ethers.parseEther("0.001");
+        const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
+
+        // ---------
+        // Act & Assert: Attempt to register public namespace and expect revert
+        // ---------
+        await expect(
+            s.xns.connect(s.user1).registerPublicNamespace(namespace, pricePerName, { value: fee })
+        ).to.be.revertedWith("XNS: invalid namespace");
+    });
+
+    it("Should revert with `XNS: invalid namespace` error for public namespace ending with hyphen", async () => {
+        // ---------
+        // Arrange: Prepare parameters with public namespace ending with hyphen
+        // ---------
+        const namespace = "public-";
+        const pricePerName = ethers.parseEther("0.001");
+        const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
+
+        // ---------
+        // Act & Assert: Attempt to register public namespace and expect revert
+        // ---------
+        await expect(
+            s.xns.connect(s.user1).registerPublicNamespace(namespace, pricePerName, { value: fee })
+        ).to.be.revertedWith("XNS: invalid namespace");
+    });
+
+    it("Should revert with `XNS: invalid namespace` error for public namespace with consecutive hyphens", async () => {
+        // ---------
+        // Arrange: Prepare parameters with public namespace containing consecutive hyphens
+        // ---------
+        const namespace = "my--public";
+        const pricePerName = ethers.parseEther("0.001");
+        const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
+
+        // ---------
+        // Act & Assert: Attempt to register public namespace and expect revert
         // ---------
         await expect(
             s.xns.connect(s.user1).registerPublicNamespace(namespace, pricePerName, { value: fee })
@@ -1890,11 +1966,11 @@ describe("XNS", function () {
         ).to.be.revertedWith("XNS: invalid namespace");
     });
 
-    it("Should revert with `XNS: invalid namespace` error for private namespace longer than 16 characters", async () => {
+    it("Should revert with `XNS: invalid namespace` error for private namespace longer than 20 characters", async () => {
         // ---------
-        // Arrange: Prepare parameters with private namespace longer than 16 characters
+        // Arrange: Prepare parameters with private namespace longer than 20 characters
         // ---------
-        const namespace = "a".repeat(17); // 17 characters
+        const namespace = "a".repeat(21); // 21 characters
         const pricePerName = ethers.parseEther("0.001");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
@@ -1906,7 +1982,7 @@ describe("XNS", function () {
         ).to.be.revertedWith("XNS: invalid namespace");
     });
 
-    it("Should revert with `XNS: invalid namespace` error for private namespace with invalid characters", async () => {
+    it("Should revert with `XNS: invalid namespace` error for private namespace with invalid characters (uppercase, spaces, special chars)", async () => {
         // ---------
         // Arrange: Prepare parameters with private namespace containing invalid characters
         // ---------
@@ -7032,11 +7108,11 @@ describe("XNS", function () {
         expect(ownerAddress).to.equal(ethers.ZeroAddress);
     });
 
-    it("Should return correct address for long private namespace (up to 16 characters)", async () => {
+    it("Should return correct address for long private namespace (up to 20 characters)", async () => {
         // ---------
-        // Arrange: Register a long private namespace (16 characters) and sponsor a name registration
+        // Arrange: Register a long private namespace (20 characters) and sponsor a name registration
         // ---------
-        const namespace = "my-private-names"; // 16 characters (max length for private namespaces)
+        const namespace = "my-private-namespace"; // 20 characters (max length for private namespaces)
         const pricePerName = ethers.parseEther("0.001");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
         const label = "test";
@@ -7050,7 +7126,7 @@ describe("XNS", function () {
         const [, creator, , isPrivate] = await getNamespaceInfoByString(namespace);
         expect(creator).to.equal(s.user1.address);
         expect(isPrivate).to.equal(true);
-        expect(namespace.length).to.equal(16); // Verify it's the max length
+        expect(namespace.length).to.equal(20); // Verify it's the max length
 
         // Sponsor name registration in private namespace (user1 sponsors as creator)
         const signature = await s.signRegisterNameAuth(s.user2, recipient, label, namespace);
@@ -7685,11 +7761,11 @@ describe("XNS", function () {
         expect(await getAddressByFullName("foo.bar.baz")).to.equal(ethers.ZeroAddress);
       });
 
-    it("Should resolve correctly for long private namespaces (e.g., \"label.my-private-namespace\" with namespace up to 16 characters)", async () => {
+    it("Should resolve correctly for long private namespaces (e.g., \"label.my-private-namespace\" with namespace up to 20 characters)", async () => {
         // ---------
-        // Arrange: Register a long private namespace (16 characters) and sponsor a name registration
+        // Arrange: Register a long private namespace (20 characters) and sponsor a name registration
         // ---------
-        const namespace = "my-private-names"; // 16 characters (max length for private namespaces)
+        const namespace = "my-private-namespace"; // 20 characters (max length for private namespaces)
         const pricePerName = ethers.parseEther("0.001");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
         const label = "label";
@@ -7703,7 +7779,7 @@ describe("XNS", function () {
         const [, creator, , isPrivate] = await getNamespaceInfoByString(namespace);
         expect(creator).to.equal(s.user1.address);
         expect(isPrivate).to.equal(true);
-        expect(namespace.length).to.equal(16); // Verify it's the max length
+        expect(namespace.length).to.equal(20); // Verify it's the max length
 
         // Sponsor name registration in private namespace (user1 sponsors as creator)
         const signature = await s.signRegisterNameAuth(s.user2, recipient, label, namespace);

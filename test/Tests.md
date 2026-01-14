@@ -40,73 +40,28 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
-### isValidLabel
+### isValidSlug
 
 #### Functionality
 
-- Should return `true` for valid labels with lowercase letters.
-- Should return `true` for valid labels with digits.
-- Should return `true` for valid labels with hyphens.
-- Should return `true` for valid labels combining letters, digits, and hyphens.
+- Should return `true` for valid slugs with lowercase letters.
+- Should return `true` for valid slugs with digits.
+- Should return `true` for valid slugs with hyphens.
+- Should return `true` for valid slugs combining letters, digits, and hyphens.
 - Should return `true` for minimum length (1 character).
 - Should return `true` for maximum length (20 characters).
 
 #### Reverts
 
 - Should return `false` for empty string.
-- Should return `false` for labels longer than 20 characters.
-- Should return `false` for labels starting with hyphen.
-- Should return `false` for labels ending with hyphen.
-- Should return `false` for labels containing uppercase letters.
-- Should return `false` for labels containing spaces.
-- Should return `false` for labels containing special characters (except hyphen).
-- Should return `false` for labels containing underscores.
-- Should return `false` for labels containing consecutive hyphens.
-
----
-
-### isValidPublicNamespace
-
-#### Functionality
-
-- Should return `true` for valid public namespaces with lowercase letters.
-- Should return `true` for valid public namespaces with digits.
-- Should return `true` for valid public namespaces combining letters and digits.
-- Should return `true` for minimum length (1 character).
-- Should return `true` for maximum length (4 characters).
-
-#### Reverts
-
-- Should return `false` for empty string.
-- Should return `false` for public namespaces longer than 4 characters.
-- Should return `false` for public namespaces containing uppercase letters.
-- Should return `false` for public namespaces containing hyphens.
-- Should return `false` for public namespaces containing spaces.
-- Should return `false` for public namespaces containing special characters.
-
----
-
-### isValidPrivateNamespace
-
-#### Functionality
-
-- Should return `true` for valid private namespaces with lowercase letters.
-- Should return `true` for valid private namespaces with digits.
-- Should return `true` for valid private namespaces with hyphens.
-- Should return `true` for valid private namespaces combining letters, digits, and hyphens.
-- Should return `true` for minimum length (1 character).
-- Should return `true` for maximum length (16 characters).
-
-#### Reverts
-
-- Should return `false` for empty string.
-- Should return `false` for private namespaces longer than 16 characters.
-- Should return `false` for private namespaces containing uppercase letters.
-- Should return `false` for private namespaces containing spaces.
-- Should return `false` for private namespaces containing special characters (except hyphen).
-- Should return `false` for private namespaces starting with hyphen.
-- Should return `false` for private namespaces ending with hyphen.
-- Should return `false` for private namespaces containing consecutive hyphens.
+- Should return `false` for slugs longer than 20 characters.
+- Should return `false` for slugs starting with hyphen.
+- Should return `false` for slugs ending with hyphen.
+- Should return `false` for slugs containing uppercase letters.
+- Should return `false` for slugs containing spaces.
+- Should return `false` for slugs containing special characters (except hyphen).
+- Should return `false` for slugs containing underscores.
+- Should return `false` for slugs containing consecutive hyphens.
 
 ---
 
@@ -114,7 +69,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 #### Functionality
 
-- Should register a new public namespace correctly
+- Should register a new namespace correctly
   - Should create namespace with correct price.
   - Should set namespace creator to `msg.sender`.
   - Should set `isPrivate = false`.
@@ -132,16 +87,20 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should credit correct amount of DETH to owner after initial period.
 - Should credit correct amount of DETH to non-owner registrant after initial period.
 - Should allow multiple public namespaces with the same price (no price uniqueness).
+- Should allow public namespace with hyphens (e.g., 'my-public-ns').
 
 #### Events
 
-- Should emit `NamespaceRegistered` event with correct parameters and `isPrivate = false`.
+- Should emit `NamespaceRegistered` event with correct parameters.
 
 #### Reverts
 
 - Should revert with `XNS: invalid namespace` error for empty namespace.
-- Should revert with `XNS: invalid namespace` error for public namespace longer than 4 characters.
+- Should revert with `XNS: invalid namespace` error for public namespace longer than 20 characters.
 - Should revert with `XNS: invalid namespace` error for public namespace with invalid characters.
+- Should revert with `XNS: invalid namespace` error for public namespace starting with hyphen.
+- Should revert with `XNS: invalid namespace` error for public namespace ending with hyphen.
+- Should revert with `XNS: invalid namespace` error for public namespace with consecutive hyphens.
 - Should revert with `XNS: 'eth' namespace forbidden` error when trying to register "eth" namespace.
 - Should revert with `XNS: pricePerName must be > 0` error for zero price.
 - Should revert with `XNS: price must be multiple of 0.001 ETH` error for non-multiple price.
@@ -182,8 +141,8 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 #### Reverts
 
 - Should revert with `XNS: invalid namespace` error for empty namespace.
-- Should revert with `XNS: invalid namespace` error for private namespace longer than 16 characters.
-- Should revert with `XNS: invalid namespace` error for private namespace with invalid characters.
+- Should revert with `XNS: invalid namespace` error for private namespace longer than 20 characters.
+- Should revert with `XNS: invalid namespace` error for private namespace with invalid characters (uppercase, spaces, special chars).
 - Should revert with `XNS: invalid namespace` error for private namespace starting with hyphen.
 - Should revert with `XNS: invalid namespace` error for private namespace ending with hyphen.
 - Should revert with `XNS: invalid namespace` error for private namespace with consecutive hyphens.
@@ -391,7 +350,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should handle special namespace "x" correctly.
 - Should return correct recipient address for sponsored name in private namespace.
 - Should return `address(0)` for unregistered name in private namespace.
-- Should return correct address for long private namespace (up to 16 characters).
+- Should return correct address for long private namespace (up to 20 characters).
 
 ---
 
@@ -418,7 +377,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should resolve fullnames with six characters.
 - Should resolve fullnames with seven characters.
 - Should resolve fullnames with twenty-five characters.
-- Should resolve correctly for long private namespaces (e.g., "label.my-private-namespace" with namespace up to 16 characters).
+- Should resolve correctly for long private namespaces (e.g., "label.my-private-namespace" with namespace up to 20 characters).
 - Should return `address(0)` for unregistered names.
 - Should return `address(0)` for empty string.
 - Should return `address(0)` for "foo.bar.baz" (parses correctly with full reverse scan as label="foo.bar", namespace="baz").
@@ -432,6 +391,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 - Should return full name with namespace for regular names (e.g., returns "alice.001").
 - Should return bare name without ".x" suffix for names in the "x" namespace (e.g., returns "vitalik" not "vitalik.x").
+- Should return full name with namespace for private namespace names (e.g., returns "alice.my-private").
 - Should return empty string for address without a name.
 
 ---

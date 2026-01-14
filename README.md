@@ -40,6 +40,8 @@ nike.ape
 
 XNS also supports **bare names**, i.e. names without a suffix (e.g., `nike`, `vitalik`, `alice`). Bare names are premium names costing 100 ETH per name.
 
+> **Note:** Labels and namespaces (both public and private) follow the same format rules: 1–20 characters, lowercase letters/digits/hyphens only (`a-z`, `0-9`, `-`), cannot start/end with hyphen, and cannot contain consecutive hyphens.
+
 
 ## ✨ How It Works
 
@@ -109,8 +111,10 @@ To register a public namespace, follow these steps:
 
 **Requirements:** 
 - **Namespace:**
-   - 1–4 characters
-   - Lowercase letters/digits only (`a-z`, `0-9`)
+   - 1–20 characters
+   - Lowercase letters/digits/hyphens only (`a-z`, `0-9`, `-`)
+   - Cannot start or end with hyphen (`-`)
+   - Cannot contain consecutive hyphens (`--`)
    - Must not exist yet
    - Cannot be `"eth"` (forbidden to avoid confusion with ENS)
 - **Price per name:**
@@ -123,10 +127,14 @@ To register a public namespace, follow these steps:
 - ✅ `100x`
 - ✅ `ape`
 - ✅ `001`
+- ✅ `my-public-ns` (hyphens allowed)
+- ✅ `test-123` (hyphens with digits)
 - ❌ `YOLO` (uppercase)
-- ❌`toolong` (more than 4 characters)
+- ❌`this-is-too-long-namespace` (more than 20 characters)
 - ❌`eth` (forbidden)
-- ❌`my-n` (contains hyphen)
+- ❌`-my-ns` (starts with hyphen)
+- ❌`my-ns-` (ends with hyphen)
+- ❌`my--ns` (consecutive hyphens)
 
 **Additional comments:**
 - As the public namespace creator, you'll receive 5% of all name registration fees for names registered in your namespace forever.
@@ -144,7 +152,7 @@ To register a private namespace, follow these steps:
 
 **Requirements:** 
 - **Namespace:**
-   - 1–16 characters
+   - 1–20 characters
    - Lowercase letters/digits/hyphens only (`a-z`, `0-9`, `-`)
    - Cannot start or end with hyphen (`-`)
    - Cannot contain consecutive hyphens (`--`)
@@ -161,8 +169,9 @@ To register a private namespace, follow these steps:
 - ✅ `private-ns`
 - ✅ `test123`
 - ✅ `a-b-c-d-e-f`
+- ✅ `my-private-namespace` (up to 20 characters)
 - ❌ `My-Org` (uppercase)
-- ❌`this-is-too-long-namespace` (more than 16 characters)
+- ❌`this-is-too-long-namespace` (more than 20 characters)
 - ❌`eth` (forbidden)
 - ❌`-myorg` (starts with hyphen)
 - ❌`myorg-` (ends with hyphen)
@@ -371,7 +380,7 @@ registerPublicNamespace(string namespace, uint256 pricePerName) payable
 - Binds it to `pricePerName`
 - During the initial 1-year period, the contract owner can register public namespaces for free
 - All others must pay the public namespace registration fee (200 ETH)
-- Namespace must be 1–4 characters, lowercase letters/digits only (`a-z`, `0-9`)
+- Namespace must be 1–20 characters, lowercase letters/digits/hyphens only (`a-z`, `0-9`, `-`), cannot start/end with hyphen or contain consecutive hyphens
 
 ### Register a Private Namespace
 
@@ -383,7 +392,7 @@ registerPrivateNamespace(string namespace, uint256 pricePerName) payable
 - Binds it to `pricePerName`
 - During the initial 1-year period, the contract owner can register private namespaces for free
 - All others must pay the private namespace registration fee (10 ETH)
-- Namespace must be 1–16 characters, lowercase letters/digits/hyphens (`a-z`, `0-9`, `-`), cannot start/end with hyphen or contain consecutive hyphens
+- Namespace must be 1–20 characters, lowercase letters/digits/hyphens (`a-z`, `0-9`, `-`), cannot start/end with hyphen or contain consecutive hyphens
 - Names in private namespaces can only be registered via sponsorship (`registerNameWithAuthorization`), never via public `registerName`
 
 ---
