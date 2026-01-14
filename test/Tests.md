@@ -411,6 +411,20 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
+### getNamespacePrice
+
+#### Functionality
+
+- Should return correct price for public namespace.
+- Should return correct price for private namespace.
+- Should return correct price for special namespace 'x' (bare names).
+
+#### Reverts
+
+- Should revert with `XNS: namespace not found` error for non-existent namespace.
+
+---
+
 ### getPendingFees
 
 #### Functionality

@@ -7945,6 +7945,107 @@ describe("XNS", function () {
 
   });
 
+  describe("getNamespacePrice", function () {
+    let s: SetupOutput;
+
+    beforeEach(async () => {
+      s = await loadFixture(setup);
+    });
+
+    // -----------------------
+    // Functionality
+    // -----------------------
+
+    it("Should return correct price for public namespace", async () => {
+      // ---------
+      // Arrange: Register a new public namespace for testing
+      // ---------
+      const namespaceFee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
+      const namespace = "test-price";
+      const pricePerName = ethers.parseEther("0.005");
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      // Register public namespace
+      await s.xns.connect(user3).registerPublicNamespace(namespace, pricePerName, { value: namespaceFee });
+
+      // ---------
+      // Act: Get namespace price
+      // ---------
+      const getNamespacePriceByString = s.xns.getFunction("getNamespacePrice(string)");
+      const returnedPrice = await getNamespacePriceByString(namespace);
+
+      // ---------
+      // Assert: Verify price is correct
+      // ---------
+      expect(returnedPrice).to.equal(pricePerName);
+    });
+
+    it("Should return correct price for private namespace", async () => {
+      // ---------
+      // Arrange: Register a new private namespace for testing
+      // ---------
+      const namespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
+      const namespace = "private-price";
+      const pricePerName = ethers.parseEther("0.002");
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      // Register private namespace
+      await s.xns.connect(user3).registerPrivateNamespace(namespace, pricePerName, { value: namespaceFee });
+
+      // ---------
+      // Act: Get namespace price
+      // ---------
+      const getNamespacePriceByString = s.xns.getFunction("getNamespacePrice(string)");
+      const returnedPrice = await getNamespacePriceByString(namespace);
+
+      // ---------
+      // Assert: Verify price is correct
+      // ---------
+      expect(returnedPrice).to.equal(pricePerName);
+    });
+
+    it("Should return correct price for special namespace 'x' (bare names)", async () => {
+      // ---------
+      // Arrange: Special namespace "x" is registered in constructor
+      // ---------
+      const namespace = "x";
+      const expectedPrice = ethers.parseEther("100");
+
+      // ---------
+      // Act: Get namespace price
+      // ---------
+      const getNamespacePriceByString = s.xns.getFunction("getNamespacePrice(string)");
+      const returnedPrice = await getNamespacePriceByString(namespace);
+
+      // ---------
+      // Assert: Verify price is correct (100 ETH for bare names)
+      // ---------
+      expect(returnedPrice).to.equal(expectedPrice);
+    });
+
+    // -----------------------
+    // Reverts
+    // -----------------------
+
+    it("Should revert with `XNS: namespace not found` error for non-existent namespace", async () => {
+      // ---------
+      // Arrange: Use a non-existent namespace
+      // ---------
+      const nonExistentNamespace = "none";
+
+      // ---------
+      // Act & Assert: Attempt to get namespace price for non-existent namespace
+      // ---------
+      const getNamespacePriceByString = s.xns.getFunction("getNamespacePrice(string)");
+      await expect(
+        getNamespacePriceByString(nonExistentNamespace)
+      ).to.be.revertedWith("XNS: namespace not found");
+    });
+
+  });
+
   describe("getPendingFees", function () {
     let s: SetupOutput;
 

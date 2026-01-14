@@ -9,6 +9,7 @@
   "function getAddress(string) view returns (address)",
   "function getName(address) view returns (string)",
   "function getNamespaceInfo(string) view returns (uint256, address, uint64, bool)",
+  "function getNamespacePrice(string) view returns (uint256)",
   "function getPendingFees(address) view returns (uint256)",
   "function isValidSignature(tuple(address,string,string),bytes) view returns (bool)",
   "function isValidSlug(string) pure returns (bool)",

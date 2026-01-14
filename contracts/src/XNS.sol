@@ -69,7 +69,7 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - 90% of ETH sent is burnt via DETH.
 /// - 10% is credited as fees.
 ///   - Public namespaces: 5% to namespace creator + 5% to XNS owner
-///   - Private namespaces: 10% to XNS owner (creator share redirected to owner)
+///   - Private namespaces: 10% to XNS owner
 contract XNS is EIP712 {
     // -------------------------------------------------------------------------
     // Types
@@ -648,6 +648,16 @@ contract XNS is EIP712 {
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
         return (ns.pricePerName, ns.creator, ns.createdAt, ns.isPrivate);
+    }
+
+    /// @notice Function to retrieve only the price per name for a given namespace.
+    /// @dev More gas efficient than `getNamespaceInfo` if only the price is needed.
+    /// @param namespace The namespace to retrieve the price for.
+    /// @return pricePerName The price per name for the namespace.
+    function getNamespacePrice(string calldata namespace) external view returns (uint256 pricePerName) {
+        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
+        require(ns.creator != address(0), "XNS: namespace not found");
+        return ns.pricePerName;
     }
 
     /// @notice Function to check if a label or namespace is valid (returns bool, does not revert).
