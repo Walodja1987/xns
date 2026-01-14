@@ -61,7 +61,7 @@ Front-running is possible but not considered a significant problem because:
 
 ### Front-Running during the First Year
 
-During the first year after contract deployment (the initial owner namespace registration period), the contract owner is permitted to register namespaces at no cost, whereas all other users must pay a 200 ETH fee per namespace. This mechanism is intended to promote rapid ecosystem adoption by enabling the owner to grant free namespaces to participants and integrators. However, this privilege does introduce a theoretical front-running risk:
+During the first year after contract deployment (the onboarding period), the contract owner is permitted to register namespaces at no cost, whereas all other users must pay a 200 ETH fee per namespace. This mechanism is intended to promote rapid ecosystem adoption by enabling the owner to grant free namespaces to participants and integrators. However, this privilege does introduce a theoretical front-running risk:
 
 * **Theoretical scenario**: The owner could monitor the mempool for namespace registration transactions from other users and front-run them to register the namespace first.
 * **Economic disincentive**: Front-running namespace registrations would negatively impact the system's reputation and the owner's future revenue.

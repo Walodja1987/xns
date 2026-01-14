@@ -149,8 +149,8 @@ describe("XNS", function () {
         // Should have correct NAMESPACE_CREATOR_EXCLUSIVE_PERIOD (30 days)
         expect(await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD()).to.equal(30 * 24 * 60 * 60);
 
-        // Should have correct INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD (1 year)
-        expect(await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD()).to.equal(365 * 24 * 60 * 60);
+        // Should have correct ONBOARDING_PERIOD (1 year)
+        expect(await s.xns.ONBOARDING_PERIOD()).to.equal(365 * 24 * 60 * 60);
 
         // Should have correct PRICE_STEP (0.001 ether / 1e15)
         expect(await s.xns.PRICE_STEP()).to.equal(ethers.parseEther("0.001"));
@@ -435,10 +435,10 @@ describe("XNS", function () {
         // ---------
         const namespace = "ape";
         const pricePerName = ethers.parseEther("0.002");
-        // Confirm that this registration is within the INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+        // Confirm that this registration is within the ONBOARDING_PERIOD
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
 
@@ -473,7 +473,7 @@ describe("XNS", function () {
         const namespace = "test";
         const pricePerName = ethers.parseEther("0.002");
         const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         
         // Fast-forward time to be after the initial period (1 year + 1 day to be safe)
@@ -515,10 +515,10 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.003");
         const ethToSend = ethers.parseEther("200"); // Owner sends ETH even though it's free
         
-        // Confirm that this registration is within the INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+        // Confirm that this registration is within the ONBOARDING_PERIOD
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
 
@@ -567,10 +567,10 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.004");
         const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
         
-        // Confirm that this registration is within the INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+        // Confirm that this registration is within the ONBOARDING_PERIOD
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
 
@@ -604,7 +604,7 @@ describe("XNS", function () {
         const namespace = "nft";
         const pricePerName = ethers.parseEther("0.005");
         const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         
         // Fast-forward time to be after the initial period (1 year + 1 day to be safe)
@@ -696,7 +696,7 @@ describe("XNS", function () {
         const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
         const excessPayment = ethers.parseEther("100"); // Pay 100 ETH more than required
         const totalPayment = fee + excessPayment; // 300 ETH total
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         
         // Fast-forward time to be after the initial period (1 year + 1 day to be safe)
@@ -799,10 +799,10 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.009");
         const ethToSend = ethers.parseEther("200"); // Owner sends ETH even though it's free
         
-        // Confirm that this registration is within the INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+        // Confirm that this registration is within the ONBOARDING_PERIOD
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
 
@@ -865,10 +865,10 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.010");
         const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
         
-        // Confirm that this registration is within the INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+        // Confirm that this registration is within the ONBOARDING_PERIOD
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
 
@@ -905,7 +905,7 @@ describe("XNS", function () {
         const namespace = "own";
         const pricePerName = ethers.parseEther("0.011");
         const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         
         // Fast-forward time to be after the initial period (1 year + 1 day to be safe)
@@ -950,7 +950,7 @@ describe("XNS", function () {
         const namespace = "app";
         const pricePerName = ethers.parseEther("0.012");
         const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         
         // Fast-forward time to be after the initial period (1 year + 1 day to be safe)
@@ -1187,10 +1187,10 @@ describe("XNS", function () {
         const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
         const insufficientFee = fee - ethers.parseEther("1"); // Pay 1 ETH less than required
         
-        // Confirm that this registration is within the INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+        // Confirm that this registration is within the ONBOARDING_PERIOD
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
 
@@ -1210,7 +1210,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.018");
         const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
         const insufficientFee = fee - ethers.parseEther("1"); // Pay 1 ETH less than required
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         
         // Fast-forward time to be after the initial period (1 year + 1 day to be safe)
@@ -1247,7 +1247,7 @@ describe("XNS", function () {
         // Confirm we're within the initial period
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
-        const initialPeriod = await xnsWithRevertingOwner.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await xnsWithRevertingOwner.ONBOARDING_PERIOD();
         const deployedAt = await xnsWithRevertingOwner.DEPLOYED_AT();
         expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
 
@@ -1326,10 +1326,10 @@ describe("XNS", function () {
         // ---------
         const namespace = "owner-private";
         const pricePerName = ethers.parseEther("0.002");
-        // Confirm that this registration is within the INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+        // Confirm that this registration is within the ONBOARDING_PERIOD
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
 
@@ -1362,7 +1362,7 @@ describe("XNS", function () {
         const namespace = "after-period";
         const pricePerName = ethers.parseEther("0.002");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         
         // Fast-forward time to be after the initial period (1 year + 1 day to be safe)
@@ -1404,10 +1404,10 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.003");
         const ethToSend = ethers.parseEther("10"); // Owner sends ETH even though it's free (using PRIVATE_NAMESPACE_REGISTRATION_FEE amount)
         
-        // Confirm that this registration is within the INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+        // Confirm that this registration is within the ONBOARDING_PERIOD
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
 
@@ -1456,10 +1456,10 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.004");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
         
-        // Confirm that this registration is within the INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+        // Confirm that this registration is within the ONBOARDING_PERIOD
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
 
@@ -1492,7 +1492,7 @@ describe("XNS", function () {
         const namespace = "nft-private";
         const pricePerName = ethers.parseEther("0.005");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         
         // Fast-forward time to be after the initial period (1 year + 1 day to be safe)
@@ -1582,7 +1582,7 @@ describe("XNS", function () {
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
         const excessPayment = ethers.parseEther("5"); // Pay 5 ETH more than required
         const totalPayment = fee + excessPayment; // 15 ETH total
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         
         // Fast-forward time to be after the initial period (1 year + 1 day to be safe)
@@ -1685,10 +1685,10 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.009");
         const ethToSend = ethers.parseEther("10"); // Owner sends ETH even though it's free (using PRIVATE_NAMESPACE_REGISTRATION_FEE amount)
         
-        // Confirm that this registration is within the INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+        // Confirm that this registration is within the ONBOARDING_PERIOD
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
 
@@ -1750,10 +1750,10 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.010");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
         
-        // Confirm that this registration is within the INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+        // Confirm that this registration is within the ONBOARDING_PERIOD
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
 
@@ -1790,7 +1790,7 @@ describe("XNS", function () {
         const namespace = "own-private";
         const pricePerName = ethers.parseEther("0.011");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         
         // Fast-forward time to be after the initial period (1 year + 1 day to be safe)
@@ -1835,7 +1835,7 @@ describe("XNS", function () {
         const namespace = "app-private";
         const pricePerName = ethers.parseEther("0.012");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         
         // Fast-forward time to be after the initial period (1 year + 1 day to be safe)
@@ -2120,10 +2120,10 @@ describe("XNS", function () {
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
         const insufficientFee = fee - ethers.parseEther("1"); // Pay 1 ETH less than required
         
-        // Confirm that this registration is within the INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+        // Confirm that this registration is within the ONBOARDING_PERIOD
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
 
@@ -2143,7 +2143,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.018");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
         const insufficientFee = fee - ethers.parseEther("1"); // Pay 1 ETH less than required
-        const initialPeriod = await s.xns.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await s.xns.ONBOARDING_PERIOD();
         const deployedAt = await s.xns.DEPLOYED_AT();
         
         // Fast-forward time to be after the initial period (1 year + 1 day to be safe)
@@ -2180,7 +2180,7 @@ describe("XNS", function () {
         // Confirm we're within the initial period
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
-        const initialPeriod = await xnsWithRevertingOwner.INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD();
+        const initialPeriod = await xnsWithRevertingOwner.ONBOARDING_PERIOD();
         const deployedAt = await xnsWithRevertingOwner.DEPLOYED_AT();
         expect(now).to.be.lte(Number(deployedAt) + Number(initialPeriod));
 

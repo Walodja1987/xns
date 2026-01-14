@@ -145,12 +145,12 @@ contract XNS is EIP712 {
     uint256 public constant NAMESPACE_CREATOR_EXCLUSIVE_PERIOD = 30 days;
 
     /// @notice Period after contract deployment during which the owner pays no namespace registration fee.
-    uint256 public constant INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD = 365 days;
+    uint256 public constant ONBOARDING_PERIOD = 365 days;
 
     /// @notice Unit price step (0.001 ETH).
-    uint256 public constant PRICE_STEP = 1e15; // 0.001 ether
+    uint256 public constant PRICE_STEP = 1e15;
 
-    /// @notice Namespace used for bare labels (e.g. "nike" = "nike.x").
+    /// @notice Namespace associated with bare names (e.g. "vitalik" = "vitalik.x").
     string public constant BARE_NAME_NAMESPACE = "x";
 
     /// @notice Address of DETH contract used to burn ETH and credit the recipient.
@@ -369,7 +369,7 @@ contract XNS is EIP712 {
             require(_isValidSlug(auth.label), "XNS: invalid label");
             require(auth.recipient != address(0), "XNS: 0x recipient");
 
-            // Skip if recipient already has a name (resistant to griefing attacks).
+            // Skip if recipient already has a name (protection against griefing attacks).
             if (bytes(_addressToName[auth.recipient].label).length > 0) {
                 continue;
             }
@@ -380,7 +380,7 @@ contract XNS is EIP712 {
 
             bytes32 key = keccak256(abi.encodePacked(auth.label, ".", auth.namespace));
 
-            // Skip if name is already registered (resistant to griefing attacks).
+            // Skip if name is already registered (protection against griefing attacks).
             if (_nameHashToAddress[key] != address(0)) {
                 continue;
             }
@@ -423,12 +423,11 @@ contract XNS is EIP712 {
     /// - `pricePerName` must be a multiple of 0.001 ETH.
     ///
     /// **Note:**
-    /// - During the initial owner namespace registration period (1 year following contract deployment),
+    /// - During the onboarding period (1 year following contract deployment),
     ///   the owner pays no namespace registration fee.
-    /// - Anyone can register a namespace for a 200 ETH fee within the initial owner
-    ///   namespace registration period.
-    /// - Front-running namespace registrations by the owner during the initial owner namespace
-    ///   registration period provides no economic benefit: the owner would only receive 5% of name
+    /// - Anyone can register a namespace for a 200 ETH fee within the onboarding period.
+    /// - Front-running namespace registrations by the owner during the onboarding period
+    ///   provides no economic benefit: the owner would only receive 5% of name
     ///   registration fees (vs 200 ETH upfront fee), and users can mitigate this by waiting until
     ///   after the 1-year period. This is an accepted design trade-off for simplicity.
     ///
@@ -447,7 +446,7 @@ contract XNS is EIP712 {
         require(_namespaces[nsHash].creator == address(0), "XNS: namespace already exists");
 
         uint256 requiredAmount = 0;
-        if (!(block.timestamp < DEPLOYED_AT + INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD && msg.sender == OWNER)) {
+        if (!(block.timestamp < DEPLOYED_AT + ONBOARDING_PERIOD && msg.sender == OWNER)) {
             requiredAmount = PUBLIC_NAMESPACE_REGISTRATION_FEE;
             require(msg.value >= requiredAmount, "XNS: insufficient namespace fee");
         }
@@ -462,7 +461,7 @@ contract XNS is EIP712 {
         emit NamespaceRegistered(namespace, pricePerName, msg.sender, false);
 
         // Process payment: burn 90%, credit fees, and refund excess (if any).
-        // `requiredAmount` = 0 within initial owner namespace registration period (1 year after contract deployment).
+        // `requiredAmount` = 0 within onboarding period (1 year after contract deployment).
         if (requiredAmount > 0) {
             _processETHPayment(requiredAmount, msg.sender, false);
         } else if (msg.value > 0) {
@@ -483,12 +482,11 @@ contract XNS is EIP712 {
     /// - `pricePerName` must be >= 0.001 ETH and a multiple of 0.001 ETH.
     ///
     /// **Note:**
-    /// - During the initial owner namespace registration period (1 year following contract deployment),
+    /// - During the onboarding period (1 year following contract deployment),
     ///   the owner pays no namespace registration fee.
-    /// - Anyone can register a namespace for a 10 ETH fee within the initial owner
-    ///   namespace registration period.
-    /// - Front-running namespace registrations by the owner during the initial owner namespace
-    ///   registration period provides no economic benefit: the owner would only receive 10% of name
+    /// - Anyone can register a namespace for a 10 ETH fee within the onboarding period.
+    /// - Front-running namespace registrations by the owner during the onboarding period
+    ///   provides no economic benefit: the owner would only receive 10% of name
     ///   registration fees (vs 10 ETH upfront fee), and users can mitigate this by waiting until
     ///   after the 1-year period. This is an accepted design trade-off for simplicity.
     ///
@@ -507,7 +505,7 @@ contract XNS is EIP712 {
         require(_namespaces[nsHash].creator == address(0), "XNS: namespace already exists");
 
         uint256 requiredAmount = 0;
-        if (!(block.timestamp < DEPLOYED_AT + INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD && msg.sender == OWNER)) {
+        if (!(block.timestamp < DEPLOYED_AT + ONBOARDING_PERIOD && msg.sender == OWNER)) {
             requiredAmount = PRIVATE_NAMESPACE_REGISTRATION_FEE;
             require(msg.value >= requiredAmount, "XNS: insufficient namespace fee");
         }

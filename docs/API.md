@@ -180,12 +180,11 @@ Register a new public namespace.
 - `pricePerName` must be a multiple of 0.001 ETH.
 
 **Note:**
-- During the initial owner namespace registration period (1 year following contract deployment),
+- During the onboarding period (1 year following contract deployment),
   the owner pays no namespace registration fee.
-- Anyone can register a namespace for a 200 ETH fee within the initial owner
-  namespace registration period.
-- Front-running namespace registrations by the owner during the initial owner namespace
-  registration period provides no economic benefit: the owner would only receive 5% of name
+- Anyone can register a namespace for a 200 ETH fee within the onboarding period.
+- Front-running namespace registrations by the owner during the onboarding period
+  provides no economic benefit: the owner would only receive 5% of name
   registration fees (vs 200 ETH upfront fee), and users can mitigate this by waiting until
   after the 1-year period. This is an accepted design trade-off for simplicity.
 
@@ -216,12 +215,11 @@ Register a new private namespace.
 - `pricePerName` must be >= 0.001 ETH and a multiple of 0.001 ETH.
 
 **Note:**
-- During the initial owner namespace registration period (1 year following contract deployment),
+- During the onboarding period (1 year following contract deployment),
   the owner pays no namespace registration fee.
-- Anyone can register a namespace for a 10 ETH fee within the initial owner
-  namespace registration period.
-- Front-running namespace registrations by the owner during the initial owner namespace
-  registration period provides no economic benefit: the owner would only receive 10% of name
+- Anyone can register a namespace for a 10 ETH fee within the onboarding period.
+- Front-running namespace registrations by the owner during the onboarding period
+  provides no economic benefit: the owner would only receive 10% of name
   registration fees (vs 10 ETH upfront fee), and users can mitigate this by waiting until
   after the 1-year period. This is an accepted design trade-off for simplicity.
 
@@ -562,13 +560,13 @@ uint256 NAMESPACE_CREATOR_EXCLUSIVE_PERIOD
 
 
 
-### INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+### ONBOARDING_PERIOD
 
 
 Period after contract deployment during which the owner pays no namespace registration fee.
 
 ```solidity
-uint256 INITIAL_OWNER_NAMESPACE_REGISTRATION_PERIOD
+uint256 ONBOARDING_PERIOD
 ```
 
 
@@ -591,7 +589,7 @@ uint256 PRICE_STEP
 ### BARE_NAME_NAMESPACE
 
 
-Namespace used for bare labels (e.g. "nike" = "nike.x").
+Namespace associated with bare names (e.g. "vitalik" = "vitalik.x").
 
 ```solidity
 string BARE_NAME_NAMESPACE

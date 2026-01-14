@@ -278,7 +278,7 @@ The testnet contract has been parametrized as follows:
 - Public namespace registration fee: 0.1 ether (instead of 200 ether)
 - Private namespace registration fee: 0.005 ether (instead of 10 ether)
 - Namespace creator exclusive period: 60 seconds (instead of 30 days)
-- Initial owner namespace registration period: 60 seconds (instead of 365 days)
+- Onboarding period: 60 seconds (instead of 365 days)
 - Bare name price: 0.2 ether (instead of 100 ether)
 
 ## 🔧 Key Functions
