@@ -146,8 +146,8 @@ describe("XNS", function () {
         // Should have correct PRIVATE_NAMESPACE_REGISTRATION_FEE (10 ether)
         expect(await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE()).to.equal(ethers.parseEther("10"));
 
-        // Should have correct NAMESPACE_CREATOR_EXCLUSIVE_PERIOD (30 days)
-        expect(await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD()).to.equal(30 * 24 * 60 * 60);
+        // Should have correct EXCLUSIVITY_PERIOD (30 days)
+        expect(await s.xns.EXCLUSIVITY_PERIOD()).to.equal(30 * 24 * 60 * 60);
 
         // Should have correct ONBOARDING_PERIOD (1 year)
         expect(await s.xns.ONBOARDING_PERIOD()).to.equal(365 * 24 * 60 * 60);
@@ -2227,7 +2227,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // ---------
@@ -2275,7 +2275,7 @@ describe("XNS", function () {
         const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
         expect(creator).to.equal(s.user1.address); // user1 is the namespace creator
 
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
         expect(now).to.be.lt(Number(createdAt) + Number(exclusivityPeriod));
@@ -2334,7 +2334,7 @@ describe("XNS", function () {
         const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
         expect(creator).to.equal(s.user1.address); // user1 is the namespace creator
 
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         
         // Fast-forward time past the exclusivity period (30 days + 1 day to be safe)
         const timeToAdd = Number(exclusivityPeriod) + 86400; // 30 days + 1 day in seconds
@@ -2395,7 +2395,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Get initial state
@@ -2446,7 +2446,7 @@ describe("XNS", function () {
         const totalPayment = pricePerName + excessPayment; // 0.0015 ETH total
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Get user2 balance before transaction
@@ -2496,7 +2496,7 @@ describe("XNS", function () {
         const [specialNamespacePrice] = await getNamespaceInfoByString(namespace); // 100 ETH
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Verify special namespace exists and has correct price
@@ -2548,7 +2548,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Get initial DETH burned amount for msg.sender (user2)
@@ -2588,7 +2588,7 @@ describe("XNS", function () {
         const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
         expect(creator).to.equal(s.user1.address); // user1 is the namespace creator
 
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
         expect(now).to.be.lt(Number(createdAt) + Number(exclusivityPeriod));
@@ -2626,7 +2626,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // ---------
@@ -2676,7 +2676,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Deploy contract without registering (empty label)
@@ -2735,7 +2735,7 @@ describe("XNS", function () {
         const totalPayment = pricePerName + excessPayment; // 0.0015 ETH total
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Get deployer (user2) balance before deployment
@@ -2795,7 +2795,7 @@ describe("XNS", function () {
         const totalPayment = pricePerName + excessPayment; // 0.0015 ETH total
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Deploy contract without registering (empty label)
@@ -2847,7 +2847,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // ---------
@@ -2873,7 +2873,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // ---------
@@ -2893,7 +2893,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // ---------
@@ -2917,7 +2917,7 @@ describe("XNS", function () {
         await s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: privateNamespaceFee });
 
         // Fast-forward time past the exclusivity period so anyone can register (if it were public)
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // ---------
@@ -2938,7 +2938,7 @@ describe("XNS", function () {
         const insufficientPayment = ethers.parseEther("0.0005"); // Less than required
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // ---------
@@ -2962,7 +2962,7 @@ describe("XNS", function () {
         const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
         expect(creator).to.equal(s.user1.address); // user1 is the namespace creator
 
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
         expect(now).to.be.lt(Number(createdAt) + Number(exclusivityPeriod));
@@ -2985,7 +2985,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register first name for user2
@@ -3013,7 +3013,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register name for user2
@@ -3055,7 +3055,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Create signature from recipient (user2)
@@ -3114,7 +3114,7 @@ describe("XNS", function () {
         const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
         expect(creator).to.equal(s.user1.address); // user1 is the namespace creator
 
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
         expect(now).to.be.lt(Number(createdAt) + Number(exclusivityPeriod));
@@ -3171,7 +3171,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Verify we're past the exclusivity period
@@ -3240,7 +3240,7 @@ describe("XNS", function () {
         await s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: privateNamespaceFee });
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Verify namespace is private
@@ -3301,7 +3301,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Get initial state
@@ -3360,7 +3360,7 @@ describe("XNS", function () {
         await s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: privateNamespaceFee });
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Get initial state
@@ -3414,7 +3414,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Get wallet address from setup
@@ -3478,7 +3478,7 @@ describe("XNS", function () {
         const totalPayment = pricePerName + excessPayment; // 0.0015 ETH total
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Create signature from recipient (user2)
@@ -3534,7 +3534,7 @@ describe("XNS", function () {
         const [specialNamespacePrice] = await getNamespaceInfoByString(namespace); // 100 ETH
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Verify special namespace exists and has correct price
@@ -3603,7 +3603,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Create signature from recipient (user2)
@@ -3641,7 +3641,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Create signature (will fail label validation before signature check)
@@ -3673,7 +3673,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Create signature (will fail recipient validation before signature check)
@@ -3705,7 +3705,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Create signature (will fail namespace validation before signature check)
@@ -3738,7 +3738,7 @@ describe("XNS", function () {
         const insufficientPayment = ethers.parseEther("0.0005"); // Less than required
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Create signature from recipient (user2)
@@ -3774,7 +3774,7 @@ describe("XNS", function () {
         const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
         expect(creator).to.equal(s.user1.address); // user1 is the namespace creator
 
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
         expect(now).to.be.lt(Number(createdAt) + Number(exclusivityPeriod));
@@ -3812,7 +3812,7 @@ describe("XNS", function () {
         await s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: privateNamespaceFee });
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Verify namespace is private
@@ -3851,7 +3851,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register first name for recipient (user2) using registerName
@@ -3892,7 +3892,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register name for firstRecipient (user2) using registerName
@@ -3937,7 +3937,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Create an invalid signature (random bytes)
@@ -3969,7 +3969,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Create signature from user1 (wrong recipient) instead of user2 (the actual recipient)
@@ -4012,7 +4012,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Prepare multiple registrations
@@ -4121,7 +4121,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // First, register a name for user1 so they already have a name
@@ -4238,7 +4238,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // First, register "alice.xns" for user1
@@ -4352,7 +4352,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // First, register names for all recipients so they all already have names
@@ -4464,7 +4464,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // First, register a name for user1 so they already have a name (will be skipped)
@@ -4565,7 +4565,7 @@ describe("XNS", function () {
         await s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: privateNamespaceFee });
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // First, register a name for user2 so they already have a name (will be skipped)
@@ -4669,7 +4669,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
     
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
     
         // Prepare batch registrations: user1 and user2 as recipients (sponsor is owner)
@@ -4756,7 +4756,7 @@ describe("XNS", function () {
         const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
         expect(creator).to.equal(s.user1.address); // user1 is the namespace creator
 
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
         expect(now).to.be.lt(Number(createdAt) + Number(exclusivityPeriod));
@@ -4839,7 +4839,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Verify we're past the exclusivity period
@@ -4934,7 +4934,7 @@ describe("XNS", function () {
         await s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: privateNamespaceFee });
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Verify namespace is private
@@ -5021,7 +5021,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Get wallet address from setup
@@ -5115,7 +5115,7 @@ describe("XNS", function () {
         const pricePerName = specialNamespacePrice;
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Verify we're past the exclusivity period
@@ -5216,7 +5216,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Prepare batch registrations: user1, user2, and owner as recipients
@@ -5311,7 +5311,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Prepare registrations array with 2 items
@@ -5375,7 +5375,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Prepare registration with non-existent namespace
@@ -5415,7 +5415,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Prepare batch with 2 registrations
@@ -5481,7 +5481,7 @@ describe("XNS", function () {
         const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
         expect(creator).to.equal(s.user1.address); // user1 is the namespace creator
 
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         const latestBlock = await ethers.provider.getBlock("latest");
         const now = latestBlock.timestamp;
         expect(now).to.be.lt(Number(createdAt) + Number(exclusivityPeriod));
@@ -5548,7 +5548,7 @@ describe("XNS", function () {
         await s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: privateNamespaceFee });
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Verify namespace is private
@@ -5621,7 +5621,7 @@ describe("XNS", function () {
         await s.xns.connect(s.user2).registerPublicNamespace(namespace2, pricePerName2, { value: namespaceFee });
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Prepare batch with registrations in different namespaces
@@ -5668,7 +5668,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Prepare batch with one valid label and one invalid label
@@ -5715,7 +5715,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Prepare batch with one valid recipient and one zero address recipient
@@ -5762,7 +5762,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Prepare batch with two valid registrations
@@ -5809,7 +5809,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Prepare batch with two registrations
@@ -5856,7 +5856,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Deploy RevertingReceiver contract that will revert when receiving ETH
@@ -5937,7 +5937,7 @@ describe("XNS", function () {
         const recipient = s.user1.address; // Non-owner recipient
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register a name to accumulate fees for the owner (5% of pricePerName)
@@ -5984,7 +5984,7 @@ describe("XNS", function () {
         expect(creator).to.equal(s.user1.address);
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register a name to accumulate fees for the namespace creator (5% of pricePerName)
@@ -6030,7 +6030,7 @@ describe("XNS", function () {
         await s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: privateNamespaceFee });
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Verify namespace is private
@@ -6121,7 +6121,7 @@ describe("XNS", function () {
         await s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: privateNamespaceFee });
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Verify namespace is private
@@ -6185,7 +6185,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register a name to accumulate fees for the owner (5% of pricePerName)
@@ -6232,7 +6232,7 @@ describe("XNS", function () {
         expect(creator).to.equal(s.user1.address);
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register a name to accumulate fees for the namespace creator (5% of pricePerName)
@@ -6274,7 +6274,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Reset fees by claiming any existing fees from namespace registration in setup
@@ -6372,7 +6372,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register a name to accumulate fees for the owner (5% of pricePerName)
@@ -6410,7 +6410,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register a name to accumulate fees for the owner
@@ -6452,7 +6452,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register a name to accumulate fees for the owner
@@ -6496,7 +6496,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register a name to accumulate fees for the owner (5% of pricePerName)
@@ -6542,7 +6542,7 @@ describe("XNS", function () {
         expect(creator).to.equal(s.user1.address);
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register a name to accumulate fees for the namespace creator (5% of pricePerName)
@@ -6587,7 +6587,7 @@ describe("XNS", function () {
         await s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: privateNamespaceFee });
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Verify namespace is private
@@ -6669,7 +6669,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register a name to accumulate fees for the owner (5% of pricePerName)
@@ -6722,7 +6722,7 @@ describe("XNS", function () {
         const pricePerName = ethers.parseEther("0.001");
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register a name to accumulate fees for the owner
@@ -6962,7 +6962,7 @@ describe("XNS", function () {
         const label = "alice";
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register name for user2
@@ -7008,7 +7008,7 @@ describe("XNS", function () {
         const label = "vitalik";
 
         // Fast-forward time past the exclusivity period so anyone can register
-        const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Register bare name for user2
@@ -7169,7 +7169,7 @@ describe("XNS", function () {
       // ---------
       const namespaceFee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
       const pricePerName = ethers.parseEther("0.01");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7191,7 +7191,7 @@ describe("XNS", function () {
       // Arrange
       // ---------
       const specialNamespacePrice = ethers.parseEther("100");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7212,7 +7212,7 @@ describe("XNS", function () {
       // Arrange
       // ---------
       const specialNamespacePrice = ethers.parseEther("100");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7233,7 +7233,7 @@ describe("XNS", function () {
       // Arrange
       // ---------
       const specialNamespacePrice = ethers.parseEther("100");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7254,7 +7254,7 @@ describe("XNS", function () {
       // Arrange
       // ---------
       const specialNamespacePrice = ethers.parseEther("100");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7275,7 +7275,7 @@ describe("XNS", function () {
       // Arrange
       // ---------
       const specialNamespacePrice = ethers.parseEther("100");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7296,7 +7296,7 @@ describe("XNS", function () {
       // Arrange
       // ---------
       const specialNamespacePrice = ethers.parseEther("100");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7317,7 +7317,7 @@ describe("XNS", function () {
       // Arrange
       // ---------
       const specialNamespacePrice = ethers.parseEther("100");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7338,7 +7338,7 @@ describe("XNS", function () {
       // Arrange
       // ---------
       const specialNamespacePrice = ethers.parseEther("100");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7360,7 +7360,7 @@ describe("XNS", function () {
       // ---------
       const namespaceFee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
       const pricePerName = ethers.parseEther("0.002");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7383,7 +7383,7 @@ describe("XNS", function () {
       // ---------
       const namespaceFee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
       const pricePerName = ethers.parseEther("0.002");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7405,7 +7405,7 @@ describe("XNS", function () {
       // Arrange
       // ---------
       const pricePerName = ethers.parseEther("0.003");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7428,7 +7428,7 @@ describe("XNS", function () {
       // ---------
       const namespaceFee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
       const pricePerName = ethers.parseEther("0.002");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7451,7 +7451,7 @@ describe("XNS", function () {
       // ---------
       const namespaceFee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
       const pricePerName = ethers.parseEther("0.004");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7474,7 +7474,7 @@ describe("XNS", function () {
       // ---------
       const namespaceFee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
       const pricePerName = ethers.parseEther("0.005");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7497,7 +7497,7 @@ describe("XNS", function () {
       // ---------
       const namespaceFee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
       const pricePerName = ethers.parseEther("0.006");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7520,7 +7520,7 @@ describe("XNS", function () {
       // ---------
       const namespaceFee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
       const pricePerName = ethers.parseEther("0.007");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7543,7 +7543,7 @@ describe("XNS", function () {
       // ---------
       const namespaceFee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
       const pricePerName = ethers.parseEther("0.008");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7566,7 +7566,7 @@ describe("XNS", function () {
       // ---------
       const namespaceFee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
       const pricePerName = ethers.parseEther("0.009");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7629,7 +7629,7 @@ describe("XNS", function () {
       // ---------
       const namespaceFee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
       const pricePerName = ethers.parseEther("0.002");
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       const signers = await ethers.getSigners();
@@ -7704,7 +7704,7 @@ describe("XNS", function () {
       const namespace = "x";
       const pricePerName = ethers.parseEther("100"); // Special namespace price
       const label = "vitalik";
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400);
 
       // Register bare name for user2
@@ -7988,7 +7988,7 @@ describe("XNS", function () {
       }
       
       // Fast-forward time past the exclusivity period so anyone can register
-      const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
       // Register a name to accumulate fees for the namespace creator (5% of pricePerName)

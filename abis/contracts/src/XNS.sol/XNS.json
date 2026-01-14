@@ -9,7 +9,7 @@
   "function BARE_NAME_NAMESPACE() view returns (string)",
   "function DEPLOYED_AT() view returns (uint64)",
   "function DETH() view returns (address)",
-  "function NAMESPACE_CREATOR_EXCLUSIVE_PERIOD() view returns (uint256)",
+  "function EXCLUSIVITY_PERIOD() view returns (uint256)",
   "function ONBOARDING_PERIOD() view returns (uint256)",
   "function OWNER() view returns (address)",
   "function PRICE_STEP() view returns (uint256)",

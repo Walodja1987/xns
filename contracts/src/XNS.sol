@@ -142,7 +142,7 @@ contract XNS is EIP712 {
     uint256 public constant PRIVATE_NAMESPACE_REGISTRATION_FEE = 10 ether;
 
     /// @notice Duration of the exclusive namespace-creator window for paid registrations (relevant for public only).
-    uint256 public constant NAMESPACE_CREATOR_EXCLUSIVE_PERIOD = 30 days;
+    uint256 public constant EXCLUSIVITY_PERIOD = 30 days;
 
     /// @notice Period after contract deployment during which the owner pays no namespace registration fee.
     uint256 public constant ONBOARDING_PERIOD = 365 days;
@@ -239,7 +239,7 @@ contract XNS is EIP712 {
 
         require(msg.value >= ns.pricePerName, "XNS: insufficient payment");
 
-        if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
+        if (block.timestamp < ns.createdAt + EXCLUSIVITY_PERIOD) {
             require(msg.sender == ns.creator, "XNS: not namespace creator");
         }
 
@@ -296,7 +296,7 @@ contract XNS is EIP712 {
         // - Private namespace: creator-only forever.
         if (ns.isPrivate) {
             require(msg.sender == ns.creator, "XNS: not namespace creator (private)");
-        } else if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
+        } else if (block.timestamp < ns.createdAt + EXCLUSIVITY_PERIOD) {
             require(msg.sender == ns.creator, "XNS: not namespace creator");
         }
 
@@ -355,7 +355,7 @@ contract XNS is EIP712 {
         // - Public namespace: creator-only during exclusivity.
         if (ns.isPrivate) {
             require(msg.sender == ns.creator, "XNS: not namespace creator (private)");
-        } else if (block.timestamp < ns.createdAt + NAMESPACE_CREATOR_EXCLUSIVE_PERIOD) {
+        } else if (block.timestamp < ns.createdAt + EXCLUSIVITY_PERIOD) {
             require(msg.sender == ns.creator, "XNS: not namespace creator");
         }
 

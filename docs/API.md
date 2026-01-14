@@ -547,13 +547,13 @@ uint256 PRIVATE_NAMESPACE_REGISTRATION_FEE
 
 
 
-### NAMESPACE_CREATOR_EXCLUSIVE_PERIOD
+### EXCLUSIVITY_PERIOD
 
 
 Duration of the exclusive namespace-creator window for paid registrations (relevant for public only).
 
 ```solidity
-uint256 NAMESPACE_CREATOR_EXCLUSIVE_PERIOD
+uint256 EXCLUSIVITY_PERIOD
 ```
 
 
