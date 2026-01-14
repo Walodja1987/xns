@@ -16,11 +16,12 @@ Examples:
 - vitalik.100x
 - garry.ape
 
-Rules for label and namespace:
+Label and namespace string requirements:
 - Must be 1–20 characters long
 - Must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
 - Cannot start or end with '-'
 - Cannot contain consecutive hyphens ('--')
+- "eth" as namespace is disallowed to avoid confusion with ENS
 
 ### Name registration with public namespaces
 - Users call `registerName(label, namespace)` and send ETH.
@@ -31,7 +32,7 @@ Rules for label and namespace:
 - `registerNameWithAuthorization` allows a sponsor to pay and register a name for a recipient
   who explicitly authorized it via an EIP-712 signature.
 - Public namespaces: during the creator's 30-day exclusivity window, only the creator may sponsor.
-- Private namespaces: only the creator may sponsor forever (public registration disabled).
+- Private namespaces: only the creator may sponsor forever. Public registrations are disabled.
 - Supports both EOA signatures and EIP-1271 contract wallet signatures.
 
 ### Bare names
@@ -578,7 +579,8 @@ uint256 PRIVATE_NAMESPACE_REGISTRATION_FEE
 ### EXCLUSIVITY_PERIOD
 
 
-Duration of the exclusive namespace-creator window for paid registrations (relevant for public only).
+Duration of the exclusive namespace-creator window for paid registrations
+(relevant for public namespace registrations only).
 
 ```solidity
 uint256 EXCLUSIVITY_PERIOD

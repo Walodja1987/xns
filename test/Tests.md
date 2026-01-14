@@ -186,7 +186,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: namespace not found` error when namespace doesn't exist.
 - Should revert with `XNS: private namespace` error when trying to register in private namespace.
 - Should revert with `XNS: insufficient payment` error when `msg.value` is less than namespace price.
-- Should revert with `XNS: not namespace creator` error when non-creator tries to register during exclusive period.
+- Should revert with `XNS: not namespace creator (exclusivity period)` error when non-creator tries to register during exclusive period.
 - Should revert with `XNS: address already has a name` error when address already owns a name.
 - Should revert with `XNS: name already registered` error when name is already registered.
 
@@ -220,7 +220,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: 0x recipient` error when recipient is `address(0)`.
 - Should revert with `XNS: namespace not found` error for non-existent namespace.
 - Should revert with `XNS: insufficient payment` error when msg.value is less than namespace price.
-- Should revert with `XNS: not namespace creator` error when non-creator tries to sponsor during exclusive period in public namespace.
+- Should revert with `XNS: not namespace creator (exclusivity period)` error when non-creator tries to sponsor during exclusive period in public namespace.
 - Should revert with `XNS: not namespace creator (private)` error when non-creator tries to sponsor in private namespace.
 - Should revert with `XNS: recipient already has a name` error when recipient already owns a name.
 - Should revert with `XNS: name already registered` error when name is already registered.
@@ -261,7 +261,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: empty array` error when arrays are empty.
 - Should revert with `XNS: namespace not found` error for non-existent namespace.
 - Should revert with `XNS: insufficient payment` error when `msg.value` is less than `pricePerName * successfulCount`.
-- Should revert with `XNS: not namespace creator` error when non-creator tries to sponsor during exclusive period in public namespace.
+- Should revert with `XNS: not namespace creator (exclusivity period)` error when non-creator tries to sponsor during exclusive period in public namespace.
 - Should revert with `XNS: not namespace creator (private)` error when non-creator tries to sponsor batch in private namespace.
 - Should revert with `XNS: namespace mismatch` error when registrations are in different namespaces.
 - Should revert with `XNS: invalid label` error for invalid label in any registration.

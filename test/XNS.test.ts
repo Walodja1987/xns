@@ -2949,7 +2949,7 @@ describe("XNS", function () {
         ).to.be.revertedWith("XNS: insufficient payment");
     });
 
-    it("Should revert with `XNS: not namespace creator` error when non-creator tries to register during exclusive period", async () => {
+    it("Should revert with `XNS: not namespace creator (exclusivity period)` error when non-creator tries to register during exclusive period", async () => {
         // ---------
         // Arrange: Prepare parameters and verify we're within exclusivity period
         // ---------
@@ -2972,7 +2972,7 @@ describe("XNS", function () {
         // ---------
         await expect(
             s.xns.connect(s.user2).registerName(label, namespace, { value: pricePerName })
-        ).to.be.revertedWith("XNS: not namespace creator");
+        ).to.be.revertedWith("XNS: not namespace creator (exclusivity period)");
     });
 
     it("Should revert with `XNS: address already has a name` error when address already owns a name", async () => {
@@ -3760,7 +3760,7 @@ describe("XNS", function () {
         ).to.be.revertedWith("XNS: insufficient payment");
     });
 
-    it("Should revert with `XNS: not namespace creator` error when non-creator tries to sponsor during exclusive period in public namespace", async () => {
+    it("Should revert with `XNS: not namespace creator (exclusivity period)` error when non-creator tries to sponsor during exclusive period in public namespace", async () => {
         // ---------
         // Arrange: Prepare parameters and verify we're within exclusivity period
         // ---------
@@ -3795,7 +3795,7 @@ describe("XNS", function () {
                 signature,
                 { value: pricePerName }
             )
-        ).to.be.revertedWith("XNS: not namespace creator");
+        ).to.be.revertedWith("XNS: not namespace creator (exclusivity period)");
     });
 
     it("Should revert with `XNS: not namespace creator (private)` error when non-creator tries to sponsor in private namespace", async () => {

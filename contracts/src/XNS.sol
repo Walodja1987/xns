@@ -29,11 +29,12 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - vitalik.100x
 /// - garry.ape
 ///
-/// Rules for label and namespace:
+/// Label and namespace string requirements:
 /// - Must be 1–20 characters long
 /// - Must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
 /// - Cannot start or end with '-'
 /// - Cannot contain consecutive hyphens ('--')
+/// - "eth" as namespace is disallowed to avoid confusion with ENS
 ///
 /// ### Name registration with public namespaces
 /// - Users call `registerName(label, namespace)` and send ETH.
@@ -44,7 +45,7 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - `registerNameWithAuthorization` allows a sponsor to pay and register a name for a recipient
 ///   who explicitly authorized it via an EIP-712 signature.
 /// - Public namespaces: during the creator's 30-day exclusivity window, only the creator may sponsor.
-/// - Private namespaces: only the creator may sponsor forever (public registration disabled).
+/// - Private namespaces: only the creator may sponsor forever. Public registrations are disabled.
 /// - Supports both EOA signatures and EIP-1271 contract wallet signatures.
 ///
 /// ### Bare names
@@ -146,7 +147,8 @@ contract XNS is EIP712 {
     /// @notice Fee to register a private namespace.
     uint256 public constant PRIVATE_NAMESPACE_REGISTRATION_FEE = 10 ether;
 
-    /// @notice Duration of the exclusive namespace-creator window for paid registrations (relevant for public only).
+    /// @notice Duration of the exclusive namespace-creator window for paid registrations
+    /// (relevant for public namespace registrations only).
     uint256 public constant EXCLUSIVITY_PERIOD = 30 days;
 
     /// @notice Period after contract deployment during which the owner pays no namespace registration fee.
@@ -245,7 +247,7 @@ contract XNS is EIP712 {
         require(msg.value >= ns.pricePerName, "XNS: insufficient payment");
 
         if (block.timestamp < ns.createdAt + EXCLUSIVITY_PERIOD) {
-            require(msg.sender == ns.creator, "XNS: not namespace creator");
+            require(msg.sender == ns.creator, "XNS: not namespace creator (exclusivity period)");
         }
 
         require(bytes(_addressToName[msg.sender].label).length == 0, "XNS: address already has a name");
@@ -302,7 +304,7 @@ contract XNS is EIP712 {
         if (ns.isPrivate) {
             require(msg.sender == ns.creator, "XNS: not namespace creator (private)");
         } else if (block.timestamp < ns.createdAt + EXCLUSIVITY_PERIOD) {
-            require(msg.sender == ns.creator, "XNS: not namespace creator");
+            require(msg.sender == ns.creator, "XNS: not namespace creator (exclusivity period)");
         }
 
         require(

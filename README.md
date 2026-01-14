@@ -37,11 +37,12 @@ alice.yolo
 nike.ape
 ```
 
-Rules for label and namespace:
+Label and namespace string requirements:
 - Must be 1–20 characters long
 - Must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
 - Cannot start or end with '-'
 - Cannot contain consecutive hyphens ('--')
+- "eth" as namespace is disallowed to avoid confusion with ENS
 
 XNS also supports **bare names**, i.e. names without a suffix (e.g., `nike`, `vitalik`, `alice`). Bare names are premium names costing 10 ETH per name.
 
