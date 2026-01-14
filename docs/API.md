@@ -173,7 +173,7 @@ has a name, or name already registered) are skipped to provide griefing protecti
 Register a new public namespace.
 
 **Requirements:**
-- Namespace must be valid as a public namespace (length 1–4, consists only of [a-z0-9]).
+- Namespace must be valid (length 1–20, consists only of [a-z0-9-], cannot start or end with '-', cannot contain consecutive hyphens).
 - `msg.value` must be >= 200 ETH (excess refunded), except OWNER pays 0 ETH during initial period.
 - Namespace must not already exist.
 - Namespace must not equal "eth".
@@ -208,7 +208,7 @@ function registerPublicNamespace(string namespace, uint256 pricePerName) externa
 Register a new private namespace.
 
 **Requirements:**
-- Namespace must be valid as a private namespace (length 1–16, consists only of [a-z0-9-],
+- Namespace must be valid (length 1–20, consists only of [a-z0-9-],
   cannot start or end with '-', cannot contain consecutive hyphens).
 - `msg.value` must be >= 10 ETH (excess refunded), except OWNER pays 0 ETH during initial period.
 - Namespace must not already exist.
@@ -372,19 +372,19 @@ function getNamespaceInfo(string namespace) external view returns (uint256 price
 | createdAt | uint64 | The timestamp when the namespace was created. |
 | isPrivate | bool | Whether the namespace is private. |
 
-### isValidLabel
+### isValidSlug
 
 
-Function to check if a label is valid (returns bool, does not revert).
+Function to check if a label or namespace is valid (returns bool, does not revert).
 
 **Requirements:**
-- Label must be 1–20 characters long
-- Label must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
-- Label cannot start or end with '-'
-- Label cannot contain consecutive hyphens ('--')
+- Must be 1–20 characters long
+- Must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
+- Cannot start or end with '-'
+- Cannot contain consecutive hyphens ('--')
 
 ```solidity
-function isValidLabel(string label) external pure returns (bool isValid)
+function isValidSlug(string slug) external pure returns (bool isValid)
 ```
 
 
@@ -392,67 +392,13 @@ function isValidLabel(string label) external pure returns (bool isValid)
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| label | string | The label to check if is valid. |
+| slug | string | The label or namespace to check if is valid. |
 
 #### Return Values
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| isValid | bool | True if the label is valid, false otherwise. |
-
-### isValidPublicNamespace
-
-
-Function to check if a namespace is a valid public namespace (returns bool, does not revert).
-
-**Requirements:**
-- Namespace must be 1–4 characters long
-- Namespace must consist only of [a-z0-9] (lowercase letters and digits)
-
-```solidity
-function isValidPublicNamespace(string namespace) external pure returns (bool isValid)
-```
-
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| namespace | string | The namespace to check if is valid. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| isValid | bool | True if the namespace is valid, false otherwise. |
-
-### isValidPrivateNamespace
-
-
-Function to check if a namespace is a valid private namespace (returns bool, does not revert).
-
-**Requirements:**
-- Namespace must be 1–16 characters long
-- Namespace must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
-- Namespace cannot start or end with '-'
-- Namespace cannot contain consecutive hyphens ('--')
-
-```solidity
-function isValidPrivateNamespace(string namespace) external pure returns (bool isValid)
-```
-
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| namespace | string | The namespace to check if is valid. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| isValid | bool | True if the namespace is valid, false otherwise. |
+| isValid | bool | True if the slug is valid, false otherwise. |
 
 ### isValidSignature
 

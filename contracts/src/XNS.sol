@@ -233,7 +233,7 @@ contract XNS is EIP712 {
     /// @param label The label part of the name to register.
     /// @param namespace The namespace part of the name to register.
     function registerName(string calldata label, string calldata namespace) external payable {
-        require(_isValidLabel(label), "XNS: invalid label");
+        require(_isValidSlug(label), "XNS: invalid label");
 
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
@@ -284,7 +284,7 @@ contract XNS is EIP712 {
         RegisterNameAuth calldata registerNameAuth,
         bytes calldata signature
     ) external payable {
-        require(_isValidLabel(registerNameAuth.label), "XNS: invalid label");
+        require(_isValidSlug(registerNameAuth.label), "XNS: invalid label");
         require(registerNameAuth.recipient != address(0), "XNS: 0x recipient");
 
         bytes32 nsHash = keccak256(bytes(registerNameAuth.namespace));
@@ -368,7 +368,7 @@ contract XNS is EIP712 {
             RegisterNameAuth calldata auth = registerNameAuths[i];
 
             // Validations that should revert (invalid input).
-            require(_isValidLabel(auth.label), "XNS: invalid label");
+            require(_isValidSlug(auth.label), "XNS: invalid label");
             require(auth.recipient != address(0), "XNS: 0x recipient");
 
             // Skip if recipient already has a name (resistant to griefing attacks).
@@ -418,7 +418,7 @@ contract XNS is EIP712 {
     /// @notice Register a new public namespace.
     ///
     /// **Requirements:**
-    /// - Namespace must be valid as a public namespace (length 1–4, consists only of [a-z0-9]).
+    /// - Namespace must be valid (length 1–20, consists only of [a-z0-9-], cannot start or end with '-', cannot contain consecutive hyphens).
     /// - `msg.value` must be >= 200 ETH (excess refunded), except OWNER pays 0 ETH during initial period.
     /// - Namespace must not already exist.
     /// - Namespace must not equal "eth".
@@ -437,7 +437,7 @@ contract XNS is EIP712 {
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace.
     function registerPublicNamespace(string calldata namespace, uint256 pricePerName) external payable {
-        require(_isValidPublicNamespace(namespace), "XNS: invalid namespace");
+        require(_isValidSlug(namespace), "XNS: invalid namespace");
 
         // Forbid "eth" namespace to avoid confusion with ENS.
         require(keccak256(bytes(namespace)) != keccak256(bytes("eth")), "XNS: 'eth' namespace forbidden");
@@ -477,7 +477,7 @@ contract XNS is EIP712 {
     /// @notice Register a new private namespace.
     ///
     /// **Requirements:**
-    /// - Namespace must be valid as a private namespace (length 1–16, consists only of [a-z0-9-],
+    /// - Namespace must be valid (length 1–20, consists only of [a-z0-9-],
     ///   cannot start or end with '-', cannot contain consecutive hyphens).
     /// - `msg.value` must be >= 10 ETH (excess refunded), except OWNER pays 0 ETH during initial period.
     /// - Namespace must not already exist.
@@ -497,7 +497,7 @@ contract XNS is EIP712 {
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace.
     function registerPrivateNamespace(string calldata namespace, uint256 pricePerName) external payable {
-        require(_isValidPrivateNamespace(namespace), "XNS: invalid namespace");
+        require(_isValidSlug(namespace), "XNS: invalid namespace");
 
         // Forbid "eth" namespace to avoid confusion with ENS.
         require(keccak256(bytes(namespace)) != keccak256(bytes("eth")), "XNS: 'eth' namespace forbidden");
@@ -654,42 +654,19 @@ contract XNS is EIP712 {
         return (ns.pricePerName, ns.creator, ns.createdAt, ns.isPrivate);
     }
 
-    /// @notice Function to check if a label is valid (returns bool, does not revert).
+    /// @notice Function to check if a label or namespace is valid (returns bool, does not revert).
     ///
     /// **Requirements:**
-    /// - Label must be 1–20 characters long
-    /// - Label must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
-    /// - Label cannot start or end with '-'
-    /// - Label cannot contain consecutive hyphens ('--')
-    /// @param label The label to check if is valid.
-    /// @return isValid True if the label is valid, false otherwise.
-    function isValidLabel(string memory label) external pure returns (bool isValid) {
-        return _isValidLabel(label);
+    /// - Must be 1–20 characters long
+    /// - Must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
+    /// - Cannot start or end with '-'
+    /// - Cannot contain consecutive hyphens ('--')
+    /// @param slug The label or namespace to check if is valid.
+    /// @return isValid True if the slug is valid, false otherwise.
+    function isValidSlug(string memory slug) external pure returns (bool isValid) {
+        return _isValidSlug(slug);
     }
 
-    /// @notice Function to check if a namespace is a valid public namespace (returns bool, does not revert).
-    ///
-    /// **Requirements:**
-    /// - Namespace must be 1–4 characters long
-    /// - Namespace must consist only of [a-z0-9] (lowercase letters and digits)
-    /// @param namespace The namespace to check if is valid.
-    /// @return isValid True if the namespace is valid, false otherwise.
-    function isValidPublicNamespace(string memory namespace) external pure returns (bool isValid) {
-        return _isValidPublicNamespace(namespace);
-    }
-
-    /// @notice Function to check if a namespace is a valid private namespace (returns bool, does not revert).
-    ///
-    /// **Requirements:**
-    /// - Namespace must be 1–16 characters long
-    /// - Namespace must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
-    /// - Namespace cannot start or end with '-'
-    /// - Namespace cannot contain consecutive hyphens ('--')
-    /// @param namespace The namespace to check if is valid.
-    /// @return isValid True if the namespace is valid, false otherwise.
-    function isValidPrivateNamespace(string memory namespace) external pure returns (bool isValid) {
-        return _isValidPrivateNamespace(namespace);
-    }
 
     /// @notice Function to check if a signature, to be used in `registerNameWithAuthorization`
     /// or `batchRegisterNameWithAuthorization`, is valid.
@@ -748,8 +725,9 @@ contract XNS is EIP712 {
         }
     }
 
-    /// @dev Helper function to check if a label is valid. Used in `registerName` and `isValidLabel`.
-    function _isValidLabel(string memory label) private pure returns (bool isValid) {
+    /// @dev Helper function to check if a label or namespace is valid (same rules for both).
+    /// Used in `registerName`, `isValidSlug`, and namespace registration functions.
+    function _isValidSlug(string memory label) private pure returns (bool isValid) {
         bytes memory b = bytes(label);
         uint256 len = b.length;
         if (len == 0 || len > 20) return false;
@@ -769,42 +747,6 @@ contract XNS is EIP712 {
         return true;
     }
 
-    /// @dev Helper function to check if a public namespace is valid. Used in `registerPublicNamespace` and `isValidPublicNamespace`.
-    function _isValidPublicNamespace(string memory namespace) private pure returns (bool isValid) {
-        bytes memory b = bytes(namespace);
-        uint256 len = b.length;
-        if (len == 0 || len > 4) return false;
-
-        for (uint256 i = 0; i < len; i++) {
-            bytes1 c = b[i];
-            bool isLowercaseLetter = (c >= 0x61 && c <= 0x7A);
-            bool isDigit = (c >= 0x30 && c <= 0x39);
-            if (!(isLowercaseLetter || isDigit)) return false;
-        }
-
-        return true;
-    }
-
-    /// @dev Helper function to check if a private namespace is valid. Used in `registerPrivateNamespace` and `isValidPrivateNamespace`.
-    function _isValidPrivateNamespace(string memory namespace) private pure returns (bool isValid) {
-        bytes memory b = bytes(namespace);
-        uint256 len = b.length;
-        if (len == 0 || len > 16) return false;
-
-        for (uint256 i = 0; i < len; i++) {
-            bytes1 c = b[i];
-            bool isLowercaseLetter = (c >= 0x61 && c <= 0x7A);
-            bool isDigit = (c >= 0x30 && c <= 0x39);
-            bool isHyphen = (c == 0x2D);
-            if (!(isLowercaseLetter || isDigit || isHyphen)) return false;
-
-            // Disallow consecutive hyphens
-            if (isHyphen && i > 0 && b[i - 1] == 0x2D) return false;
-        }
-
-        if (b[0] == 0x2D || b[len - 1] == 0x2D) return false; // no leading/trailing '-'
-        return true;
-    }
 
     /// @dev Internal function to verify EIP-712 signature for RegisterNameAuth.
     function _isValidSignature(
