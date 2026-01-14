@@ -158,9 +158,6 @@ describe("XNS", function () {
         // Should have correct SPECIAL_NAMESPACE ("x")
         expect(await s.xns.SPECIAL_NAMESPACE()).to.equal("x");
 
-        // Should have correct SPECIAL_NAMESPACE_PRICE (100 ether)
-        expect(await s.xns.SPECIAL_NAMESPACE_PRICE()).to.equal(ethers.parseEther("100"));
-
         // Should have correct DETH address
         expect(await s.xns.DETH()).to.equal("0xE46861C9f28c46F27949fb471986d59B256500a7");
     });
@@ -2495,14 +2492,14 @@ describe("XNS", function () {
         // ---------
         const namespace = "x";
         const label = "frank";
-        const specialNamespacePrice = await s.xns.SPECIAL_NAMESPACE_PRICE(); // 100 ETH
+        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
+        const [specialNamespacePrice] = await getNamespaceInfoByString(namespace); // 100 ETH
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Verify special namespace exists and has correct price
-        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
         const [returnedPrice, creator] = await getNamespaceInfoByString(namespace);
         expect(returnedPrice).to.equal(specialNamespacePrice);
         expect(creator).to.equal(s.owner.address); // Owner is the creator of special namespace
@@ -3533,14 +3530,14 @@ describe("XNS", function () {
         const namespace = "x";
         const label = "specialsponsored";
         const recipient = s.user2.address; // user2 is the recipient
-        const specialNamespacePrice = await s.xns.SPECIAL_NAMESPACE_PRICE(); // 100 ETH
+        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
+        const [specialNamespacePrice] = await getNamespaceInfoByString(namespace); // 100 ETH
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.NAMESPACE_CREATOR_EXCLUSIVE_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Verify special namespace exists and has correct price
-        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
         const [returnedPrice, creator] = await getNamespaceInfoByString(namespace);
         expect(returnedPrice).to.equal(specialNamespacePrice);
         expect(creator).to.equal(s.owner.address); // Owner is the creator of special namespace
@@ -5113,7 +5110,8 @@ describe("XNS", function () {
         // Arrange: Prepare parameters for special namespace "x"
         // ---------
         const namespace = "x"; // Special namespace
-        const specialNamespacePrice = await s.xns.SPECIAL_NAMESPACE_PRICE(); // 100 ETH
+        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
+        const [specialNamespacePrice] = await getNamespaceInfoByString(namespace); // 100 ETH
         const pricePerName = specialNamespacePrice;
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
@@ -5121,7 +5119,6 @@ describe("XNS", function () {
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
         // Verify we're past the exclusivity period
-        const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
         const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
         expect(creator).to.equal(s.owner.address); // owner is the namespace creator for "x"
 

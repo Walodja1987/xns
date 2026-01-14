@@ -15,7 +15,6 @@
   "function PRIVATE_NAMESPACE_REGISTRATION_FEE() view returns (uint256)",
   "function PUBLIC_NAMESPACE_REGISTRATION_FEE() view returns (uint256)",
   "function SPECIAL_NAMESPACE() view returns (string)",
-  "function SPECIAL_NAMESPACE_PRICE() view returns (uint256)",
   "function batchRegisterNameWithAuthorization(tuple(address,string,string)[],bytes[]) payable returns (uint256)",
   "function claimFees(address)",
   "function claimFeesToSelf()",

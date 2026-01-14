@@ -601,19 +601,6 @@ string SPECIAL_NAMESPACE
 
 
 
-### SPECIAL_NAMESPACE_PRICE
-
-
-Price-per-name for the special namespace (bare names).
-
-```solidity
-uint256 SPECIAL_NAMESPACE_PRICE
-```
-
-
-
-
-
 ### DETH
 
 
