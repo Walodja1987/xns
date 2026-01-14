@@ -150,8 +150,8 @@ contract XNS is EIP712 {
     /// @notice Unit price step (0.001 ETH).
     uint256 public constant PRICE_STEP = 1e15; // 0.001 ether
 
-    /// @notice Special namespace used for bare labels (e.g. "nike" = "nike.x").
-    string public constant SPECIAL_NAMESPACE = "x";
+    /// @notice Namespace used for bare labels (e.g. "nike" = "nike.x").
+    string public constant BARE_NAME_NAMESPACE = "x";
 
     /// @notice Address of DETH contract used to burn ETH and credit the recipient.
     address public constant DETH = 0xE46861C9f28c46F27949fb471986d59B256500a7;
@@ -186,25 +186,25 @@ contract XNS is EIP712 {
 
         // Register special public namespace "x" as the very first namespace.
         uint256 specialNamespacePrice = 100 ether;
-        _namespaces[keccak256(bytes(SPECIAL_NAMESPACE))] = NamespaceData({
+        _namespaces[keccak256(bytes(BARE_NAME_NAMESPACE))] = NamespaceData({
             pricePerName: specialNamespacePrice,
             creator: owner,
             createdAt: uint64(block.timestamp),
             isPrivate: false
         });
 
-        emit NamespaceRegistered(SPECIAL_NAMESPACE, specialNamespacePrice, owner, false);
+        emit NamespaceRegistered(BARE_NAME_NAMESPACE, specialNamespacePrice, owner, false);
 
         // Register bare name "xns" for the XNS contract itself.
         string memory contractLabel = "xns";
-        bytes32 nameKey = keccak256(abi.encodePacked(contractLabel, ".", SPECIAL_NAMESPACE));
+        bytes32 nameKey = keccak256(abi.encodePacked(contractLabel, ".", BARE_NAME_NAMESPACE));
         _nameHashToAddress[nameKey] = address(this);
         _addressToName[address(this)] = Name({
             label: contractLabel,
-            namespace: SPECIAL_NAMESPACE
+            namespace: BARE_NAME_NAMESPACE
         });
 
-        emit NameRegistered(contractLabel, SPECIAL_NAMESPACE, address(this));
+        emit NameRegistered(contractLabel, BARE_NAME_NAMESPACE, address(this));
     }
 
     // =========================================================================
@@ -587,7 +587,7 @@ contract XNS is EIP712 {
 
         if (dotIndex == type(uint256).max) {
             // Bare label => label.x
-            return _getAddress(fullName, SPECIAL_NAMESPACE);
+            return _getAddress(fullName, BARE_NAME_NAMESPACE);
         }
 
         // Extract label and namespace.
@@ -630,7 +630,7 @@ contract XNS is EIP712 {
             return "";
         }
 
-        if (keccak256(bytes(n.namespace)) == keccak256(bytes(SPECIAL_NAMESPACE))) {
+        if (keccak256(bytes(n.namespace)) == keccak256(bytes(BARE_NAME_NAMESPACE))) {
             // Bare name: return just the label without ".x"
             return n.label;
         }

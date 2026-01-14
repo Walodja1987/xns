@@ -588,13 +588,13 @@ uint256 PRICE_STEP
 
 
 
-### SPECIAL_NAMESPACE
+### BARE_NAME_NAMESPACE
 
 
-Special namespace used for bare labels (e.g. "nike" = "nike.x").
+Namespace used for bare labels (e.g. "nike" = "nike.x").
 
 ```solidity
-string SPECIAL_NAMESPACE
+string BARE_NAME_NAMESPACE
 ```
 
 
