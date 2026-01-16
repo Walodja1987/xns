@@ -3,11 +3,11 @@
  *
  * USAGE:
  * Run the script with:
- * `npx hardhat run scripts/examples/registerNameWithAuth.ts --network <network_name>`
+ * `npx hardhat run scripts/examples/registerNameWithAuthorization.ts --network <network_name>`
  *
  * EXAMPLE:
  * To register a name with authorization on Sepolia:
- * `npx hardhat run scripts/examples/registerNameWithAuth.ts --network sepolia`
+ * `npx hardhat run scripts/examples/registerNameWithAuthorization.ts --network sepolia`
  *
  * REQUIRED SETUP:
  * Before running, set these environment variables using hardhat-vars:

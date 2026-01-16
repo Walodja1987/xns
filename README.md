@@ -577,6 +577,10 @@ contract MyProtocol {
     function registerName(string calldata label, string calldata namespace) external payable {
         xns.registerName{value: msg.value}(label, namespace);
     }
+
+    /// @notice Optional: Accept ETH refunds from XNS if excess payment is sent.
+    /// Not needed if correct prices is sent, without any excess.
+    receive() external payable {}
 }
 ```
 
@@ -594,6 +598,10 @@ contract MyProtocol {
     constructor(address _xns, string memory label, string memory namespace) payable {
         IXNS(_xns).registerName{value: msg.value}(label, namespace);
     }
+
+    /// @notice Optional: Accept ETH refunds from XNS if excess payment is sent.
+    /// Not needed if correct prices is sent, without any excess.
+    receive() external payable {}
 }
 ```
 
@@ -605,6 +613,7 @@ Deploy with the `label`, `namespace`, and required payment to register the name 
 
 For contracts that implement EIP-1271 (like contract wallets), someone else can sponsor the name registration:
 
+```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
@@ -637,6 +646,8 @@ contract MyContractWallet {
         return INVALID_SIGNATURE;
     }
 }
+```
+
 **How it works:**
 1. The contract (or its owner) signs an EIP-712 message authorizing the name registration
 2. A sponsor calls `registerNameWithAuthorization` on XNS, providing the contract as the recipient
@@ -648,7 +659,7 @@ contract MyContractWallet {
 - Contracts that can't send transactions themselves
 - Allow others to pay for your contract's name registration
 
-**Note:** The contract must implement EIP-1271's `isValidSignature` function. The sponsor pays all fees and gas costs.
+**Note:** The contract must implement EIP-1271's `isValidSignature` function. The sponsor pays all fees and gas costs. Unlike Options 1 and 2 where `receive()` is optional (needed only if excess payment is sent), Option 3 does **not** need a `receive()` function because any refunds go to the sponsor (the transaction sender), not to the contract.
 
 ### Multi-Chain Deployment Considerations
 
