@@ -740,7 +740,7 @@ contract XNS is EIP712 {
     }
 
     /// @dev Helper function to check if a label or namespace is valid (same rules for both).
-    /// Used in `registerName`, `isValidSlug`, and namespace registration functions.
+    /// Used in name and namespace registration functions as well as in `isValidSlug` function.
     /// @param slug The label or namespace string to validate.
     /// @return isValid True if the slug is valid, false otherwise.
     function _isValidSlug(string memory slug) private pure returns (bool isValid) {
