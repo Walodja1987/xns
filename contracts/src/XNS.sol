@@ -740,8 +740,10 @@ contract XNS is EIP712 {
 
     /// @dev Helper function to check if a label or namespace is valid (same rules for both).
     /// Used in `registerName`, `isValidSlug`, and namespace registration functions.
-    function _isValidSlug(string memory label) private pure returns (bool isValid) {
-        bytes memory b = bytes(label);
+    /// @param slug The label or namespace string to validate.
+    /// @return isValid True if the slug is valid, false otherwise.
+    function _isValidSlug(string memory slug) private pure returns (bool isValid) {
+        bytes memory b = bytes(slug);
         uint256 len = b.length;
         if (len == 0 || len > 20) return false;
 
@@ -762,6 +764,9 @@ contract XNS is EIP712 {
 
 
     /// @dev Internal function to verify EIP-712 signature for RegisterNameAuth.
+    /// @param registerNameAuth The struct containing recipient, label, and namespace.
+    /// @param signature The signature to verify.
+    /// @return isValid True if the signature is valid, false otherwise.
     function _isValidSignature(
         RegisterNameAuth calldata registerNameAuth,
         bytes calldata signature
@@ -771,6 +776,8 @@ contract XNS is EIP712 {
     }
 
     /// @dev Helper function to return hash of RegisterNameAuth details.
+    /// @param registerNameAuth The struct containing recipient, label, and namespace.
+    /// @return registerNameAuthHash The keccak256 hash of the RegisterNameAuth struct.
     function _getRegisterNameAuthHash(
         RegisterNameAuth memory registerNameAuth
     ) private pure returns (bytes32 registerNameAuthHash) {
