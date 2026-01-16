@@ -2,7 +2,7 @@
  * Deploy XNS Contract and Register Namespace Tiers
  *
  * DEPLOYMENT COMMAND (using Sepolia as an example):
- * `npx hardhat run deploy/deployXNS.ts --network sepolia`
+ * `npx hardhat run scripts/deploy/deployXNS.ts --network sepolia`
  *
  * REQUIRED SETUP:
  * Before first deployment, set these environment variables using hardhat-vars:
@@ -17,7 +17,7 @@
  * Note: Variable names must match those in hardhat.config.ts
  */
 
-import { HardhatRuntimeEnvironment } from "hardhat/types";
+import hre, { HardhatRuntimeEnvironment } from "hardhat";
 
 // Colour codes for terminal prints
 const RESET = "\x1b[0m";
@@ -125,3 +125,4 @@ main(hre)
     console.error(error);
     process.exit(1);
   });
+

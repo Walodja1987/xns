@@ -87,7 +87,7 @@ To register an XNS name, follow the following steps:
 
 ### Name Registration via Etherscan
 
-You can register your name directly via [Etherscan](https://sepolia.etherscan.io/address/0xe08D16fDB5767EfD73AE71c985Ab0c45dA5F7427).
+You can register your name directly via [Etherscan](https://sepolia.etherscan.io/address/0x4f1d1F8C7C96C2798B0A473fE35633A47dad37f9).
 
 > ⚠️**Important:** Ensure you are connected to the wallet address that you want to associate with the name.
 

@@ -3,11 +3,11 @@
  *
  * USAGE:
  * Run the script with:
- * `npx hardhat run scripts/registerName.ts --network <network_name>`
+ * `npx hardhat run scripts/examples/registerName.ts --network <network_name>`
  *
  * EXAMPLE:
  * To register a name on Sepolia:
- * `npx hardhat run scripts/registerName.ts --network sepolia`
+ * `npx hardhat run scripts/examples/registerName.ts --network sepolia`
  *
  * REQUIRED SETUP:
  * Before running, set these environment variables using hardhat-vars:
@@ -22,7 +22,7 @@
 
 import hre from "hardhat";
 import { formatEther, parseEther } from "ethers";
-import { XNS_ADDRESS } from "../constants/addresses";
+import { XNS_ADDRESS } from "../../constants/addresses";
 
 // Colour codes for terminal prints
 const RESET = "\x1b[0m";
@@ -73,6 +73,10 @@ async function main() {
   console.log(`Namespace: ${GREEN}${namespace}${RESET}`);
   console.log(`Price per name: ${GREEN}${formatEther(pricePerName)} ETH${RESET}`);
   console.log(`Namespace creator: ${GREEN}${creator}${RESET}\n`);
+  const createdAtDate = new Date(Number(createdAt) * 1000);
+  console.log(
+    `Created at: ${GREEN}${createdAt}${RESET} [${createdAtDate.toLocaleString()}]\n`
+  );
 
   // Check if address already has a name
   const getName = xns.getFunction("getName(address)");
