@@ -80,7 +80,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should allow anyone (non-owner) to register public namespace with fee after initial period.
 - Should refund excess payment when non-owner pays more than 50 ETH.
 - Should refund excess payment when owner pays more than required fee after initial period.
-- Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
+- Should process the ETH payment correctly (90% burnt, 10% to contract owner) when fee is paid.
 - Should not distribute fees when owner registers with `msg.value > 0` during initial period.
 - Should credit correct amount of DETH to non-owner registrant during initial period.
 - Should credit correct amount of DETH to owner after initial period.

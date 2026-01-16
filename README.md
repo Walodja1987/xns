@@ -407,7 +407,9 @@ registerPrivateNamespace(string namespace, uint256 pricePerName) payable
 
 ### Fee Distribution
 
-When names are registered (via `registerName` or `registerNameWithAuthorization`) or namespaces are created with fees:
+#### Name Registration Fees
+
+When names are registered (via `registerName` or `registerNameWithAuthorization`):
 
 - **90%** of ETH is burned via DETH contract
 - The payer/sponsor is credited DETH 1:1 for the burned amount
@@ -419,6 +421,16 @@ When names are registered (via `registerName` or `registerNameWithAuthorization`
 **For private namespaces:**
 - **10%** is credited to the contract owner
 - **0%** is credited to the namespace creator (private namespace creators receive no fees)
+
+#### Namespace Registration Fees
+
+When namespaces are registered (via `registerPublicNamespace` or `registerPrivateNamespace`) with fees:
+
+- **90%** of ETH is burned via DETH contract
+- The payer is credited DETH 1:1 for the burned amount
+- **10%** is credited to the contract owner (not the namespace creator)
+
+**Note:** Namespace creators do not receive any portion of the namespace registration fee. They only receive fees from name registrations within their namespace (for public namespaces only).
 
 Fees accumulate and must be explicitly claimed.
 

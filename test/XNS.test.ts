@@ -746,7 +746,7 @@ describe("XNS", function () {
         expect(balanceAfter).to.equal(expectedBalanceAfter);
     });
 
-    it("Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid", async () => {
+    it("Should process the ETH payment correctly (90% burnt, 10% to contract owner) when fee is paid", async () => {
         // ---------
         // Arrange: Prepare parameters and get initial state
         // ---------
@@ -763,6 +763,7 @@ describe("XNS", function () {
         const expectedBurnAmount = (fee * 90n) / 100n; // 90% = 180 ETH
         const expectedCreatorFee = (fee * 5n) / 100n; // 5% = 10 ETH
         const expectedOwnerFee = fee - expectedBurnAmount - expectedCreatorFee; // 5% = 10 ETH
+        const expectedTotalOwnerFee = expectedCreatorFee + expectedOwnerFee; // 10% total (since OWNER is passed as creatorFeeRecipient)
 
         // ---------
         // Act: Non-owner (user1) registers namespace with fee
@@ -782,13 +783,13 @@ describe("XNS", function () {
         const finalDETHBurned = await s.deth.burned(s.user1.address);
         expect(finalDETHBurned - initialDETHBurned).to.equal(expectedBurnAmount);
 
-        // Verify 5% was credited to namespace creator
+        // Verify namespace creator receives no fees (fees go to OWNER instead)
         const finalCreatorFees = await s.xns.getPendingFees(s.user1.address);
-        expect(finalCreatorFees - initialCreatorFees).to.equal(expectedCreatorFee);
+        expect(finalCreatorFees - initialCreatorFees).to.equal(0n);
 
-        // Verify 5% was credited to contract owner
+        // Verify 10% was credited to contract owner (5% creator fee + 5% owner fee)
         const finalOwnerFees = await s.xns.getPendingFees(s.owner.address);
-        expect(finalOwnerFees - initialOwnerFees).to.equal(expectedOwnerFee);
+        expect(finalOwnerFees - initialOwnerFees).to.equal(expectedTotalOwnerFee);
     });
 
     it("Should not distribute fees when owner registers with `msg.value > 0` during initial period", async () => {

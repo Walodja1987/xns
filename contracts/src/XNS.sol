@@ -261,7 +261,7 @@ contract XNS is EIP712 {
         emit NameRegistered(label, namespace, msg.sender);
 
         // Process payment: burn 90%, credit fees, and refund excess.
-        _processETHPayment(ns.pricePerName, ns.creator, false);
+        _processETHPayment(ns.pricePerName, ns.creator);
     }
 
     /// @notice Function to sponsor a paid name registration for `recipient` who explicitly authorized it via
@@ -326,7 +326,8 @@ contract XNS is EIP712 {
         emit NameRegistered(registerNameAuth.label, registerNameAuth.namespace, registerNameAuth.recipient);
 
         // Process payment: burn 90%, credit fees, and refund excess.
-        _processETHPayment(ns.pricePerName, ns.creator, ns.isPrivate);
+        address creatorFeeRecipient = ns.isPrivate ? OWNER : ns.creator;
+        _processETHPayment(ns.pricePerName, creatorFeeRecipient);
     }
 
     /// @notice Batch version of `registerNameWithAuthorization` to register multiple names with a single transaction.
@@ -408,7 +409,8 @@ contract XNS is EIP712 {
         if (successful > 0) {
             uint256 actualTotal = ns.pricePerName * successful;
             require(msg.value >= actualTotal, "XNS: insufficient payment");
-            _processETHPayment(actualTotal, ns.creator, ns.isPrivate);
+            address creatorFeeRecipient = ns.isPrivate ? OWNER : ns.creator;
+            _processETHPayment(actualTotal, creatorFeeRecipient);
             return successful;
         }
 
@@ -470,7 +472,7 @@ contract XNS is EIP712 {
         // Process payment: burn 90%, credit fees, and refund excess (if any).
         // `requiredAmount` = 0 within onboarding period (1 year after contract deployment).
         if (requiredAmount > 0) {
-            _processETHPayment(requiredAmount, msg.sender, false);
+            _processETHPayment(requiredAmount, OWNER);
         } else if (msg.value > 0) {
             // Refund if owner sent ETH during free period.
             (bool ok, ) = msg.sender.call{value: msg.value}("");
@@ -527,7 +529,7 @@ contract XNS is EIP712 {
         emit NamespaceRegistered(namespace, pricePerName, msg.sender, true);
 
         if (requiredAmount > 0) {
-            _processETHPayment(requiredAmount, msg.sender, true);
+            _processETHPayment(requiredAmount, OWNER);
         } else if (msg.value > 0) {
             (bool ok, ) = msg.sender.call{value: msg.value}("");
             require(ok, "XNS: refund failed");
@@ -707,14 +709,12 @@ contract XNS is EIP712 {
     /// @dev Helper function to process ETH payment (used in `registerName`, `registerNameWithAuthorization`,
     /// `batchRegisterNameWithAuthorization`, `registerPublicNamespace`, and `registerPrivateNamespace`):
     /// - Burn 90% via DETH (credits `msg.sender` with DETH)
-    /// - Credit fees:
-    ///   - Public namespace: 5% to namespace creator, 5% to OWNER
-    ///   - Private namespace: 10% to OWNER
+    /// - Credit fees: 5% to `creatorFeeRecipient` and 5% to OWNER
     /// - Refund any excess payment
     /// @param requiredAmount The required amount of ETH for the operation (excess will be refunded).
-    /// @param namespaceCreator The address of the namespace creator that shall receive a portion of the fees.
-    /// @param isPrivateNamespace Whether the namespace is private.
-    function _processETHPayment(uint256 requiredAmount, address namespaceCreator, bool isPrivateNamespace) private {
+    /// @param creatorFeeRecipient The address that shall receive the 5% creator fee.
+    /// @dev Credits 5% to `creatorFeeRecipient` and 5% to OWNER. Passing OWNER as `creatorFeeRecipient` routes the full 10% to OWNER.
+    function _processETHPayment(uint256 requiredAmount, address creatorFeeRecipient) private {
         uint256 burnAmount = (requiredAmount * 90) / 100;
         uint256 creatorFee = (requiredAmount * 5) / 100;
         uint256 ownerFee = requiredAmount - burnAmount - creatorFee;
@@ -722,13 +722,10 @@ contract XNS is EIP712 {
         // Burn 90% via DETH contract and credit `msg.sender` (payer/sponsor) with DETH.
         IDETH(DETH).burn{value: burnAmount}(msg.sender);
 
-        // Credit fees.
-        if (isPrivateNamespace) {
-            _pendingFees[OWNER] += (creatorFee + ownerFee);
-        } else {
-            _pendingFees[namespaceCreator] += creatorFee;
-            _pendingFees[OWNER] += ownerFee;
-        }
+        // Credit fees: 5% to creatorFeeRecipient, 5% to OWNER.
+        // If creatorFeeRecipient == OWNER, OWNER effectively gets the full 10% (credited twice into the same mapping slot).
+        _pendingFees[creatorFeeRecipient] += creatorFee;
+        _pendingFees[OWNER] += ownerFee;
 
         // Refund excess payment.
         uint256 excess = msg.value - requiredAmount;
