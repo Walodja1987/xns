@@ -387,14 +387,14 @@ contract XNS is EIP712 {
             require(_isValidSlug(auth.label), "XNS: invalid label");
             require(auth.recipient != address(0), "XNS: 0x recipient");
 
+            // Verify that the namespace is the same for all registrations.
+            bytes32 nsHash = keccak256(bytes(auth.namespace));
+            require(nsHash == firstNsHash, "XNS: namespace mismatch");
+
             // Skip if recipient already has a name (protection against griefing attacks).
             if (bytes(_addressToName[auth.recipient].label).length > 0) {
                 continue;
             }
-
-            // Verify all are same namespace.
-            bytes32 nsHash = keccak256(bytes(auth.namespace));
-            require(nsHash == firstNsHash, "XNS: namespace mismatch");
 
             bytes32 key = keccak256(abi.encodePacked(auth.label, ".", auth.namespace));
 
