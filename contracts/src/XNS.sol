@@ -118,18 +118,10 @@ contract XNS is EIP712 {
     // Mapping from address to pending fees that can be claimed.
     mapping(address => uint256) private _pendingFees;
 
-    // EIP-712 struct type hash for RegisterNameAuth:
-    //
-    // keccak256(
-    //     abi.encodePacked(
-    //         "RegisterNameAuth(",
-    //         "address recipient,",
-    //         "string label,",
-    //         "string namespace)"
-    //     )
-    // )
+    // EIP-712 struct type hash for RegisterNameAuth.
     bytes32 private constant _REGISTER_NAME_AUTH_TYPEHASH =
-        0x3af1a3ccc0c04cc5d0dde28c2900c21fbae8e30149f4caf140b9223938975f04;
+        keccak256("RegisterNameAuth(address recipient,string label,string namespace)");
+
 
     // -------------------------------------------------------------------------
     // Constants
