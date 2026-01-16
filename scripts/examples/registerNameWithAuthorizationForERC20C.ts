@@ -3,11 +3,11 @@
  *
  * USAGE:
  * Run the script with:
- * `npx hardhat run scripts/examples/registerNameForERC20C.ts --network <network_name>`
+ * `npx hardhat run scripts/examples/registerNameWithAuthorizationForERC20C.ts --network <network_name>`
  *
  * EXAMPLE:
  * To deploy and register on Sepolia:
- * `npx hardhat run scripts/examples/registerNameForERC20C.ts --network sepolia`
+ * `npx hardhat run scripts/examples/registerNameWithAuthorizationForERC20C.ts --network sepolia`
  *
  * REQUIRED SETUP:
  * Before running, set these environment variables using hardhat-vars:
@@ -74,10 +74,6 @@ async function main() {
   const owner = signers[ownerIndex];
   const sponsor = signers[sponsorIndex];
 
-  if (ownerIndex === sponsorIndex) {
-    throw new Error("Owner and sponsor must be different addresses for this example");
-  }
-
   console.log(`\nNetwork: ${GREEN}${networkName}${RESET}`);
   console.log(`XNS contract: ${GREEN}${contractAddress}${RESET}`);
   console.log(`Contract owner: ${GREEN}${owner.address}${RESET}`);
@@ -114,7 +110,7 @@ async function main() {
     );
   }
 
-  // Deploy MockERC20C contract (EIP-1271 wallet)
+  // Deploy MockERC20C contract (EIP-1271)
   console.log(`Deploying MockERC20C contract (EIP-1271)...`);
   console.log(`  Token name: ${GREEN}${tokenName}${RESET}`);
   console.log(`  Token symbol: ${GREEN}${tokenSymbol}${RESET}`);

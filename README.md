@@ -554,9 +554,34 @@ Since XNS only exists on Ethereum mainnet, **your contract must be deployed on E
 
 ### Integration on Ethereum
 
-For contracts deployed only on Ethereum, there are two ways to integrate XNS:
+For contracts deployed only on Ethereum, there are three ways to integrate XNS:
 
-#### Option 1: Register via Separate Function
+#### Option 1: Register via Constructor
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.28;
+
+import {IXNS} from "./interfaces/IXNS.sol";
+
+contract MyProtocol {
+    constructor(address _xns, string memory label, string memory namespace) payable {
+        IXNS(_xns).registerName{value: msg.value}(label, namespace);
+    }
+
+    /// @notice Optional: Accept ETH refunds from XNS if excess payment is sent.
+    /// Not needed if correct prices is sent, without any excess.
+    receive() external payable {}
+}
+```
+
+Deploy with the `label`, `namespace`, and required payment to register the name during contract creation.
+
+> **Note:** In both integration options, any excess payment is refunded by XNS to `msg.sender`, which will be your contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when calling `registerName`.
+
+See `contracts/src/mocks/MockERC20A` and `scripts/registerNameForERC20A.ts` for an example of how to register a name for an ERC20 token using the constructor method.
+
+#### Option 2: Register via Separate Function
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -586,28 +611,7 @@ contract MyProtocol {
 
 After deployment, call `registerName("myprotocol", "xns")` with the required payment to register the name.
 
-#### Option 2: Register via Constructor
-
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity 0.8.28;
-
-import {IXNS} from "./interfaces/IXNS.sol";
-
-contract MyProtocol {
-    constructor(address _xns, string memory label, string memory namespace) payable {
-        IXNS(_xns).registerName{value: msg.value}(label, namespace);
-    }
-
-    /// @notice Optional: Accept ETH refunds from XNS if excess payment is sent.
-    /// Not needed if correct prices is sent, without any excess.
-    receive() external payable {}
-}
-```
-
-Deploy with the `label`, `namespace`, and required payment to register the name during contract creation.
-
-> **Note:** In both integration options, any excess payment is refunded by XNS to `msg.sender`, which will be your contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when calling `registerName`.
+See `contracts/src/mocks/MockERC20B` and `scripts/registerNameForERC20B.ts` for an example of how to register a name for an ERC20 token using the separate `registerName` function approach.
 
 #### Option 3: Sponsored Registration via EIP-1271
 
@@ -660,6 +664,8 @@ contract MyContractWallet {
 - Allow others to pay for your contract's name registration
 
 **Note:** The contract must implement EIP-1271's `isValidSignature` function. The sponsor pays all fees and gas costs. Unlike Options 1 and 2 where `receive()` is optional (needed only if excess payment is sent), Option 3 does **not** need a `receive()` function because any refunds go to the sponsor (the transaction sender), not to the contract.
+
+See `contracts/src/mocks/MockERC20C` and  `scripts/registerNameWithAuthorizationForERC20C.ts` for an example of how to register a name for an ERC20 token using the EIP-1271 method.
 
 ### Multi-Chain Deployment Considerations
 
