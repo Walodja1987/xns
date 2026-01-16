@@ -74,17 +74,19 @@ Label and namespace string requirements:
 ### registerName
 
 
-Function to register a paid name for `msg.sender` in a public namespace. To register a bare name
-(e.g., "vitalik"), use "x" as the namespace parameter. Namespace creators have a 30-day exclusivity window
-to register a name for themselves within their public namespace. Registrations are opened to the public after the 30-day
-exclusivity period.
+Function to register a paid name for `msg.sender`. To register a bare name
+(e.g., "vitalik"), use "x" as the namespace parameter. 
+For public namespaces: Namespace creators have a 30-day exclusivity window to register a name for themselves.
+Registrations are opened to the public after the 30-day exclusivity period.
+For private namespaces: Only the namespace creator may register a name for themselves.
 
 **Requirements:**
 - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-',
   cannot contain consecutive hyphens)
-- Namespace must exist and must be a public namespace.
+- Namespace must exist.
+- For private namespaces: `msg.sender` must be the namespace creator.
+- For public namespaces: `msg.sender` must be namespace creator if called during the 30-day exclusivity period.
 - `msg.value` must be >= the namespace's registered price (excess will be refunded).
-- Caller must be namespace creator if called during the 30-day exclusivity period.
 - Caller must not already have a name.
 - Name must not already be registered.
 
@@ -122,6 +124,8 @@ Supports both EOA signatures and EIP-1271 contract wallet signatures.
 - Recipient must not already have a name.
 - Name must not already be registered.
 - Signature must be valid EIP-712 signature from `recipient` (EOA) or EIP-1271 contract signature.
+- If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271
+  for signature validation.
 
 **Note:** Due to block reorganization risks, users should wait for a few blocks and verify
 the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.

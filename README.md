@@ -83,7 +83,7 @@ To register an XNS name, follow the following steps:
 **Additional comments:**
 - If you're unsure of a namespace's price, check the [price list](#-xns-price-list) below or retrieve it with `getNamespaceInfo("your_namespace")` by replacing `"your_namespace"` with your desired namespace.
 - Calling `registerName(label, namespace)` always links names to the caller's address.
-- **Note:** `registerName` only works for public namespaces. Private namespaces require sponsorship via `registerNameWithAuthorization`.
+- **Note:** `registerName` works for public namespaces. For private namespaces, only the namespace creator can use `registerName` to register a name for themselves. Non-creators must use sponsorship via `registerNameWithAuthorization`.
 
 ### Name Registration via Etherscan
 
@@ -185,8 +185,8 @@ To register a private namespace, follow these steps:
 
 **Additional comments:**
 - Private namespace creators receive **0%** of name registration fees (contract owner receives 10%).
-- Names in private namespaces can **only** be registered via sponsorship (`registerNameWithAuthorization`), never via public `registerName`.
-- The namespace creator has **permanent exclusive rights** to sponsor name registrations in their private namespace (no 30-day limit).
+- Names in private namespaces can be registered by the namespace creator via `registerName`, or via sponsorship (`registerNameWithAuthorization`) for others.
+- The namespace creator has **permanent exclusive rights** to register names in their private namespace (no 30-day limit).
 
 ### Namespace Registration via Etherscan
 
@@ -241,8 +241,8 @@ Namespaces can share the same price (price uniqueness is not enforced). All pric
 
 ### Private Namespace Creators
 
-- **Permanent exclusive rights**: Only the creator can sponsor name registrations forever (no time limit)
-- Names in private namespaces can **only** be registered via sponsorship (`registerNameWithAuthorization`), never via public `registerName`
+- **Permanent exclusive rights**: Only the creator can register names forever (no time limit)
+- The creator can register names for themselves via `registerName`, or sponsor registrations for others via `registerNameWithAuthorization`
 - Private namespace creators receive **0%** of name registration fees (contract owner receives 10%)
 
 ---
@@ -266,9 +266,9 @@ After 30 days:
 
 ### Private Namespaces
 
-- **Permanent exclusivity**: Only the namespace creator can sponsor name registrations forever
-- Public `registerName` is **always disabled** for private namespaces (even for the creator)
-- All name registrations in private namespaces must be done via `registerNameWithAuthorization` with the creator as the sponsor
+- **Permanent exclusivity**: Only the namespace creator can register names forever
+- The creator can register names for themselves via `registerName`, or sponsor registrations for others via `registerNameWithAuthorization`
+- Non-creators cannot use `registerName` for private namespaces (they must be sponsored by the creator)
 
 ---
 
@@ -298,8 +298,8 @@ registerName(string label, string namespace) payable
 - Burns `msg.value` ETH (must be >= the namespace's registered price)
 - Registers `label.namespace` for `msg.sender`
 - Excess payment is refunded
-- **Only works for public namespaces** (reverts for private namespaces)
-- During the 30-day exclusivity period, only the namespace creator can use this function for public namespaces
+- **For public namespaces**: During the 30-day exclusivity period, only the namespace creator can use this function. After 30 days, anyone can use it.
+- **For private namespaces**: Only the namespace creator can use this function to register names for themselves
 
 Example:
 
@@ -340,6 +340,8 @@ Use cases:
 - Batch registrations: Collect signatures off-chain, execute in one tx
 - Front-running protection: Creator can atomically register reserved names
 
+>**Note:** If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271 for signature validation.
+
 ---
 
 ### Batch Register Names with Authorization
@@ -374,6 +376,8 @@ Use cases:
 - Launch campaigns: Register reserved names atomically before public launch
 - Gas efficiency: Save gas by batching multiple registrations
 
+>**Note:** If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271 for signature validation.
+
 ---
 
 ### Register a Public Namespace
@@ -399,7 +403,7 @@ registerPrivateNamespace(string namespace, uint256 pricePerName) payable
 - During the initial 1-year period, the contract owner can register private namespaces for free
 - All others must pay the private namespace registration fee (10 ETH)
 - Namespace must be 1–20 characters, lowercase letters/digits/hyphens (`a-z`, `0-9`, `-`), cannot start/end with hyphen or contain consecutive hyphens
-- Names in private namespaces can only be registered via sponsorship (`registerNameWithAuthorization`), never via public `registerName`
+- Names in private namespaces can be registered by the namespace creator via `registerName`, or via sponsorship (`registerNameWithAuthorization`) for others
 
 ---
 
@@ -407,7 +411,9 @@ registerPrivateNamespace(string namespace, uint256 pricePerName) payable
 
 ### Fee Distribution
 
-When names are registered (via `registerName` or `registerNameWithAuthorization`) or namespaces are created with fees:
+#### Name Registration Fees
+
+When names are registered (via `registerName` or `registerNameWithAuthorization`):
 
 - **90%** of ETH is burned via DETH contract
 - The payer/sponsor is credited DETH 1:1 for the burned amount
@@ -419,6 +425,16 @@ When names are registered (via `registerName` or `registerNameWithAuthorization`
 **For private namespaces:**
 - **10%** is credited to the contract owner
 - **0%** is credited to the namespace creator (private namespace creators receive no fees)
+
+#### Namespace Registration Fees
+
+When namespaces are registered (via `registerPublicNamespace` or `registerPrivateNamespace`) with fees:
+
+- **90%** of ETH is burned via DETH contract
+- The payer is credited DETH 1:1 for the burned amount
+- **10%** is credited to the contract owner (not the namespace creator)
+
+**Note:** Namespace creators do not receive any portion of the namespace registration fee. They only receive fees from name registrations within their namespace (for public namespaces only).
 
 Fees accumulate and must be explicitly claimed.
 
