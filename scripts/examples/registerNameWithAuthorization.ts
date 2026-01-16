@@ -1,13 +1,13 @@
 /**
- * Script to register a name on XNS
+ * Script to register a name with authorization (sponsorship) on XNS
  *
  * USAGE:
  * Run the script with:
- * `npx hardhat run scripts/registerName.ts --network <network_name>`
+ * `npx hardhat run scripts/examples/registerNameWithAuthorization.ts --network <network_name>`
  *
  * EXAMPLE:
- * To register a name on Sepolia:
- * `npx hardhat run scripts/registerName.ts --network sepolia`
+ * To register a name with authorization on Sepolia:
+ * `npx hardhat run scripts/examples/registerNameWithAuthorization.ts --network sepolia`
  *
  * REQUIRED SETUP:
  * Before running, set these environment variables using hardhat-vars:
@@ -21,8 +21,11 @@
  */
 
 import hre from "hardhat";
-import { formatEther, parseEther } from "ethers";
-import { XNS_ADDRESS } from "../constants/addresses";
+import { formatEther } from "ethers";
+import { XNS } from "../../typechain-types";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { XNS_ADDRESS } from "../../constants/addresses";
+import { signRegisterNameAuth } from "../utils/signRegisterNameAuth";
 
 // Colour codes for terminal prints
 const RESET = "\x1b[0m";
@@ -35,13 +38,17 @@ const RED = "\x1b[31m";
 //////////////////////////////////////////////////////////////*/
 
 // Label to register (e.g., "alice", "bob", "vitalik")
-const label = "xns-deployer";
+const label = "sponsored-user";
 
 // Namespace (e.g., "xns", "x" for bare names, "001", etc.)
 const namespace = "xns";
 
-// Signer index (0 = account 1, 1 = account 2, 2 = account 3, etc.)
-const signerIndex = 2;
+// Recipient address (who will receive the name - must sign the EIP-712 message)
+// For this example, we'll use a signer from the mnemonic, but in practice this could be any address
+const recipientIndex = 1; // Index of signer that will receive the name (must sign)
+
+// Sponsor index (who pays for the registration)
+const sponsorIndex = 0; // Index of signer that pays for the registration
 
 async function main() {
   const networkName = hre.network.name;
@@ -55,31 +62,38 @@ async function main() {
   }
 
   // Get XNS contract instance
-  const xns = await hre.ethers.getContractAt("XNS", contractAddress);
+  const xns = await hre.ethers.getContractAt("XNS", contractAddress) as unknown as XNS;
 
-  // Get signer
+  // Get signers
   const signers = await hre.ethers.getSigners();
-  const signer = signers[signerIndex];
+  const recipient = signers[recipientIndex] as unknown as SignerWithAddress;
+  const sponsor = signers[sponsorIndex];
+
+  if (recipientIndex === sponsorIndex) {
+    throw new Error("Recipient and sponsor must be different addresses");
+  }
 
   console.log(`\nNetwork: ${GREEN}${networkName}${RESET}`);
   console.log(`XNS contract: ${GREEN}${contractAddress}${RESET}`);
-  console.log(`Registering with account: ${GREEN}${signer.address}${RESET}\n`);
+  console.log(`Recipient (will receive name): ${GREEN}${recipient.address}${RESET}`);
+  console.log(`Sponsor (pays fees): ${GREEN}${sponsor.address}${RESET}\n`);
 
   // Get namespace info to determine price
   console.log(`Fetching namespace info for "${namespace}"...\n`);
   const getNamespaceInfo = xns.getFunction("getNamespaceInfo(string)");
-  const [pricePerName, creator, createdAt] = await getNamespaceInfo(namespace);
+  const [pricePerName, creator, createdAt, isPrivate] = await getNamespaceInfo(namespace);
 
   console.log(`Namespace: ${GREEN}${namespace}${RESET}`);
+  console.log(`Type: ${GREEN}${isPrivate ? "private" : "public"}${RESET}`);
   console.log(`Price per name: ${GREEN}${formatEther(pricePerName)} ETH${RESET}`);
   console.log(`Namespace creator: ${GREEN}${creator}${RESET}\n`);
 
-  // Check if address already has a name
+  // Check if recipient already has a name
   const getName = xns.getFunction("getName(address)");
-  const existingName = await getName(signer.address);
+  const existingName = await getName(recipient.address);
   if (existingName !== "") {
     throw new Error(
-      `Address ${signer.address} already has a name: ${existingName}`,
+      `Recipient ${recipient.address} already has a name: ${existingName}`,
     );
   }
 
@@ -92,10 +106,10 @@ async function main() {
     );
   }
 
-  // Check signer balance
-  const balance = await hre.ethers.provider.getBalance(signer.address);
+  // Check sponsor balance
+  const balance = await hre.ethers.provider.getBalance(sponsor.address);
   console.log(
-    `Account balance: ${GREEN}${formatEther(balance)} ETH${RESET}\n`,
+    `Sponsor balance: ${GREEN}${formatEther(balance)} ETH${RESET}\n`,
   );
 
   if (balance < pricePerName) {
@@ -104,14 +118,30 @@ async function main() {
     );
   }
 
-  // Register name (bare names use namespace "x")
+  // Recipient signs the EIP-712 message to authorize the registration
+  console.log(`Recipient signing authorization message...\n`);
+  const signature = await signRegisterNameAuth(xns, recipient, recipient.address, label, namespace);
+  console.log(`${GREEN}✓${RESET} Authorization signature obtained\n`);
+
+  // Prepare RegisterNameAuth struct
+  const registerNameAuth = {
+    recipient: recipient.address,
+    label: label,
+    namespace: namespace,
+  };
+
+  // Register name with authorization
   const fullName = namespace.toLowerCase() === "x" ? label : `${label}.${namespace}`;
   console.log(`Registering name: ${GREEN}${fullName}${RESET}`);
+  console.log(`Recipient: ${GREEN}${recipient.address}${RESET}`);
+  console.log(`Sponsor: ${GREEN}${sponsor.address}${RESET}`);
   console.log(`Sending ${GREEN}${formatEther(pricePerName)} ETH${RESET}...\n`);
 
-  const registerTx = await xns.connect(signer).registerName(label, namespace, {
-    value: pricePerName,
-  });
+  const registerTx = await xns.connect(sponsor).registerNameWithAuthorization(
+    registerNameAuth,
+    signature,
+    { value: pricePerName }
+  );
 
   console.log(
     `Transaction hash: ${GREEN}${registerTx.hash}${RESET}\n`,
@@ -122,17 +152,17 @@ async function main() {
 
   // Verify registration
   const nameOwner = await getAddress(label, namespace);
-  const registeredName = await getName(signer.address);
+  const registeredName = await getName(recipient.address);
 
   console.log(`\n${GREEN}✓ Registration successful!${RESET}\n`);
   console.log(`Name: ${GREEN}${fullName}${RESET}`);
   console.log(`Owner: ${GREEN}${nameOwner}${RESET}`);
-  console.log(`Registered name for ${signer.address}: ${GREEN}${registeredName}${RESET}\n`);
+  console.log(`Registered name for ${recipient.address}: ${GREEN}${registeredName}${RESET}\n`);
 
-  // Check balance after
-  const balanceAfter = await hre.ethers.provider.getBalance(signer.address);
+  // Check sponsor balance after
+  const balanceAfter = await hre.ethers.provider.getBalance(sponsor.address);
   console.log(
-    `Account balance after: ${GREEN}${formatEther(balanceAfter)} ETH${RESET}\n`,
+    `Sponsor balance after: ${GREEN}${formatEther(balanceAfter)} ETH${RESET}\n`,
   );
 }
 
