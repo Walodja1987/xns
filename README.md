@@ -13,6 +13,32 @@
 //////////////////////////////
 ```
 
+## Table of contents
+
+1. [Overview](#-overview)
+2. [Name Format](#-name-format)
+3. [How It Works](#-how-it-works)
+4. [XNS Price list](#-xns-price-list)
+5. [Namespace Creators](#-namespace-creators)
+6. [Exclusive Period](#-exclusive-period)
+7. [Address](#-address)
+8. [Key Functions](#-key-functions)
+9. [Fee Management](#-fee-management)
+10. [Name Resolution](#-name-resolution)
+11. [Namespace Queries](#-namespace-queries)
+12. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
+13. [Front-Running & Design Choice](#️-front-running--design-choice)
+14. [Events](#-events)
+15. [Contract Address](#-contract-address)
+16. [Design Philosophy](#-design-philosophy)
+17. [Documentation](#-documentation)
+
+## API Reference
+
+See the [API Reference](docs/API.md) for complete documentation of all XNS contract functions, events, state variables, and types.
+
+---
+
 ## 🚀 Overview
 
 **XNS** is a decentralized, Ethereum-native name registry that **maps human-readable names to Ethereum addresses**.
