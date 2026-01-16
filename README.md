@@ -340,6 +340,8 @@ Use cases:
 - Batch registrations: Collect signatures off-chain, execute in one tx
 - Front-running protection: Creator can atomically register reserved names
 
+>**Note:** If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271 for signature validation.
+
 ---
 
 ### Batch Register Names with Authorization
@@ -373,6 +375,8 @@ Use cases:
 - Community onboarding: Batch register multiple community members at once
 - Launch campaigns: Register reserved names atomically before public launch
 - Gas efficiency: Save gas by batching multiple registrations
+
+>**Note:** If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271 for signature validation.
 
 ---
 

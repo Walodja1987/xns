@@ -289,6 +289,8 @@ contract XNS is EIP712 {
     /// - Recipient must not already have a name.
     /// - Name must not already be registered.
     /// - Signature must be valid EIP-712 signature from `recipient` (EOA) or EIP-1271 contract signature.
+    /// - If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271
+    ///   for signature validation.
     ///
     /// **Note:** Due to block reorganization risks, users should wait for a few blocks and verify
     /// the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
@@ -391,6 +393,9 @@ contract XNS is EIP712 {
             bytes32 nsHash = keccak256(bytes(auth.namespace));
             require(nsHash == firstNsHash, "XNS: namespace mismatch");
 
+            // Verify that the signature is valid.
+            require(_isValidSignature(auth, signatures[i]), "XNS: bad authorization");
+
             // Skip if recipient already has a name (protection against griefing attacks).
             if (bytes(_addressToName[auth.recipient].label).length > 0) {
                 continue;
@@ -402,9 +407,6 @@ contract XNS is EIP712 {
             if (_nameHashToAddress[key] != address(0)) {
                 continue;
             }
-
-            // Verify that the signature is valid.
-            require(_isValidSignature(auth, signatures[i]), "XNS: bad authorization");
 
             _nameHashToAddress[key] = auth.recipient;
             _addressToName[auth.recipient] = Name({

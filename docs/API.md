@@ -124,6 +124,8 @@ Supports both EOA signatures and EIP-1271 contract wallet signatures.
 - Recipient must not already have a name.
 - Name must not already be registered.
 - Signature must be valid EIP-712 signature from `recipient` (EOA) or EIP-1271 contract signature.
+- If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271
+  for signature validation.
 
 **Note:** Due to block reorganization risks, users should wait for a few blocks and verify
 the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
