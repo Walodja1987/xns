@@ -15,27 +15,25 @@
 
 ## Table of contents
 
-1. [Overview](#-overview)
-2. [Name Format](#-name-format)
-3. [How It Works](#-how-it-works)
-4. [XNS Price list](#-xns-price-list)
-5. [Namespace Creators](#-namespace-creators)
-6. [Exclusive Period](#-exclusive-period)
-7. [Address](#-address)
-8. [Key Functions](#-key-functions)
-9. [Fee Management](#-fee-management)
-10. [Name Resolution](#-name-resolution)
-11. [Namespace Queries](#-namespace-queries)
-12. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
-13. [Front-Running & Design Choice](#️-front-running--design-choice)
-14. [Events](#-events)
-15. [Contract Address](#-contract-address)
-16. [Design Philosophy](#-design-philosophy)
-17. [Documentation](#-documentation)
+1. [Overview](#🚀-overview)
+2. [Name Format](#🏷-name-format)
+3. [How It Works](#✨-how-it-works)
+4. [XNS Price list](#🔥-xns-price-list)
+5. [Namespace Creators](#👥-namespace-creators)
+6. [Exclusive Period](#⏳-exclusive-period)
+7. [Contract Address](#🔗-contract-address)
+8. [Fee Management](#💰-fee-management)
+9.  [Name Resolution](#🔍-name-resolution)
+10. [Namespace Queries](#🧠-namespace-queries)
+11. [Integration Guide for Contract Developers](#🔧-integration-guide-for-contract-developers)
 
 ## API Reference
 
 See the [API Reference](docs/API.md) for complete documentation of all XNS contract functions, events, state variables, and types.
+
+## Developer Notes
+
+See the [Developer Notes](docs/DEV_NOTES.md) for design decisions, code style guidelines, governance considerations, and known limitations. This document is primarily intended for auditors and developers working on the XNS contract.
 
 ---
 
@@ -227,26 +225,8 @@ You can register your name directly via [Etherscan](https://sepolia.etherscan.io
 | Namespace | ETH Amount   |
 | --------- | -----------  |
 | xns       | 0.001 ETH    | 
-| gm        | 0.002 ETH    |
-| long      | 0.003 ETH    |
-| wtf       | 0.004 ETH    |
-| yolo      | 0.005 ETH    |
-| bro       | 0.006 ETH    |
-| chad      | 0.007 ETH    |
-| og        | 0.008 ETH    |
-| hodl      | 0.009 ETH    |
-| maxi      | 0.010 ETH    |
-| bull      | 0.015 ETH    |
-| pump      | 0.025 ETH    |
-| 100x      | 0.030 ETH    |
-| xyz       | 0.035 ETH    |
-| ape       | 0.040 ETH    |
-| moon      | 0.045 ETH    |
-| com       | 0.050 ETH    |
-| io        | 0.055 ETH    |
-| 888       | 0.888 ETH    |
+| more to come...        |     |
 
-Namespaces can share the same price (price uniqueness is not enforced). All prices must be multiples of 0.001 ETH.
 
 ---
 
@@ -298,7 +278,7 @@ After 30 days:
 
 ---
 
-## 🔗 Address
+## 🧾 Contract Address
 
 The XNS contract is deployed on Ethereum at the following address: [xxx](https://etherscan.io/address/xxx)
 
@@ -313,125 +293,7 @@ The testnet contract has been parametrized as follows:
 - Onboarding period: 60 seconds (instead of 365 days)
 - Bare name price: 0.2 ether (instead of 10 ether)
 
-## 🔧 Key Functions
 
-### Register a Name
-
-```solidity
-registerName(string label, string namespace) payable
-```
-
-- Burns `msg.value` ETH (must be >= the namespace's registered price)
-- Registers `label.namespace` for `msg.sender`
-- Excess payment is refunded
-- **For public namespaces**: During the 30-day exclusivity period, only the namespace creator can use this function. After 30 days, anyone can use it.
-- **For private namespaces**: Only the namespace creator can use this function to register names for themselves
-
-Example:
-
-```solidity
-xns.registerName{value: 0.001 ether}("alice", "001");
-```
-
----
-
-### Register a Name with Authorization (Sponsorship)
-
-```solidity
-registerNameWithAuthorization(
-    RegisterNameAuth calldata registerNameAuth,
-    bytes calldata signature
-) payable
-```
-
-- Allows a sponsor (tx sender) to pay and register a name for a recipient
-- Recipient must explicitly authorize via EIP-712 signature
-- Supports both EOA signatures and EIP-1271 contract wallet signatures (Safe, Argent, etc.)
-- Works for both **public** and **private** namespaces
-- For **public namespaces**: During the 30-day exclusivity period, only the namespace creator can sponsor registrations. After 30 days, anyone can sponsor.
-- For **private namespaces**: Only the namespace creator can sponsor registrations forever (permanent exclusivity)
-- Burns `msg.value` ETH (must match namespace price)
-- Registers name to `recipient`, not `msg.sender`
-
-The `RegisterNameAuth` struct contains:
-
-- `recipient`: Address that will receive the name (must sign the EIP-712 message)
-- `label`: The label part of the name
-- `namespace`: The namespace part of the name
-
-Use cases:
-
-- Community onboarding: Users sign once, sponsor covers gas and fees
-- Gasless registration: Recipient doesn't need ETH
-- Batch registrations: Collect signatures off-chain, execute in one tx
-- Front-running protection: Creator can atomically register reserved names
-
->**Note:** If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271 for signature validation.
-
----
-
-### Batch Register Names with Authorization
-
-```solidity
-batchRegisterNameWithAuthorization(
-    RegisterNameAuth[] calldata registerNameAuths,
-    bytes[] calldata signatures
-) payable returns (uint256 successfulCount)
-```
-
-- Batch version of `registerNameWithAuthorization` to register multiple names in a single transaction
-- All registrations must be in the same namespace
-- Requires `msg.value >= pricePerName * successfulCount` (where `successfulCount` is the number of names actually registered)
-- Payment is only processed for successful registrations; skipped items are not charged
-- Excess payment is refunded
-- Returns the number of successfully registered names (may be 0 if all registrations were skipped)
-- If no registrations succeed, refunds all payment and returns 0
-- Skips registrations where recipient already has a name or name is already registered (griefing resistance)
-- More gas efficient than calling `registerNameWithAuthorization` multiple times
-- Works for both **public** and **private** namespaces
-- For **public namespaces**: During the 30-day exclusivity period, only the namespace creator can sponsor batch registrations. After 30 days, anyone can sponsor.
-- For **private namespaces**: Only the namespace creator can sponsor batch registrations forever (permanent exclusivity)
-- Burns ETH only for successful registrations:
-  - **Public namespaces**: 90% burnt, 5% to namespace creator, 5% to contract owner
-  - **Private namespaces**: 90% burnt, 10% to contract owner, 0% to namespace creator
-- Registers names to recipients, not `msg.sender`
-- Resistant to griefing attacks: if someone front-runs and registers a name for one recipient, that registration is skipped and others proceed
-
-Use cases:
-- Community onboarding: Batch register multiple community members at once
-- Launch campaigns: Register reserved names atomically before public launch
-- Gas efficiency: Save gas by batching multiple registrations
-
->**Note:** If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271 for signature validation.
-
----
-
-### Register a Public Namespace
-
-```solidity
-registerPublicNamespace(string namespace, uint256 pricePerName) payable
-```
-
-- Registers a new **public** namespace
-- Binds it to `pricePerName`
-- During the initial 1-year period, the contract owner can register public namespaces for free
-- All others must pay the public namespace registration fee (50 ETH)
-- Namespace must be 1–20 characters, lowercase letters/digits/hyphens only (`a-z`, `0-9`, `-`), cannot start/end with hyphen or contain consecutive hyphens
-
-### Register a Private Namespace
-
-```solidity
-registerPrivateNamespace(string namespace, uint256 pricePerName) payable
-```
-
-- Registers a new **private** namespace
-- Binds it to `pricePerName`
-- During the initial 1-year period, the contract owner can register private namespaces for free
-- All others must pay the private namespace registration fee (10 ETH)
-- Namespace must be 1–20 characters, lowercase letters/digits/hyphens (`a-z`, `0-9`, `-`), cannot start/end with hyphen or contain consecutive hyphens
-- Names in private namespaces can be registered by the namespace creator via `registerName`, or via sponsorship (`registerNameWithAuthorization`) for others
-
----
 
 ## 💰 Fee Management
 
@@ -524,7 +386,7 @@ Examples:
 
 ```solidity
 getAddress("vitalik.001");
-getAddress("nike");      // resolves nike.x
+getAddress("nike");
 ```
 
 Returns `address(0)` if the name is not registered.
@@ -783,87 +645,6 @@ function registerName(string calldata label, string calldata namespace) external
 ### Getting the XNS Contract Address
 
 After contract deployment, applications can query the address via `getAddress("myprotocol.xns")` on Ethereum.
-
----
-
-## ⚠️ Front-Running & Design Choice
-
-XNS **does not** use a commit–reveal pattern.
-
-Why?
-
-- On a public blockchain, **reveals are still front-runnable**
-- Commit–reveal hides intent but does **not** prevent motivated actors from racing the final transaction
-- Including commit–reveal would add complexity without providing real guarantees
-
-**Design choice:**
-XNS embraces simplicity and economic deterrence.
-
-For high-value registrations, users may optionally use **private transaction submission**, but this is intentionally kept **outside the protocol**.
-
----
-
-## 📡 Events
-
-### `NameRegistered`
-
-```solidity
-event NameRegistered(string label, string namespace, address owner);
-```
-
-Emitted on paid or free registration.
-
----
-
-### `NamespaceRegistered`
-
-```solidity
-event NamespaceRegistered(
-  string namespace,
-  uint256 pricePerName,
-  address creator,
-  bool isPrivate
-);
-```
-
-Emitted when a namespace is created. The `isPrivate` parameter indicates whether the namespace is private (`true`) or public (`false`).
-
----
-
-## 🧾 Contract Address
-
-**Ethereum Mainnet**
-
-> Address: `TBD`
-> (Etherscan link will be added after deployment)
-
----
-
-## 🧠 Design Philosophy
-
-XNS is intentionally minimal:
-
-- Immutable mappings
-- Immutable ownership (set at deployment)
-- No admin keys
-- No upgrades
-- No tokenization
-- No off-chain trust
-
-It is designed to be:
-
-- Easy to reason about
-- Easy to integrate
-- Hard to abuse
-
----
-
-If you want next, we can:
-
-- Add a **“How to use XNS via Etherscan”** walkthrough
-- Write a **short protocol integration guide**
-- Or tighten the tone further (more playful vs more formal)
-
 
 ---
 
