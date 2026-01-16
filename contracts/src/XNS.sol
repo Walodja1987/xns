@@ -218,17 +218,19 @@ contract XNS is EIP712 {
     // STATE-MODIFYING FUNCTIONS
     // =========================================================================
 
-    /// @notice Function to register a paid name for `msg.sender` in a public namespace. To register a bare name
-    /// (e.g., "vitalik"), use "x" as the namespace parameter. Namespace creators have a 30-day exclusivity window
-    /// to register a name for themselves within their public namespace. Registrations are opened to the public after the 30-day
-    /// exclusivity period.
+    /// @notice Function to register a paid name for `msg.sender`. To register a bare name
+    /// (e.g., "vitalik"), use "x" as the namespace parameter. 
+    /// For public namespaces: Namespace creators have a 30-day exclusivity window to register a name for themselves.
+    /// Registrations are opened to the public after the 30-day exclusivity period.
+    /// For private namespaces: Only the namespace creator may register a name for themselves.
     ///
     /// **Requirements:**
     /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-',
     ///   cannot contain consecutive hyphens)
-    /// - Namespace must exist and must be a public namespace.
+    /// - Namespace must exist.
+    /// - For private namespaces: `msg.sender` must be the namespace creator.
+    /// - For public namespaces: `msg.sender` must be namespace creator if called during the 30-day exclusivity period.
     /// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
-    /// - Caller must be namespace creator if called during the 30-day exclusivity period.
     /// - Caller must not already have a name.
     /// - Name must not already be registered.
     /// 
@@ -242,12 +244,20 @@ contract XNS is EIP712 {
 
         NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
-        require(!ns.isPrivate, "XNS: private namespace");
 
         require(msg.value >= ns.pricePerName, "XNS: insufficient payment");
 
-        if (block.timestamp < ns.createdAt + EXCLUSIVITY_PERIOD) {
-            require(msg.sender == ns.creator, "XNS: not namespace creator (exclusivity period)");
+        // Default to namespace creator as the creator fee recipient (common case: public name registration)
+        address creatorFeeRecipient = ns.creator;
+
+        // Enforce access control: private namespaces require creator, public namespaces follow exclusivity rules
+        if (!ns.isPrivate) {
+            if (block.timestamp < ns.createdAt + EXCLUSIVITY_PERIOD) {
+                require(msg.sender == ns.creator, "XNS: not namespace creator (exclusivity period)");
+            }
+        } else {
+            require(msg.sender == ns.creator, "XNS: not namespace creator (private)");
+            creatorFeeRecipient = OWNER;
         }
 
         require(bytes(_addressToName[msg.sender].label).length == 0, "XNS: address already has a name");
@@ -261,7 +271,7 @@ contract XNS is EIP712 {
         emit NameRegistered(label, namespace, msg.sender);
 
         // Process payment: burn 90%, credit fees, and refund excess.
-        _processETHPayment(ns.pricePerName, ns.creator);
+        _processETHPayment(ns.pricePerName, creatorFeeRecipient);
     }
 
     /// @notice Function to sponsor a paid name registration for `recipient` who explicitly authorized it via

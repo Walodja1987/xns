@@ -175,6 +175,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should allow a contract to register a name for itself via `registerName` (after deployment).
 - Should refund excess payment to contract when registering in constructor with excess payment.
 - Should refund excess payment to contract when registering via function with excess payment.
+- Should allow private namespace creator to register a name for themselves and process fees correctly (90% burnt, 10% to contract owner, 0% to namespace creator).
 
 #### Events
 
@@ -184,7 +185,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 - Should revert with `XNS: invalid label` error for invalid label.
 - Should revert with `XNS: namespace not found` error when namespace doesn't exist.
-- Should revert with `XNS: private namespace` error when trying to register in private namespace.
+- Should revert with `XNS: not namespace creator (private)` error when trying to register in private namespace with non-creator account.
 - Should revert with `XNS: insufficient payment` error when `msg.value` is less than namespace price.
 - Should revert with `XNS: not namespace creator (exclusivity period)` error when non-creator tries to register during exclusive period.
 - Should revert with `XNS: address already has a name` error when address already owns a name.
