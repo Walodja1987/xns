@@ -17,7 +17,7 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 //////////////////////////////
 
 /// @title XNS
-/// @author Wladimir Weinbender
+/// @author Wladimir Weinbender (DIVA Technologies AG)
 /// @notice An Ethereum-native name registry that maps human-readable names to Ethereum addresses.
 /// Names are **permanent, immutable, and non-transferable**.
 ///

@@ -1,4 +1,4 @@
-# XNS – The Permanent Name Registry on Ethereum
+# XNS – The Name Registry on Ethereum
 
 ```
 //////////////////////////////

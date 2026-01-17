@@ -1,7 +1,7 @@
 {
   "name": "xns",
   "version": "1.0.0",
-  "description": "An On-Chain Name Service.",
+  "description": "An Ethereum-native name registry that maps human-readable names to Ethereum addresses.",
   "keywords": [
     "xns",
     "name",
@@ -17,8 +17,8 @@
   "bugs": {
     "url": "https://github.com/Walodja1987/xns/issues"
   },
-  "author": "Wladimir Weinbender",
-  "license": "MIT",
+  "author": "Wladimir Weinbender (DIVA Technologies AG)",
+  "license": "BUSL-1.1",
   "scripts": {
     "help": "npx hardhat help",
     "accounts": "npx hardhat accounts",
