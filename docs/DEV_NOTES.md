@@ -12,6 +12,8 @@ pnpm compile:hh
 pnpm test:hh
 ``` 
 
+>**Note:** Adjust Hardhat specific configuration as needed.
+
 # Design Decisions
 
 This document outlines the key design decisions regarding code style, governance, and specific contract features. It is primarily intended for auditors and anyone interested in the code.

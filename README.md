@@ -36,14 +36,19 @@ See the [Developer Notes](docs/DEV_NOTES.md) for design decisions, code style gu
 
 ## 🚀 Overview
 
-**XNS** is a decentralized, Ethereum-native name registry that **maps human-readable names to Ethereum addresses**.
+**XNS** is an Ethereum-native name registry that **maps human-readable names to Ethereum addresses**. It allows both EOAs and smart contracts (including ERC20 tokens) to be named in a single unified registry.
+
+For example:
+- `vitalik.xns` ⟷ `0x123...abc` (Ethereum address)
+- `myprotocol.ape` ⟷ `0x456...def` (Smart contract address)
+- `myerc20.token` ⟷ `0xabc...556` (Smart contract address)
 
 **Key properties:**
-- **Permanent**: Names are permanently linked to an Ethereum address; no expiration, no secondary market or resale mechanism.
-- **One name per address**: Each address can own at most one XNS name, ensuring a unique identity mapping and simple lookup.
-- **Fully on-chain**: All resolution (name → address, address → name) is done via on-chain view functions; no indexers required.
+- **Permanent:** Each is irrevocably bound to an Ethereum address; no expiration, no transfer, no resale.
+- **Globally unique:** Each name is unique across all Ethereum addresses, preventing conflicts like duplicate ERC20 token names.
+- **Universal naming:** Both smart contracts and EOAs can be named in the same unified registry.
 
-Each name has a pre-defined price, denominated in ETH, determined by its namespace (see [XNS price list](#🔥-xns-price-list) below). **90% of the ETH paid** for name registration is **permanently burned**, supporting Ethereum's deflationary mechanism. Registrants receive [DETH credits](https://github.com/Walodja1987/deth) that can be used as burn attestations in downstream applications.
+Name registration fees are denominated in ETH and determined by the namespace (see [XNS Price List](#🔥-xns-price-list) below). **90% of registration fees** are **permanently burned**, supporting Ethereum's deflationary mechanism. Registrants receive [DETH credits](https://github.com/Walodja1987/deth) as burn attestations.
 
 ### 🏷 Name Format
 
