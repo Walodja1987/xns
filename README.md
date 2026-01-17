@@ -21,7 +21,8 @@
 4. [Namespace Creator Privileges](#👥-namespace-creator-privileges)
 5. [Contract Address](#🔗-contract-address)
 6. [Fees](#💰-fees)
-7.  [Integration Guide for Contract Developers](#🔧-integration-guide-for-contract-developers)
+7. [Integration Guide for Contract Developers](#🔧-integration-guide-for-contract-developers)
+8. [License and Deployment Policy](#📄-license-and-deployment-policy)
 
 ### API Reference
 
@@ -38,12 +39,11 @@ See the [Developer Notes](docs/DEV_NOTES.md) for design decisions, code style gu
 **XNS** is a decentralized, Ethereum-native name registry that **maps human-readable names to Ethereum addresses**.
 
 **Key properties:**
-- **Permanent, immutable, and non-transferable**: Names are forever linked to the owner's address. There is no secondary market or resale mechanism.
-- **One name per address**: Each address can own at most one XNS name, ensuring clear identity mapping and simple reverse lookup.
-- **Fully on-chain**: All resolution is done via on-chain view functions and can be queried directly via **Etherscan**; no indexers required.
+- **Permanent**: Names are permanently linked to an Ethereum address; no expiration, no secondary market or resale mechanism.
+- **One name per address**: Each address can own at most one XNS name, ensuring a unique identity mapping and simple lookup.
+- **Fully on-chain**: All resolution (name → address, address → name) is done via on-chain view functions; no indexers required.
 
-Registration works by **burning ETH**, supporting Ethereum's deflationary mechanism. Registrants receive DETH credits that can be used as burn attestations in downstream applications. See the [DETH contract repository](https://github.com/Walodja1987/deth) for details.
-
+Each name has a pre-defined price, denominated in ETH, determined by its namespace (see [XNS price list](#🔥-xns-price-list) below). **90% of the ETH paid** for name registration is **permanently burned**, supporting Ethereum's deflationary mechanism. Registrants receive [DETH credits](https://github.com/Walodja1987/deth) that can be used as burn attestations in downstream applications.
 
 ### 🏷 Name Format
 
@@ -57,16 +57,30 @@ alice.yolo
 nike.ape
 ```
 
-Label and namespace string requirements:
+Labels and namespaces are subject to the following format rules:
 - Must be 1–20 characters long
-- Must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
-- Cannot start or end with '-'
-- Cannot contain consecutive hyphens ('--')
+- Must consist only of lowercase letters (`a-z`), digits (`0-9`), and hyphens (`-`)
+- Cannot start or end with `-`
+- Cannot contain consecutive hyphens (`--`)
 - "eth" as namespace is disallowed to avoid confusion with ENS
 
-XNS also supports **bare names**, i.e. names without a suffix (e.g., `nike`, `vitalik`, `alice`). Bare names are premium names costing 10 ETH per name.
+**Valid name examples:**
+- ✅ `alice.xns`
+- ✅ `vitalik.100x`
+- ✅ `crypto-degen.yolo`
+- ✅ `to-the-moon.bull`
+- ✅ `gm.wen-lambo`
+- ✅ `2-rich.4-you`
 
-> **Note:** Labels and namespaces (both public and private) follow the same format rules: 1–20 characters, lowercase letters/digits/hyphens only (`a-z`, `0-9`, `-`), cannot start/end with hyphen, and cannot contain consecutive hyphens.
+**Invalid name examples:**
+- ❌ `thisisaveryverylongname.xns` (too long - max 20 characters)
+- ❌ `Name.xns` (uppercase not allowed)
+- ❌ `gm@web3.xyz` (cannot have special characters)
+- ❌ `-name.gm` (cannot start with hyphen)
+- ❌ `name-.og` (cannot end with hyphen)
+- ❌ `my--name.888` (cannot have consecutive hyphens)
+
+XNS also supports **bare names**, i.e. names without a namespace suffix (e.g., `nike`, `vitalik`, `alice-walker`, `1xy`). Bare names are premium names costing 10 ETH per name.
 
 
 ## ✨ How It Works
@@ -79,19 +93,6 @@ Registering an XNS name is straightforward:
 2. **Check the price**: Each namespace has a set price per name (see [price list](#🔥-xns-price-list) below)
 3. **Register**: Send a transaction with the required ETH amount to register your name
 4. **Verify**: Wait a few blocks, then verify your name is registered
-
-**Valid name examples:**
-- ✅ `alice.xns`
-- ✅ `bob.yolo`
-- ✅ `vitalik.100x`
-- ✅ `garry.ape`
-
-**Invalid name examples:**
-- ❌ `thisisaveryverylongname.xns` (too long - max 20 characters)
-- ❌ `Name.xns` (uppercase not allowed)
-- ❌ `-name.gm` (cannot start with hyphen)
-- ❌ `name-.og` (cannot end with hyphen)
-- ❌ `my--name.888` (cannot have consecutive hyphens)
 
 **Important notes:**
 - Each address can own **only one name**
@@ -114,7 +115,6 @@ You can register your name directly via [Etherscan](https://sepolia.etherscan.io
 
 **Example 2:** Registering the bare name `vitalik` (costs 10 ETH):
 <img width="664" height="296" alt="image" src="https://github.com/user-attachments/assets/a1fd1570-c946-4049-a812-528eed7c7878" />
-
 
 
 ### 💤 Namespace Registration
@@ -525,10 +525,51 @@ function registerName(string calldata label, string calldata namespace) external
 }
 ```
 
-### Getting the XNS Contract Address
 
-After contract deployment, applications can query the address via `getAddress("myprotocol.xns")` on Ethereum.
+## 📄 License and Deployment Policy
 
+XNS is licensed under the [Business Source License 1.1 (BUSL-1.1)](https://github.com/Walodja1987/xns/blob/main/LICENSE).
+
+This choice is intentional and motivated by **technical and user-safety considerations**, not by a desire to restrict innovation.
+
+### Why BUSL?
+
+XNS is an identity and naming primitive. Names like `alice.x` or `bankless` are meant to be
+**globally unique, permanent, and unambiguous**.
+
+Allowing unrestricted third-party deployments of the XNS registry on other chains would lead to:
+- the same name resolving to different addresses on different networks
+- phishing and social-engineering risks
+- user confusion about which contract deployment defines the canonical name-to-address mapping
+
+For identity infrastructure, this is unacceptable.
+
+The BUSL license ensures that:
+- there is a **single canonical XNS registry** on Ethereum
+- users can safely rely on name-address mappings
+- the mental model of XNS remains simple and trustworthy
+
+### What Is Allowed?
+
+- Reading the code
+- Auditing the code
+- Building tools, wallets, indexers, and integrations
+- Importing and using the public interfaces
+- Non-production and research use
+
+Interfaces and auxiliary files are intentionally kept under permissive licenses (MIT) to enable ecosystem adoption.
+
+### Open Source Commitment
+
+In line with BUSL-1.1, this codebase will automatically transition to an open-source license after the specified Change Date.
+
+However, even after the Change Date, XNS remains **Ethereum-canonical**. The identity, meaning, and trust of XNS names derive from the original
+deployment on Ethereum mainnet and its immutable history.
+
+Deployments of this code on other chains after the Change Date are not recognized as XNS and do not share any continuity, guarantees, or
+identity with the canonical registry.
+
+XNS does not support cross-chain name equivalence.
 
 
  ## 📚 Documentation
