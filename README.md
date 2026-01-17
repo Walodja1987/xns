@@ -68,40 +68,36 @@ Labels and namespaces are subject to the following format rules:
 **Invalid name examples:**
 - ❌ `thisisaveryverylongname.xns` (too long - max 20 characters)
 - ❌ `Name.xns` (uppercase not allowed)
-- ❌ `gm@web3.xyz` (cannot have special characters)
+- ❌ `gm@web3.xyz` (special characters not allowed)
 - ❌ `-name.gm` (cannot start with hyphen)
 - ❌ `name-.og` (cannot end with hyphen)
 - ❌ `my--name.888` (cannot have consecutive hyphens)
 
+
+#### Bare Names
+
 XNS also supports **bare names**, i.e. names without a namespace suffix (e.g., `nike`, `vitalik`, `alice-walker`, `1xy`). Bare names are premium names costing 10 ETH per name.
+
+> **Note:** Internally, all bare names are associated with the special namespace `"x"`. That is, `vitalik` and `vitalik.x` resolve to the same address.
 
 
 ## ✨ How It Works
 
-### ®️ Name Registration
+### Name Registration
 
 Registering an XNS name is straightforward:
 
-1. **Choose a name**: Pick a label (like `alice`) and a namespace (like `xns`) to create your name (`alice.xns`)
-2. **Check the price**: Each namespace has a set price per name (see [price list](#🔥-xns-price-list) below)
-3. **Register**: Send a transaction with the required ETH amount to register your name
-4. **Verify**: Wait a few blocks, then verify your name is registered
+1. **Check available namespaces**: Browse the [XNS price list](#🔥-xns-price-list) to see available namespaces and their registration fees (e.g., names within the `xns` namespace cost 0.001 ETH)
+2. **Choose a name**: Pick a name (e.g., `alice.xns`)
+3. **Register**: Send a transaction with the required ETH amount to register your name (see [`registerName`](https://github.com/Walodja1987/xns/blob/main/docs/API.md#registername) in API docs)
+4. **Verify**: Wait a few blocks, then verify your name is registered (see [`getAddress`](https://github.com/Walodja1987/xns/blob/main/docs/API.md#getAddress) and [`getName`](https://github.com/Walodja1987/xns/blob/main/docs/API.md#getName) in API docs)
 
-**Important notes:**
-- Each address can own **only one name**
-- Names are **permanent** and cannot be changed or transferred
-- For **public namespaces**: Anyone can register after the 30-day exclusivity period
-- For **private namespaces**: Only the namespace creator can register names
 
-> 💡 **For detailed technical information**, see the [API Reference](docs/API.md) for function signatures, parameters, and return values.
-
-Name registration fees are denominated in ETH and determined by the namespace (see [XNS Price List](#🔥-xns-price-list) below). **90% of registration fees** are **permanently burned**, supporting Ethereum's deflationary mechanism. Registrants receive [DETH credits](https://github.com/Walodja1987/deth) as burn attestations.
-
-### Name Registration via Etherscan
+#### Name Registration via Etherscan
 
 You can register your name directly via [Etherscan](https://sepolia.etherscan.io/address/0x4f1d1F8C7C96C2798B0A473fE35633A47dad37f9).
 
-> ⚠️**Important:** Ensure you are connected to the wallet address that you want to associate with the name.
+> ⚠️**Important:** Ensure you are connected to the wallet address that you want to name.
 
 <img width="302" height="82" alt="image" src="https://github.com/user-attachments/assets/628791be-b647-4bcc-b85f-f75289afac1c" />
 
@@ -111,8 +107,9 @@ You can register your name directly via [Etherscan](https://sepolia.etherscan.io
 **Example 2:** Registering the bare name `vitalik` (costs 10 ETH):
 <img width="664" height="296" alt="image" src="https://github.com/user-attachments/assets/a1fd1570-c946-4049-a812-528eed7c7878" />
 
+> **Note:** As mentioned earlier, bare names are internally mapped to the special namespace `"x"`. If you register a bare name like `vitalik`, you have to specify `"x"` as the namespace. The name `vitalik` resolves without the `.x` suffix.
 
-### 💤 Namespace Registration
+### Namespace Registration
 
 XNS supports two types of namespaces: **public** and **private**. Each has different rules, fees, and use cases.
 
@@ -211,6 +208,8 @@ Query any namespace to get information about:
 
 
 ## 🔥 XNS Price list
+
+> **Note**: The [price list](#🔥-xns-price-list) may not be complete as new namespaces can be added over time. It also does not include private namespaces.
 
 | Namespace | ETH Amount   |
 |  | --  |
