@@ -76,9 +76,9 @@ Label and namespace string requirements:
 
 Function to register a paid name for `msg.sender`. To register a bare name
 (e.g., "vitalik"), use "x" as the namespace parameter. 
-For public namespaces: Namespace creators have a 30-day exclusivity window to register a name for themselves.
+For public namespaces, namespace creators have a 30-day exclusivity window to register a name for themselves.
 Registrations are opened to the public after the 30-day exclusivity period.
-For private namespaces: Only the namespace creator may register a name for themselves.
+For private namespaces, only the namespace creator may register a name for themselves.
 
 **Requirements:**
 - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-',

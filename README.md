@@ -15,14 +15,14 @@
 
 ## Table of contents
 
-1. [Overview](#🚀-overview)
-2. [How It Works](#✨-how-it-works)
-3. [XNS Price list](#🔥-xns-price-list)
-4. [Namespace Creator Privileges](#👥-namespace-creator-privileges)
-5. [Contract Address](#🔗-contract-address)
-6. [Fees](#💰-fees)
-7. [Integration Guide for Contract Developers](#🔧-integration-guide-for-contract-developers)
-8. [License and Deployment Policy](#📄-license-and-deployment-policy)
+1. [Overview](#-overview)
+2. [How It Works](#-how-it-works)
+3. [XNS Price list](#-xns-price-list)
+4. [Namespace Creator Privileges](#-namespace-creator-privileges)
+5. [Contract Address](#-contract-address)
+6. [Fees](#-fees)
+7. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
+8. [License and Deployment Policy](#-license-and-deployment-policy)
 
 ### API Reference
 
@@ -40,13 +40,13 @@ See the [Developer Notes](docs/DEV_NOTES.md) for design decisions, code style gu
 
 **Key properties:**
 - **Permanent:** Each name is irrevocably bound to an Ethereum address; no expiration, no transfer, no resale.
-- **Globally unique:** Each name is unique across all Ethereum addresses, preventing conflicts like duplicate ERC20 token names.
 - **Universal naming:** Both EOAs and smart contracts can be named in the same unified registry.
-- **Permissionless namespaces:** Anyone can create and launch their own namespace by paying a registration fee, without requiring approval from any central party.
+- **Globally unique:** Each name is unique across all Ethereum addresses, preventing conflicts like duplicate ERC20 token names.
+- **Permissionless namespaces:** Anyone can create and launch their own namespace without requiring approval from any central party.
 - **Private namespaces:** Supports private namespaces where the creator maintains exclusive control over name registrations within their namespace.
 - **ETH burning:** 90% of registration fees are permanently burned, supporting Ethereum's deflationary mechanism.
 
-### 🏷 Name Format
+### Name Format
 
 XNS names follow the format `<label>.<namespace>`.
 
@@ -74,11 +74,11 @@ Labels and namespaces are subject to the following format rules:
 - ❌ `my--name.888` (cannot have consecutive hyphens)
 
 
-#### Bare Names
+### Bare Names
 
-XNS also supports **bare names**, i.e. names without a namespace suffix (e.g., `nike`, `vitalik`, `alice-walker`, `1xy`). Bare names are premium names costing 10 ETH per name.
+XNS supports **bare names**, i.e. names without a namespace suffix (e.g., `nike`, `vitalik`, `alice-walker`, `1xy`). Bare names are premium names costing 10 ETH per name.
 
-> **Note:** Internally, all bare names are associated with the special namespace `"x"`. That is, `vitalik` and `vitalik.x` resolve to the same address.
+> **Note:** Internally, all bare names are associated with the special namespace `"x"`. That is, `vitalik` and `vitalik.x` are the same and resolve to the same address.
 
 
 ## ✨ How It Works
@@ -87,10 +87,10 @@ XNS also supports **bare names**, i.e. names without a namespace suffix (e.g., `
 
 Registering an XNS name is straightforward:
 
-1. **Check available namespaces**: Browse the [XNS price list](#🔥-xns-price-list) to see available namespaces and their registration fees (e.g., names within the `xns` namespace cost 0.001 ETH)
-2. **Choose a name**: Pick a name (e.g., `alice.xns`)
-3. **Register**: Send a transaction with the required ETH amount to register your name (see [`registerName`](https://github.com/Walodja1987/xns/blob/main/docs/API.md#registername) in API docs)
-4. **Verify**: Wait a few blocks, then verify your name is registered (see [`getAddress`](https://github.com/Walodja1987/xns/blob/main/docs/API.md#getAddress) and [`getName`](https://github.com/Walodja1987/xns/blob/main/docs/API.md#getName) in API docs)
+1. **Check Available Namespaces**: Browse the [XNS price list](#-xns-price-list) to find available namespaces and their registration fees (e.g., names within the `xns` namespace cost 0.001 ETH).
+2. **Choose a Name**: e.g., `alice.xns` (must not be registered yet).
+3. **Register Name**: Send a transaction with the required ETH amount to register your name (see [`registerName`](https://github.com/Walodja1987/xns/blob/main/docs/API.md#registername) in API docs).
+4. **Verify Resolution**: Wait a few blocks, then verify your name is registered (see [`getAddress`](https://github.com/Walodja1987/xns/blob/main/docs/API.md#getAddress) and [`getName`](https://github.com/Walodja1987/xns/blob/main/docs/API.md#getName) in API docs).
 
 
 #### Name Registration via Etherscan
@@ -107,74 +107,9 @@ You can register your name directly via [Etherscan](https://sepolia.etherscan.io
 **Example 2:** Registering the bare name `vitalik` (costs 10 ETH):
 <img width="664" height="296" alt="image" src="https://github.com/user-attachments/assets/a1fd1570-c946-4049-a812-528eed7c7878" />
 
-> **Note:** As mentioned earlier, bare names are internally mapped to the special namespace `"x"`. If you register a bare name like `vitalik`, you have to specify `"x"` as the namespace. The name `vitalik` resolves without the `.x` suffix.
+> **Note:** As mentioned earlier, bare names are internally mapped to the special namespace `"x"`. If you register a bare name like `vitalik`, you have to specify `"x"` as the namespace. `vitalik` and `vitalik.x` are equivalent and resolve to the same address.
 
-### Namespace Registration
 
-XNS supports two types of namespaces: **public** and **private**. Each has different rules, fees, and use cases.
-
-#### Public Namespaces
-
-**What they are:**
-- Open to everyone after a 30-day exclusivity period
-- Anyone can register names in public namespaces (after exclusivity period)
-- Creator receives 5% of all name registration fees forever
-
-**How to register:**
-- Pay a one-time fee of **50 ETH** (contract owner pays 0 ETH during the first year)
-- Set your desired price per name (must be a multiple of 0.001 ETH)
-- You get 30 days of exclusive registration rights
-
-**Examples of valid namespaces:**
-- ✅ `yolo`, `100x`, `ape`, `001`
-- ✅ `my-public-ns`, `test-123` (hyphens allowed)
-- ❌ `YOLO` (uppercase not allowed)
-- ❌ `eth` (reserved to avoid confusion with ENS)
-
-**Examples:**
-- ✅ `yolo`
-- ✅ `100x`
-- ✅ `ape`
-- ✅ `001`
-- ✅ `my-public-ns` (hyphens allowed)
-- ✅ `test-123` (hyphens with digits)
-- ❌ `YOLO` (uppercase)
-- ❌`this-is-too-long-namespace` (more than 20 characters)
-- ❌`eth` (forbidden)
-- ❌`-my-ns` (starts with hyphen)
-- ❌`my-ns-` (ends with hyphen)
-- ❌`my--ns` (consecutive hyphens)
-
-**Additional comments:**
-- As the public namespace creator, you'll receive 5% of all name registration fees for names registered in your namespace forever.
-- After a 30-day exclusivity period, anyone can register names in your public namespace via `registerName`.
-
-#### Private Namespaces
-
-**What they are:**
-- Restricted to the creator forever
-- Only the creator can register names (no time limit)
-- Creator receives 0% of name registration fees (contract owner receives 10%)
-
-**How to register:**
-- Pay a one-time fee of **10 ETH** (contract owner pays 0 ETH during the first year)
-- Set your desired price per name (minimum 0.001 ETH, must be a multiple of 0.001 ETH)
-- You get **permanent exclusive rights** to register names in this namespace
-
-**Use cases:**
-- Organizations wanting to control who gets names in their namespace
-- Projects that want branded namespaces for their community
-- Any scenario where you want complete control over name registrations
-
-> 💡 **For technical details**, see the [API Reference](docs/API.md) for `registerPublicNamespace` and `registerPrivateNamespace` functions.
-
-### Namespace Registration via Etherscan
-
-You can register your name directly via [Etherscan](https://sepolia.etherscan.io/address/0x04c9AafC2d30857781dd1B3540411e24FA536e39).
-
-<img width="666" height="302" alt="image" src="https://github.com/user-attachments/assets/1bcea62d-4591-42f5-8507-665c0b5e59e2" />
-
-> 💡**Note:** In the screenshot, `2000000000000000` represents the registration price (in wei) for the namespace.
 
 ### Name Resolution
 
@@ -204,7 +139,49 @@ Query any namespace to get information about:
 
 > 💡 **For technical details**, see the [API Reference](docs/API.md) for `getNamespaceInfo` function.
 
+### Namespace Registration
 
+XNS supports public and private namespaces:
+
+#### Public Namespaces
+- **Open Registration:** Anyone can register names in a public namespace, but the creator enjoys an exclusive 30-day period after creation in which only they can register or sponsor names.
+- **Creator Rewards:** Public namespace creators receive 5% of all registration fees for names within their namespace, in perpetuity.
+- **Registration Fee:** The cost to register a public namespace is **50 ETH**.
+
+#### Private Namespaces
+- **Exclusive Registrations:** Only the creator may register names within a private namespace.
+- **No Creator Rewards:** The creator does not receive a share of name registration fees; it goes to the XNS contract owner.
+- **Registration Fee:** The cost to register a private namespace is **10 ETH**.
+
+**Typical use cases for private namespaces include:**
+- Organizations seeking to control who receives names under their brand.
+- Companies issuing tokenized assets that require a dedicated namespace (e.g., `ethereum-etf.blackrock`, `multi-asset-fund.blackrock`).
+- Projects wanting exclusive, branded namespaces for their communities.
+- Any situation requiring full control over registration rights and name allocation.
+
+**How to register a public namespace:**
+1. **Choose a Namespace:** Select an available namespace and set the desired price per name (must be a multiple of 0.001 ETH).
+2. **Register Namespace:** Submit a transaction with the required ETH to register the namespace (see [`registerPublicNamespace`](https://github.com/Walodja1987/xns/blob/main/docs/API.md#registerpublicnamespace) in the API docs).
+
+As the public namespace creator, you have an exclusive 30-day window to register or sponsor any name within your namespace. After this period, anyone can freely register names.
+
+**How to register a private namespace:**
+1. **Choose a Namespace:** Select an available namespace and set the desired price per name (must be a multiple of 0.001 ETH).
+2. **Register Namespace:** Submit a transaction with the required ETH to register the namespace (see [`registerPrivateNamespace`](https://github.com/Walodja1987/xns/blob/main/docs/API.md#registerprivatenamespace) in the API docs).
+
+The private namespace creator registers names via the authorized flow (see [`registerNameWithAuthorization`](https://github.com/Walodja1987/xns/blob/main/docs/API.md#registernamewithauthorization) in the API docs). The namespace creator can also use the [`registerName`](https://github.com/Walodja1987/xns/blob/main/docs/API.md#registername) function to register a name for themselves.
+
+**Notes:**
+- The `eth` namespace cannot be registered to avoid confusion with ENS.
+- The XNS contract owner may register namespaces for free during the first year after contract deployment in order to bootstrap the system.
+
+#### Example: Public Namespace Registration via Etherscan
+
+You can register your name directly via [Etherscan](https://sepolia.etherscan.io/address/0x04c9AafC2d30857781dd1B3540411e24FA536e39).
+
+<img width="666" height="302" alt="image" src="https://github.com/user-attachments/assets/1bcea62d-4591-42f5-8507-665c0b5e59e2" />
+
+> 💡**Note:** In the screenshot, `2000000000000000` (in wei) is the registration fee you set for users to pay when registering names in your namespace.
 
 
 ## 🔥 XNS Price list
@@ -217,61 +194,15 @@ Query any namespace to get information about:
 | more to come...        |     |
 
 
-
-
-## 👥 Namespace Creator Privileges
-
-**Important:** The namespace creator address is set at namespace creation time and **never changes**.
-
-- Creator privileges are tied to the specific address that created the namespace
-- These privileges are **immutable** and cannot be transferred
-
-### Public Namespace Creators
-
-- During the 30-day exclusivity period, only the creator can:
-  - Register paid names for themselves via `registerName`
-  - Sponsor paid name registrations for others via `registerNameWithAuthorization`
-- After 30 days, anyone can register names in the public namespace
-- Public namespace creators receive **5%** of all name registration fees forever
-
-### Private Namespace Creators
-
-- **Permanent exclusive rights**: Only the creator can register names forever (no time limit)
-- The creator can register names for themselves via `registerName`, or sponsor registrations for others via `registerNameWithAuthorization`
-- Private namespace creators receive **0%** of name registration fees (contract owner receives 10%)
-
-
-
-### Exclusive Period
-
-#### Public Namespaces
-
-For the first **30 days** after a public namespace is created:
-
-- **Only the namespace creator** may register paid names under that namespace
-- The creator can:
-  - Register a name for themselves using `registerName`
-  - Sponsor name registrations for others using `registerNameWithAuthorization` (requires recipient's EIP-712 signature)
-- Public `registerName` is **disabled** for non-creators during this period
-
-After 30 days:
-
-- Anyone may register paid names via `registerName`
-- Anyone may sponsor name registrations via `registerNameWithAuthorization`
-
-#### Private Namespaces
-
-- **Permanent exclusivity**: Only the namespace creator can register names forever
-- The creator can register names for themselves via `registerName`, or sponsor registrations for others via `registerNameWithAuthorization`
-- Non-creators cannot use `registerName` for private namespaces (they must be sponsored by the creator)
-
-
-
 ## 🧾 Contract Address
 
-The XNS contract is deployed on Ethereum at the following address: [xxx](https://etherscan.io/address/xxx)
+### Ethereum Mainnet
 
-<!-- [Contract deployment transaction](https://etherscan.io/tx/xxx) -->
+The official XNS contract is live on Ethereum mainnet at: [xxx](https://etherscan.io/address/xxx)
+
+This contract also owns the XNS "bare name": `xns`.
+
+### Sepolia Testnet
 
 For testing purposes, you can use the deployed contract on Sepolia at: [0x04c9AafC2d30857781dd1B3540411e24FA536e39](https://sepolia.etherscan.io/address/0x04c9AafC2d30857781dd1B3540411e24FA536e39)
 
