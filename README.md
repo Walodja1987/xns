@@ -36,31 +36,19 @@ See the [Developer Notes](docs/DEV_NOTES.md) for design decisions, code style gu
 
 ## 🚀 Overview
 
-**XNS** is an Ethereum-native name registry that **maps human-readable names to Ethereum addresses**. It allows both EOAs and smart contracts (including ERC20 tokens) to be named in a single unified registry.
-
-For example:
-- `vitalik.xns` ⟷ `0x123...abc` (Ethereum address)
-- `myprotocol.ape` ⟷ `0x456...def` (Smart contract address)
-- `myerc20.token` ⟷ `0xabc...556` (Smart contract address)
+**XNS** is an Ethereum-native name registry that **maps human-readable names to Ethereum addresses**. Share `vitalik.xns` or `my.token` instead of copying long hexadecimal strings.
 
 **Key properties:**
-- **Permanent:** Each is irrevocably bound to an Ethereum address; no expiration, no transfer, no resale.
+- **Permanent:** Each name is irrevocably bound to an Ethereum address; no expiration, no transfer, no resale.
 - **Globally unique:** Each name is unique across all Ethereum addresses, preventing conflicts like duplicate ERC20 token names.
-- **Universal naming:** Both smart contracts and EOAs can be named in the same unified registry.
-
-Name registration fees are denominated in ETH and determined by the namespace (see [XNS Price List](#🔥-xns-price-list) below). **90% of registration fees** are **permanently burned**, supporting Ethereum's deflationary mechanism. Registrants receive [DETH credits](https://github.com/Walodja1987/deth) as burn attestations.
+- **Universal naming:** Both EOAs and smart contracts can be named in the same unified registry.
+- **Permissionless namespaces:** Anyone can create and launch their own namespace by paying a registration fee, without requiring approval from any central party.
+- **Private namespaces:** Supports private namespaces where the creator maintains exclusive control over name registrations within their namespace.
+- **ETH burning:** 90% of registration fees are permanently burned, supporting Ethereum's deflationary mechanism.
 
 ### 🏷 Name Format
 
 XNS names follow the format `<label>.<namespace>`.
-
-Examples:
-
-```
-vitalik.001
-alice.yolo
-nike.ape
-```
 
 Labels and namespaces are subject to the following format rules:
 - Must be 1–20 characters long
@@ -106,6 +94,8 @@ Registering an XNS name is straightforward:
 - For **private namespaces**: Only the namespace creator can register names
 
 > 💡 **For detailed technical information**, see the [API Reference](docs/API.md) for function signatures, parameters, and return values.
+
+Name registration fees are denominated in ETH and determined by the namespace (see [XNS Price List](#🔥-xns-price-list) below). **90% of registration fees** are **permanently burned**, supporting Ethereum's deflationary mechanism. Registrants receive [DETH credits](https://github.com/Walodja1987/deth) as burn attestations.
 
 ### Name Registration via Etherscan
 
