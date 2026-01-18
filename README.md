@@ -190,7 +190,7 @@ The private namespace creator registers names via the authorized flow (see [`reg
 
 #### Example: Public Namespace Registration via Etherscan
 
-You can register your name directly via [Etherscan][etherscan-sepolia].
+You can register a namespace directly via [Etherscan][etherscan-sepolia].
 
 <img width="665" height="303" alt="image" src="https://github.com/user-attachments/assets/90b4cded-bb3c-468e-a645-5c6405bac0e0" />
 
@@ -427,15 +427,7 @@ contract YourContract {
 
 ### Documentation and Address Books
 
-When publishing contract addresses:
-
-* **If the address matches the Ethereum deployment:**
-
-  * Use the XNS name as the primary identifier
-    Example: `myprotocol.xns`
-* **If the address differs:**
-
-  * Use the raw address for that chain
+When publishing contract addresses, use the XNS name (e.g., `myprotocol.xns`) if the contract address matches the Ethereum deployment. If the address is different on another chain, use the raw address instead.
 
 Example:
 
