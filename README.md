@@ -18,11 +18,11 @@
 1. [Overview](#-overview)
 2. [How It Works](#-how-it-works) \
    2.1 [Name Registration](#name-registration) \
-   2.2 [Name Resolution](#-name-resolution) \
-   2.3 [Name Registration With Authorization](#-name-registration-with-authorization) \
-   2.4 [Namespace Registration](#-namespace-registration) \
-   2.5 [Namespace Infos](#-namespace-infos) \
-   2.6 [Registration Fees](#-registration-fees)
+   2.2 [Name Resolution](#name-resolution) \
+   2.3 [Name Registration With Authorization](#name-registration-with-authorization) \
+   2.4 [Namespace Registration](#namespace-registration) \
+   2.5 [Namespace Infos](#namespace-infos) \
+   2.6 [Registration Fees](#registration-fees)
 3. [XNS Price list](#-xns-price-list)
 4. [Contract Address](#-contract-address)
 5. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
