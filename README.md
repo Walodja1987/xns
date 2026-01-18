@@ -246,7 +246,7 @@ Fees earned by namespace creators and the XNS contract owner accumulate within t
 
 ## 🔥 XNS Price list
 
-> **Note**: The [price list](#🔥-xns-price-list) may not be complete as new namespaces can be added over time. It also does not include private namespaces.
+> **Note**: The price list may not be complete as new namespaces can be added over time. It also does not include private namespaces.
 
 | Namespace        | ETH Amount   |
 |------------------|-------------|
