@@ -19,9 +19,9 @@
 2. [How It Works](#-how-it-works) \
    2.1 [Name Registration](#-name-registration) \
    2.2 [Name Resolution](#-name-resolution) \
-   2.3 [Namespace Infos](#-namespace-infos) \
-   2.4 [Name Registration With Authorization](#-name-registration-with-authorization) \
-   2.5 [Namespace Registration](#-namespace-registration) \
+   2.3 [Name Registration With Authorization](#-name-registration-with-authorization) \
+   2.4 [Namespace Registration](#-namespace-registration) \
+   2.5 [Namespace Infos](#-namespace-infos) \
    2.6 [Registration Fees](#-registration-fees)
 3. [XNS Price list](#-xns-price-list)
 4. [Contract Address](#-contract-address)
@@ -125,15 +125,6 @@ XNS provides simple on-chain resolution for names and addresses.
 - Returns the full name format (e.g., `alice.001` or just `vitalik` for bare names).
 - Returns an empty string if the address has no name.
 
-### Namespace Infos
-
-You can retrieve namespace details using [`getNamespaceInfo`][api-getNamespaceInfo]. The details include:
-- Price per name
-- Creator address
-- Creation timestamp
-- Whether it's private or public
-
-
 ### Name Registration With Authorization
 
 XNS supports **authorized name registration** via [`registerNameWithAuthorization`][api-registerNameWithAuthorization], which allows a third party (sponsor) to pay the registration fee and gas costs while the recipient explicitly authorizes the registration via an EIP-712 signature.
@@ -210,6 +201,14 @@ To register a private namespace, use the [`registerPrivateNamespace`][api-regist
 **Example script:**
 * [Public/Private namespace registration][script-registerNamespace]
 
+### Namespace Infos
+
+You can retrieve namespace details using [`getNamespaceInfo`][api-getNamespaceInfo]. The details include:
+- Price per name
+- Creator address
+- Creation timestamp
+- Whether it's private or public
+
 ### Registration Fees
 
 **Name Registration Fees:**
@@ -223,6 +222,8 @@ To register a private namespace, use the [`registerPrivateNamespace`][api-regist
 - **10%** goes to the contract owner
 
 >**Note:** Namespace creators only receive fees from name registrations in their namespace (public namespaces only).
+
+All ETH burns are recorded via the [DETH contract](https://github.com/Walodja1987/deth), a global ETH sink and burn attestation registry. Burns are tracked and verifiable as non-transferrable DETH credits minted at a 1:1 ratio, providing proof of contribution to Ethereum's deflationary mechanism.
 
 #### Claiming Fees
 
@@ -271,7 +272,7 @@ XNS can be integrated into your smart contracts, allowing users to identify your
 
 > **Note:** The naming of smart contracts via XNS applies to **new smart contracts** only, not existing ones. Existing contracts cannot be retroactively named.
 
-This section includes examples of how to name your smart contracts on Ethereum, the canonical XNS chain, as well as a guide on using XNS with multi-chain deployments
+This section includes examples of how to name your smart contracts on Ethereum, the canonical XNS chain, as well as a guide on using XNS with multi-chain deployments.
 
 ### Integration on Ethereum
 
