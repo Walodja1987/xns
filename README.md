@@ -309,7 +309,7 @@ contract MyProtocol {
 
 Deploy with the `label`, `namespace`, and required payment to register the name during contract creation.
 
-See [`contracts/src/mocks/MockERC20A`][contract-MockERC20A] and the [`registerNameForERC20A.ts`][script-registerNameForERC20A] script for an example of how to register a name for an ERC20 token using the constructor method.
+See [`MockERC20A`][contract-MockERC20A] and the [`registerNameForERC20A.ts`][script-registerNameForERC20A] script for an example of how to register a name for an ERC20 token using the constructor method.
 
 > **Note:** Any excess payment is refunded by XNS to `msg.sender`, which will be your contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when deploying the contract.
 
@@ -343,7 +343,7 @@ contract MyProtocol {
 
 After deployment, call `registerName("myprotocol", "xns")` with the required payment to register the name.
 
-See [`contracts/src/mocks/MockERC20B`][contract-MockERC20B] and the [`registerNameForERC20B.ts`][script-registerNameForERC20B] script for an example of how to register a name for an ERC20 token using the separate [`registerName`][api-registerName] function approach.
+See [`MockERC20B`][contract-MockERC20B] and the [`registerNameForERC20B.ts`][script-registerNameForERC20B] script for an example of how to register a name for an ERC20 token using the separate [`registerName`][api-registerName] function approach.
 
 > **Note:** Any excess payment is refunded by XNS to `msg.sender`, which will be your contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when calling [`registerName`][api-registerName].
 
@@ -399,7 +399,7 @@ contract MyContractWallet {
 
 **Note:** The contract must implement EIP-1271's `isValidSignature` function. The sponsor pays all fees and gas costs. Unlike Options 1 and 2 where `receive()` is optional (needed only if excess payment is sent), Option 3 does **not** need a `receive()` function because any refunds go to the sponsor (the transaction sender), not to the contract.
 
-See [`contracts/src/mocks/MockERC20C`][contract-MockERC20C] and the [`registerNameWithAuthorizationForERC20C.ts`][script-registerNameWithAuthorizationForERC20C] script for an example of how to register a name for an ERC20 token using the EIP-1271 method.
+See [`MockERC20C`][contract-MockERC20C] and the [`registerNameWithAuthorizationForERC20C.ts`][script-registerNameWithAuthorizationForERC20C] script for an example of how to register a name for an ERC20 token using the EIP-1271 method.
 
 
 ### Using XNS Names with Multi-Chain Deployments
