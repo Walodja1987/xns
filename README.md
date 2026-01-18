@@ -16,14 +16,19 @@
 ## Table of contents
 
 1. [Overview](#-overview)
-2. [How It Works](#-how-it-works)
+2. [How It Works](#-how-it-works) \
+   2.1 [Name Registration](#-name-registration) \
+   2.2 [Name Resolution](#-name-resolution) \
+   2.3 [Namespace Infos](#-namespace-infos) \
+   2.4 [Name Registration With Authorization](#-name-registration-with-authorization) \
+   2.5 [Namespace Registration](#-namespace-registration) \
+   2.6 [Registration Fees](#-registration-fees)
 3. [XNS Price list](#-xns-price-list)
 4. [Contract Address](#-contract-address)
-5. [Registration Fees](#-registration-fees)
-6. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
-7. [License and Deployment Policy](#-license-and-deployment-policy)
-8. [API Reference](#-api-reference)
-9. [Developer Notes](#-developer-notes)
+5. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
+6. [License and Deployment Policy](#-license-and-deployment-policy)
+7. [API Reference](#-api-reference)
+8. [Developer Notes](#-developer-notes)
 
 ## 🚀 Overview
 
@@ -119,7 +124,7 @@ XNS provides simple on-chain resolution for names and addresses.
 - Returns the full name format (e.g., `alice.001` or just `vitalik` for bare names)
 - Returns an empty string if the address has no name
 
-### Namespace Queries
+### Namespace Infos
 
 You can retrieve namespace details using [`getNamespaceInfo`][api-getNamespaceInfo]. The details include:
 - Price per name
@@ -203,6 +208,31 @@ To register a private namespace, use the [`registerPrivateNamespace`][api-regist
 **Example script:**
 * [Public/Private namespace registration][script-registerNamespace]
 
+### Registration Fees
+
+**Name Registration Fees:**
+- **90%** of ETH is permanently burned (supporting Ethereum's deflationary mechanism)
+- **10%** is distributed as fees:
+  - **Public namespaces**: 5% to namespace creator + 5% to XNS contract owner
+  - **Private namespaces**: 10% to contract owner
+
+**Namespace Registration Fees:**
+- **90%** of ETH is permanently burned
+- **10%** goes to the contract owner
+
+>**Note:** Namespace creators only receive fees from name registrations in their namespace (public namespaces only).
+
+#### Claiming Fees
+
+Fees earned by namespace creators and the XNS contract owner accumulate within the XNS contract and must be claimed to be withdrawn. You can:
+- Check pending fees for any address ([`getPendingFees`][api-getPendingFees])
+- Claim fees to yourself ([`claimFeesToSelf`][api-claimFeesToSelf])
+- Claim fees to a different recipient ([`claimFees`][api-claimFees])
+
+**Example script:**
+* [Claim fees to self][script-claimFeesToSelf]
+* [Claim fees to a different recipient][script-claimFees]
+
 ## 🔥 XNS Price list
 
 > **Note**: The [price list](#🔥-xns-price-list) may not be complete as new namespaces can be added over time. It also does not include private namespaces.
@@ -232,31 +262,6 @@ The testnet contract has been parametrized as follows:
 - Onboarding period: 60 seconds (instead of 365 days)
 - Bare name price: 0.2 ether (instead of 10 ether)
 
-
-## 💰 Registration Fees
-
-**Name Registration Fees:**
-- **90%** of ETH is permanently burned (supporting Ethereum's deflationary mechanism)
-- **10%** is distributed as fees:
-  - **Public namespaces**: 5% to namespace creator + 5% to XNS contract owner
-  - **Private namespaces**: 10% to contract owner
-
-**Namespace Registration Fees:**
-- **90%** of ETH is permanently burned
-- **10%** goes to the contract owner
-
->**Note:** Namespace creators only receive fees from name registrations in their namespace (public namespaces only).
-
-### Claiming Fees
-
-Fees earned by namespace creators and the XNS contract owner accumulate within the XNS contract and must be claimed to be withdrawn. You can:
-- Check pending fees for any address ([`getPendingFees`][api-getPendingFees])
-- Claim fees to yourself ([`claimFeesToSelf`][api-claimFeesToSelf])
-- Claim fees to a different recipient ([`claimFees`][api-claimFees])
-
-**Example script:**
-* [Claim fees to self][script-claimFeesToSelf]
-* [Claim fees to a different recipient][script-claimFees]
 
 ## 🔧 Integration Guide for Contract Developers
 
