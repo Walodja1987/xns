@@ -320,7 +320,7 @@ contract MyProtocol {
     }
 
     /// @notice Optional: Accept ETH refunds from XNS if excess payment is sent.
-    /// Not needed if correct prices is sent, without any excess.
+    /// Not needed if the correct price is sent, without any excess.
     receive() external payable {}
 }
 ```
