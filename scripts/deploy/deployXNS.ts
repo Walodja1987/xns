@@ -30,7 +30,7 @@ function delay(ms: number) {
 
 // Namespace tiers: price (in ETH) -> namespace
 const NAMESPACE_TIERS: { priceETH: string; namespace: string }[] = [
-  { priceETH: "0.001", namespace: "xns" },
+  // { priceETH: "0.001", namespace: "xns" },
   // { priceETH: "0.002", namespace: "gm" },
   // { priceETH: "0.003", namespace: "long" },
   // { priceETH: "0.004", namespace: "wtf" },
