@@ -57,7 +57,7 @@ Labels and namespaces are subject to the following format rules:
 - ✅ `2-rich.4-you`
 
 **Invalid name examples:**
-- ❌ `thisisaveryverylongname.xns` (too long - max 20 characters)
+- ❌ `thisisaveryverylongname.xns` (too long label - max 20 characters)
 - ❌ `Name.xns` (uppercase not allowed)
 - ❌ `gm@web3.xyz` (special characters not allowed)
 - ❌ `-name.gm` (cannot start with hyphen)
@@ -109,19 +109,19 @@ You can register a name for your EOA directly via [Etherscan][etherscan-sepolia]
 
 XNS provides simple on-chain resolution for names and addresses.
 
-**Look up Address from Name: [`getAddress("yourxnsname")`][api-getAddress]**
+**Look up Address from Name: [`getAddress`][api-getAddress]**
 - Resolve a name like `vitalik.001` or `nike` to its Ethereum address
 - Works directly on Etherscan or any Ethereum interface
 - Returns `0x0000...` if the name is not registered
 
-**Look up Name from Address: [`getName(address)`][api-getName]**
+**Look up Name from Address: [`getName`][api-getName]**
 - Find the XNS name for any Ethereum address
 - Returns the full name format (e.g., `alice.001` or just `vitalik` for bare names)
 - Returns an empty string if the address has no name
 
 ### Namespace Queries
 
-You can retrieve namespace details using [`getNamespaceInfo("namespace")`][api-getNamespaceInfo]. The details include:
+You can retrieve namespace details using [`getNamespaceInfo`][api-getNamespaceInfo]. The details include:
 - Price per name
 - Creator address
 - Creation timestamp
@@ -249,7 +249,7 @@ The testnet contract has been parametrized as follows:
 
 ### Claiming Fees
 
-Fees earned by namespace creators and the XNS contract owner accumulate withitn the XNS contract and must be claimed to be withdrawn. You can:
+Fees earned by namespace creators and the XNS contract owner accumulate within the XNS contract and must be claimed to be withdrawn. You can:
 - Check pending fees for any address ([`getPendingFees`][api-getPendingFees])
 - Claim fees to yourself ([`claimFeesToSelf`][api-claimFeesToSelf])
 - Claim fees to a different recipient ([`claimFees`][api-claimFees])
@@ -264,11 +264,13 @@ XNS can be integrated into your smart contracts, allowing users to identify your
 
 > **Note:** The naming of smart contracts via XNS applies to **new smart contracts** only, not existing ones. Existing contracts cannot be retroactively named.
 
-This section includes examples how to name your smart contracts on Ethereum, the canonical XNS chain, as well as a guide on using XNS with multi-chain deployments
+This section includes examples of how to name your smart contracts on Ethereum, the canonical XNS chain, as well as a guide on using XNS with multi-chain deployments
 
 ### Integration on Ethereum
 
-For contracts deployed only on Ethereum only, there are three ways to integrate XNS:
+There are three ways to integrate XNS:
+
+> **Note:** The following examples demonstrate XNS integration for contracts that are only deployed on Ethereum. If you plan to deploy your contract on multiple chains, see the [Using XNS Names with Multi-Chain Deployments](#-using-xns-names-with-multi-chain-deployments) section below for important guidance and considerations.
 
 #### Option 1: Register via Constructor
 
@@ -284,14 +286,14 @@ contract MyProtocol {
     }
 
     /// @notice Optional: Accept ETH refunds from XNS if excess payment is sent.
-    /// Not needed if correct prices is sent, without any excess.
+    /// Not needed if the correct price is sent, without any excess.
     receive() external payable {}
 }
 ```
 
 Deploy with the `label`, `namespace`, and required payment to register the name during contract creation.
 
-See [`contracts/src/mocks/MockERC20A`][contract-MockERC20A] and [`scripts/examples/registerNameForERC20A.ts`][script-registerNameForERC20A] for an example of how to register a name for an ERC20 token using the constructor method.
+See [`contracts/src/mocks/MockERC20A`][contract-MockERC20A] and the [`registerNameForERC20A.ts`][script-registerNameForERC20A] script for an example of how to register a name for an ERC20 token using the constructor method.
 
 > **Note:** Any excess payment is refunded by XNS to `msg.sender`, which will be your contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when deploying the contract.
 
@@ -325,7 +327,7 @@ contract MyProtocol {
 
 After deployment, call `registerName("myprotocol", "xns")` with the required payment to register the name.
 
-See [`contracts/src/mocks/MockERC20B`][contract-MockERC20B] and [`scripts/examples/registerNameForERC20A.ts`][script-registerNameForERC20B] for an example of how to register a name for an ERC20 token using the separate `registerName` function approach.
+See [`contracts/src/mocks/MockERC20B`][contract-MockERC20B] and the [`registerNameForERC20B.ts`][script-registerNameForERC20B] script for an example of how to register a name for an ERC20 token using the separate `registerName` function approach.
 
 > **Note:** Any excess payment is refunded by XNS to `msg.sender`, which will be your contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when calling `registerName`.
 
@@ -381,7 +383,7 @@ contract MyContractWallet {
 
 **Note:** The contract must implement EIP-1271's `isValidSignature` function. The sponsor pays all fees and gas costs. Unlike Options 1 and 2 where `receive()` is optional (needed only if excess payment is sent), Option 3 does **not** need a `receive()` function because any refunds go to the sponsor (the transaction sender), not to the contract.
 
-See [`contracts/src/mocks/MockERC20C`][contract-MockERC20C] and [`scripts/examples/registerNameWithAuthorizationForERC20C.ts`][script-registerNameWithAuthorizationForERC20C] for an example of how to register a name for an ERC20 token using the EIP-1271 method.
+See [`contracts/src/mocks/MockERC20C`][contract-MockERC20C] and the [`registerNameWithAuthorizationForERC20C.ts`][script-registerNameWithAuthorizationForERC20C] script for an example of how to register a name for an ERC20 token using the EIP-1271 method.
 
 
 ### Using XNS Names with Multi-Chain Deployments
