@@ -135,7 +135,7 @@ XNS supports **authorized name registration** via [`registerNameWithAuthorizatio
 
 **How it works:**
 1. The recipient signs an EIP-712 message authorizing a specific name registration (label, namespace, and recipient address).
-2. The sponsor calls `registerNameWithAuthorization` with the recipient's signature and pays the registration fee.
+2. The sponsor calls [`registerNameWithAuthorization`][api-registerNameWithAuthorization] with the recipient's signature and pays the registration fee.
 3. The name is registered to the recipient's address.
 
 **Use cases:**
@@ -145,7 +145,7 @@ XNS supports **authorized name registration** via [`registerNameWithAuthorizatio
 - Any scenario where someone else pays registration fees on your behalf.
 
 **Important restrictions:**
-- For public namespaces: Only the namespace creator can sponsor registrations during the 30-day exclusivity period.
+- For public namespaces: During the 30-day exclusivity period, only the namespace creator can sponsor registrations.
 - For private namespaces: Only the namespace creator can sponsor registrations forever.
 
 **Batch registration:** 
@@ -343,9 +343,9 @@ contract MyProtocol {
 
 After deployment, call `registerName("myprotocol", "xns")` with the required payment to register the name.
 
-See [`contracts/src/mocks/MockERC20B`][contract-MockERC20B] and the [`registerNameForERC20B.ts`][script-registerNameForERC20B] script for an example of how to register a name for an ERC20 token using the separate `registerName` function approach.
+See [`contracts/src/mocks/MockERC20B`][contract-MockERC20B] and the [`registerNameForERC20B.ts`][script-registerNameForERC20B] script for an example of how to register a name for an ERC20 token using the separate [`registerName`][api-registerName] function approach.
 
-> **Note:** Any excess payment is refunded by XNS to `msg.sender`, which will be your contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when calling `registerName`.
+> **Note:** Any excess payment is refunded by XNS to `msg.sender`, which will be your contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when calling [`registerName`][api-registerName].
 
 #### Option 3: Sponsored Registration via EIP-1271
 
@@ -387,10 +387,10 @@ contract MyContractWallet {
 ```
 
 **How it works:**
-1. The contract (or its owner) signs an EIP-712 message authorizing the name registration
-2. A sponsor calls `registerNameWithAuthorization` on XNS, providing the contract as the recipient
-3. XNS validates the signature via the contract's `isValidSignature` function
-4. The sponsor pays the registration fee
+1. The contract (or its owner) signs an EIP-712 message authorizing the name registration.
+2. A sponsor calls [`registerNameWithAuthorization`][api-registerNameWithAuthorization] on XNS, providing the contract as the recipient.
+3. XNS validates the signature via the contract's `isValidSignature` function (EIP-1271).
+4. The sponsor pays the registration fee.
 
 **Use cases:**
 - Contract wallets (Safe, Argent, etc.) that want to be named
@@ -415,7 +415,7 @@ This section is intended for teams that:
 
 #### Deployment Pattern
 
-The recommended deployment pattern is to add a dedicated `registerName` function to your contract that performs XNS name registration on Ethereum mainnet (`chainId = 1`) and reverts on other chains. Once your contract is deployed, you invoke `registerName` on Ethereum mainnet to link the XNS name to your contract address.
+The recommended deployment pattern is to add a dedicated [`registerName`][api-registerName] function to your contract that performs XNS name registration on Ethereum mainnet (`chainId = 1`) and reverts on other chains. Once your contract is deployed, you invoke [`registerName`][api-registerName] on Ethereum mainnet to link the XNS name to your contract address.
 
 Example:
 

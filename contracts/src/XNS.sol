@@ -152,6 +152,9 @@ contract XNS is EIP712 {
     /// @notice Namespace associated with bare names (e.g. "vitalik" = "vitalik.x").
     string public constant BARE_NAME_NAMESPACE = "x";
 
+    /// @notice Price for registering a bare name (e.g. "vitalik").
+    uint256 public constant BARE_NAME_PRICE = 10 ether;
+
     /// @notice Address of DETH contract used to burn ETH and credit the recipient.
     address public constant DETH = 0xE46861C9f28c46F27949fb471986d59B256500a7;
 
@@ -183,16 +186,15 @@ contract XNS is EIP712 {
         OWNER = owner;
         DEPLOYED_AT = uint64(block.timestamp);
 
-        // Register special public namespace "x" as the very first namespace.
-        uint256 specialNamespacePrice = 10 ether;
+        // Register special public namespace "x" associated with bare names as the very first namespace.
         _namespaces[keccak256(bytes(BARE_NAME_NAMESPACE))] = NamespaceData({
-            pricePerName: specialNamespacePrice,
+            pricePerName: BARE_NAME_PRICE,
             creator: owner,
             createdAt: uint64(block.timestamp),
             isPrivate: false
         });
 
-        emit NamespaceRegistered(BARE_NAME_NAMESPACE, specialNamespacePrice, owner, false);
+        emit NamespaceRegistered(BARE_NAME_NAMESPACE, BARE_NAME_PRICE, owner, false);
 
         // Register bare name "xns" for the XNS contract itself.
         string memory contractLabel = "xns";

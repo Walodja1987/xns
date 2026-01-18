@@ -633,6 +633,19 @@ string BARE_NAME_NAMESPACE
 
 
 
+### BARE_NAME_PRICE
+
+
+Price for registering a bare name (e.g. "vitalik").
+
+```solidity
+uint256 BARE_NAME_PRICE
+```
+
+
+
+
+
 ### DETH
 
 

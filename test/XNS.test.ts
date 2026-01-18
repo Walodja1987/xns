@@ -158,6 +158,9 @@ describe("XNS", function () {
         // Should have correct BARE_NAME_NAMESPACE ("x")
         expect(await s.xns.BARE_NAME_NAMESPACE()).to.equal("x");
 
+        // Should have correct BARE_NAME_PRICE (10 ether)
+        expect(await s.xns.BARE_NAME_PRICE()).to.equal(ethers.parseEther("10"));
+
         // Should have correct DETH address
         expect(await s.xns.DETH()).to.equal("0xE46861C9f28c46F27949fb471986d59B256500a7");
     });
