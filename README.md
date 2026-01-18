@@ -38,7 +38,7 @@
 - **Permanent:** Each name is irrevocably bound to an Ethereum address; no expiration, no transfer, no resale.
 - **Universal naming:** Both EOAs and smart contracts can be named in the same unified registry.
 - **Globally unique:** Each name is unique across all Ethereum addresses, preventing conflicts like duplicate ERC20 token names.
-- **Permissionless namespaces:** Anyone can create and launch their own namespace without requiring approval from any central party.
+- **Permissionless namespaces:** Anyone can create their own namespace without requiring approval from any central party.
 - **Private namespaces:** Supports private namespaces where the creator maintains exclusive control over name registrations within their namespace.
 - **ETH burning:** 90% of registration fees are permanently burned, supporting Ethereum's deflationary mechanism.
 
@@ -59,16 +59,17 @@ Labels and namespaces are subject to the following format rules:
 - ✅ `crypto-degen.yolo`
 - ✅ `to-the-moon.bull`
 - ✅ `gm.wen-lambo`
-- ✅ `2-rich.4-you`
+- ✅ `2-rich.4-real`
 
 **Invalid name examples:**
-- ❌ `thisisaveryverylongname.xns` (too long label - max 20 characters)
-- ❌ `Name.xns` (uppercase not allowed)
-- ❌ `gm@web3.xyz` (special characters not allowed)
-- ❌ `-name.gm` (cannot start with hyphen)
-- ❌ `name-.og` (cannot end with hyphen)
-- ❌ `my--name.888` (cannot have consecutive hyphens)
+- ❌ `thisisaveryverylongname.xns` (label too long)
+- ❌ `Name.xns` (uppercase in label)
+- ❌ `gm@web3.xyz` (special character in label)
+- ❌ `-name.gm` (label cannot start with hyphen)
+- ❌ `name-.og` (label cannot end with hyphen)
+- ❌ `my--name.888` (label cannot have consecutive hyphens)
 
+The same format rules apply to namespaces as well (e.g., `my.--name`, `info.$`, `-ns.xns` are all invalid).
 
 ### Bare Names
 
