@@ -89,3 +89,6 @@ out
 
 # Directory including context files
 context
+
+# Documentation files
+docs/SECURITY_CHECKLIST.md

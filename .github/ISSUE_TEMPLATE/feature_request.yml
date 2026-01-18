@@ -1,15 +1,15 @@
 name: "Feature Request"
-description: "Suggest an idea for Hardhat project template."
+description: "Suggest an idea for XNS."
 title: "[Feature-Request]: "
 labels:
   - enhancement
 assignees:
-  - pcaversaccio
+  - walodja1987
 body:
   - attributes:
       value: |
-        Please check the [issues tab](https://github.com/pcaversaccio/hardhat-project-template-ts/issues) to avoid duplicates.
-        Thanks for taking the time to provide feedback on my Hardhat project template!
+        Please check the [issues tab](https://github.com/Walodja1987/xns/issues) to avoid duplicates.
+        Thanks for taking the time to provide feedback on XNS!
     type: markdown
 
   - attributes:

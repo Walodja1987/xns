@@ -1,4 +1,4 @@
-# XNS – The Permanent Name Registry on Ethereum
+# XNS – The Name Registry on Ethereum
 
 ```
 //////////////////////////////
@@ -15,97 +15,90 @@
 
 ## Table of contents
 
-1. [Overview](#🚀-overview)
-2. [How It Works](#✨-how-it-works)
-3. [XNS Price list](#🔥-xns-price-list)
-4. [Namespace Creator Privileges](#👥-namespace-creator-privileges)
-5. [Contract Address](#🔗-contract-address)
-6. [Fees](#💰-fees)
-7.  [Integration Guide for Contract Developers](#🔧-integration-guide-for-contract-developers)
-
-### API Reference
-
-See the [API Reference](docs/API.md) for complete documentation of all XNS contract functions, events, state variables, and types.
-
-### Developer Notes
-
-See the [Developer Notes](docs/DEV_NOTES.md) for design decisions, code style guidelines, governance considerations, and known limitations. This document is primarily intended for auditors and developers working on the XNS contract.
-
-
+1. [Overview](#-overview)
+2. [How It Works](#-how-it-works) \
+   2.1 [Name Registration](#-name-registration) \
+   2.2 [Name Resolution](#-name-resolution) \
+   2.3 [Name Registration With Authorization](#-name-registration-with-authorization) \
+   2.4 [Namespace Registration](#-namespace-registration) \
+   2.5 [Namespace Infos](#-namespace-infos) \
+   2.6 [Registration Fees](#-registration-fees)
+3. [XNS Price list](#-xns-price-list)
+4. [Contract Address](#-contract-address)
+5. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
+6. [License and Deployment Policy](#-license-and-deployment-policy)
+7. [API Reference](#-api-reference)
+8. [Developer Notes](#-developer-notes)
 
 ## 🚀 Overview
 
-**XNS** is a decentralized, Ethereum-native name registry that **maps human-readable names to Ethereum addresses**.
+**XNS** is an Ethereum-native name registry that **maps human-readable names to Ethereum addresses**. Share `vitalik.xns` or `my.token` instead of copying long hexadecimal strings.
 
 **Key properties:**
-- **Permanent, immutable, and non-transferable**: Names are forever linked to the owner's address. There is no secondary market or resale mechanism.
-- **One name per address**: Each address can own at most one XNS name, ensuring clear identity mapping and simple reverse lookup.
-- **Fully on-chain**: All resolution is done via on-chain view functions and can be queried directly via **Etherscan**; no indexers required.
+- **Permanent:** Each name is irrevocably bound to an Ethereum address; no expiration, no transfer, no resale.
+- **Universal naming:** Both EOAs and smart contracts can be named in the same unified registry.
+- **Globally unique:** Each name is unique across all Ethereum addresses, preventing conflicts like duplicate ERC20 token names.
+- **Permissionless namespaces:** Anyone can create their own namespace without requiring approval from any central party.
+- **Private namespaces:** Supports private namespaces where the creator maintains exclusive control over name registrations within their namespace.
+- **ETH burning:** 90% of registration fees are permanently burned, supporting Ethereum's deflationary mechanism.
 
-Registration works by **burning ETH**, supporting Ethereum's deflationary mechanism. Registrants receive DETH credits that can be used as burn attestations in downstream applications. See the [DETH contract repository](https://github.com/Walodja1987/deth) for details.
-
-
-### 🏷 Name Format
+### Name Format
 
 XNS names follow the format `<label>.<namespace>`.
 
-Examples:
-
-```
-vitalik.001
-alice.yolo
-nike.ape
-```
-
-Label and namespace string requirements:
+Labels and namespaces are subject to the following format rules:
 - Must be 1–20 characters long
-- Must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
-- Cannot start or end with '-'
-- Cannot contain consecutive hyphens ('--')
+- Must consist only of lowercase letters (`a-z`), digits (`0-9`), and hyphens (`-`)
+- Cannot start or end with `-`
+- Cannot contain consecutive hyphens (`--`)
 - "eth" as namespace is disallowed to avoid confusion with ENS
 
-XNS also supports **bare names**, i.e. names without a suffix (e.g., `nike`, `vitalik`, `alice`). Bare names are premium names costing 10 ETH per name.
+**Valid name examples:**
+- ✅ `alice.xns`
+- ✅ `vitalik.100x`
+- ✅ `crypto-degen.yolo`
+- ✅ `to-the-moon.bull`
+- ✅ `gm.wen-lambo`
+- ✅ `2-rich.4-real`
 
-> **Note:** Labels and namespaces (both public and private) follow the same format rules: 1–20 characters, lowercase letters/digits/hyphens only (`a-z`, `0-9`, `-`), cannot start/end with hyphen, and cannot contain consecutive hyphens.
+**Invalid name examples:**
+- ❌ `thisisaveryverylongname.xns` (label too long)
+- ❌ `Name.xns` (uppercase in label)
+- ❌ `gm@web3.xyz` (special character in label)
+- ❌ `-name.gm` (label cannot start with hyphen)
+- ❌ `name-.og` (label cannot end with hyphen)
+- ❌ `my--name.888` (label cannot have consecutive hyphens)
+
+The same format rules apply to namespaces as well (e.g., `my.--name`, `info.$`, `-ns.xns` are all invalid).
+
+### Bare Names
+
+XNS supports **bare names**, i.e. names without a namespace suffix (e.g., `nike`, `vitalik`, `alice-walker`, `1xy`). Bare names are premium names costing 10 ETH per name.
+
+> **Note:** Internally, all bare names are associated with the special namespace `"x"`. That is, `vitalik` and `vitalik.x` are the same and resolve to the same address.
 
 
 ## ✨ How It Works
 
-### ®️ Name Registration
+### Name Registration
 
 Registering an XNS name is straightforward:
 
-1. **Choose a name**: Pick a label (like `alice`) and a namespace (like `xns`) to create your name (`alice.xns`)
-2. **Check the price**: Each namespace has a set price per name (see [price list](#🔥-xns-price-list) below)
-3. **Register**: Send a transaction with the required ETH amount to register your name
-4. **Verify**: Wait a few blocks, then verify your name is registered
+1. **Check Available Namespaces**: Browse the [XNS price list](#-xns-price-list) to find available namespaces and their registration fees (e.g., names within the `xns` namespace cost 0.001 ETH).
+2. **Choose a Name**: e.g., `alice.xns` (must not be registered yet).
+3. **Register Name**: Send a transaction with the required ETH amount to register your name (see [`registerName`][api-registerName] in API docs). Any excess will be refunded.
+4. **Verify Resolution**: Wait a few blocks, then verify your name is registered (see [`getAddress`][api-getAddress] and [`getName`][api-getName] in API docs).
 
-**Valid name examples:**
-- ✅ `alice.xns`
-- ✅ `bob.yolo`
-- ✅ `vitalik.100x`
-- ✅ `garry.ape`
+**Example scripts:**
+* [Name registration for EOA][script-registerName]
+* [Name registration for ERC20 token (via constructor)][script-registerNameForERC20A]
+* [Name registration for ERC20 token (via separate `registerName` function)][script-registerNameForERC20B]
 
-**Invalid name examples:**
-- ❌ `thisisaveryverylongname.xns` (too long - max 20 characters)
-- ❌ `Name.xns` (uppercase not allowed)
-- ❌ `-name.gm` (cannot start with hyphen)
-- ❌ `name-.og` (cannot end with hyphen)
-- ❌ `my--name.888` (cannot have consecutive hyphens)
+#### Name Registration via Etherscan
 
-**Important notes:**
-- Each address can own **only one name**
-- Names are **permanent** and cannot be changed or transferred
-- For **public namespaces**: Anyone can register after the 30-day exclusivity period
-- For **private namespaces**: Only the namespace creator can register names
+You can register a name for your EOA directly via [Etherscan][etherscan-sepolia].
 
-> 💡 **For detailed technical information**, see the [API Reference](docs/API.md) for function signatures, parameters, and return values.
-
-### Name Registration via Etherscan
-
-You can register your name directly via [Etherscan](https://sepolia.etherscan.io/address/0x4f1d1F8C7C96C2798B0A473fE35633A47dad37f9).
-
-> ⚠️**Important:** Ensure you are connected to the wallet address that you want to associate with the name.
+> ⚠️**Important:** Ensure you are connected to the wallet address that you want to name.
 
 <img width="302" height="82" alt="image" src="https://github.com/user-attachments/assets/628791be-b647-4bcc-b85f-f75289afac1c" />
 
@@ -115,171 +108,163 @@ You can register your name directly via [Etherscan](https://sepolia.etherscan.io
 **Example 2:** Registering the bare name `vitalik` (costs 10 ETH):
 <img width="664" height="296" alt="image" src="https://github.com/user-attachments/assets/a1fd1570-c946-4049-a812-528eed7c7878" />
 
+> **Note:** As mentioned earlier, bare names are internally mapped to the special namespace `"x"`. If you register a bare name like `vitalik`, you have to specify `"x"` as the namespace. `vitalik` and `vitalik.x` are equivalent and resolve to the same address.
 
-
-### 💤 Namespace Registration
-
-XNS supports two types of namespaces: **public** and **private**. Each has different rules, fees, and use cases.
-
-#### Public Namespaces
-
-**What they are:**
-- Open to everyone after a 30-day exclusivity period
-- Anyone can register names in public namespaces (after exclusivity period)
-- Creator receives 5% of all name registration fees forever
-
-**How to register:**
-- Pay a one-time fee of **50 ETH** (contract owner pays 0 ETH during the first year)
-- Set your desired price per name (must be a multiple of 0.001 ETH)
-- You get 30 days of exclusive registration rights
-
-**Examples of valid namespaces:**
-- ✅ `yolo`, `100x`, `ape`, `001`
-- ✅ `my-public-ns`, `test-123` (hyphens allowed)
-- ❌ `YOLO` (uppercase not allowed)
-- ❌ `eth` (reserved to avoid confusion with ENS)
-
-**Examples:**
-- ✅ `yolo`
-- ✅ `100x`
-- ✅ `ape`
-- ✅ `001`
-- ✅ `my-public-ns` (hyphens allowed)
-- ✅ `test-123` (hyphens with digits)
-- ❌ `YOLO` (uppercase)
-- ❌`this-is-too-long-namespace` (more than 20 characters)
-- ❌`eth` (forbidden)
-- ❌`-my-ns` (starts with hyphen)
-- ❌`my-ns-` (ends with hyphen)
-- ❌`my--ns` (consecutive hyphens)
-
-**Additional comments:**
-- As the public namespace creator, you'll receive 5% of all name registration fees for names registered in your namespace forever.
-- After a 30-day exclusivity period, anyone can register names in your public namespace via `registerName`.
-
-#### Private Namespaces
-
-**What they are:**
-- Restricted to the creator forever
-- Only the creator can register names (no time limit)
-- Creator receives 0% of name registration fees (contract owner receives 10%)
-
-**How to register:**
-- Pay a one-time fee of **10 ETH** (contract owner pays 0 ETH during the first year)
-- Set your desired price per name (minimum 0.001 ETH, must be a multiple of 0.001 ETH)
-- You get **permanent exclusive rights** to register names in this namespace
-
-**Use cases:**
-- Organizations wanting to control who gets names in their namespace
-- Projects that want branded namespaces for their community
-- Any scenario where you want complete control over name registrations
-
-> 💡 **For technical details**, see the [API Reference](docs/API.md) for `registerPublicNamespace` and `registerPrivateNamespace` functions.
-
-### Namespace Registration via Etherscan
-
-You can register your name directly via [Etherscan](https://sepolia.etherscan.io/address/0x04c9AafC2d30857781dd1B3540411e24FA536e39).
-
-<img width="666" height="302" alt="image" src="https://github.com/user-attachments/assets/1bcea62d-4591-42f5-8507-665c0b5e59e2" />
-
-> 💡**Note:** In the screenshot, `2000000000000000` represents the registration price (in wei) for the namespace.
 
 ### Name Resolution
 
 XNS provides simple on-chain resolution for names and addresses.
 
-**Forward Lookup (Name → Address):**
-- Resolve a name like `vitalik.001` or `nike` to its Ethereum address
-- Works directly on Etherscan or any Ethereum interface
-- Returns `0x0000...` if the name is not registered
+**Look up Address from Name: [`getAddress`][api-getAddress]**
+- Resolve a name like `vitalik.001` or `nike` to its Ethereum address.
+- Works directly on Etherscan or any Ethereum interface.
+- Returns `0x0000...` if the name is not registered.
 
-**Reverse Lookup (Address → Name):**
-- Find the XNS name for any Ethereum address
-- Returns the full name format (e.g., `alice.001` or just `vitalik` for bare names)
-- Returns an empty string if the address has no name
+**Look up Name from Address: [`getName`][api-getName]**
+- Find the XNS name for any Ethereum address.
+- Returns the full name format (e.g., `alice.001` or just `vitalik` for bare names).
+- Returns an empty string if the address has no name.
 
-> 💡 **For technical details**, see the [API Reference](docs/API.md) for `getAddress` and `getName` functions.
+**Example scripts:**
+* [Look up address from name][script-getAddress]
+* [Look up name from address][script-getName]
 
+### Name Registration With Authorization
 
+XNS supports **authorized name registration** via [`registerNameWithAuthorization`][api-registerNameWithAuthorization], which allows a third party (sponsor) to pay the registration fee and gas costs while the recipient explicitly authorizes the registration via an EIP-712 signature.
 
-### Namespace Queries
+**How it works:**
+1. The recipient signs an EIP-712 message authorizing a specific name registration (label, namespace, and recipient address).
+2. The sponsor calls [`registerNameWithAuthorization`][api-registerNameWithAuthorization] with the recipient's signature and pays the registration fee.
+3. The name is registered to the recipient's address.
 
-Query any namespace to get information about:
+**Use cases:**
+- Organizations registering names for their team members.
+- Projects airdropping names to their community.
+- Enabling contract wallets (EIP-1271) to register names, as contracts can't send transactions themselves.
+- Any scenario where someone else pays registration fees on your behalf.
+
+**Important restrictions:**
+- For public namespaces: During the 30-day exclusivity period, only the namespace creator can sponsor registrations.
+- For private namespaces: Only the namespace creator can sponsor registrations forever.
+
+**Batch registration:** 
+XNS also supports [`batchRegisterNameWithAuthorization`][api-batchRegisterNameWithAuthorization] to register multiple names in a single transaction. See the API documentation for details.
+
+**Example scripts:**
+* [Name registration with authorization for EOA][script-registerNameWithAuthorization]
+* [Name registration with authorization for ERC20 token][script-registerNameWithAuthorizationForERC20]
+* [Batch name registration with authorization][script-batchRegisterNameWithAuthorization]
+
+### Namespace Registration
+
+XNS supports public and private namespaces:
+
+#### Public Namespaces
+- **Open Registration:** Anyone can register names in a public namespace, but the creator enjoys an exclusive 30-day period after creation in which only they can register or sponsor names.
+- **Creator Rewards:** Public namespace creators receive 5% of all registration fees for names within their namespace, in perpetuity.
+- **Registration Fee:** The cost to register a public namespace is **50 ETH**.
+
+#### Private Namespaces
+- **Exclusive Registrations:** Only the creator may register names within a private namespace.
+- **No Creator Rewards:** The creator does not receive a share of name registration fees; it goes to the XNS contract owner.
+- **Registration Fee:** The cost to register a private namespace is **10 ETH**.
+
+**Typical use cases for private namespaces include:**
+- Organizations seeking to control who receives names under their brand.
+- Companies issuing tokenized assets that require a dedicated namespace (e.g., `ethereum-etf.blackrock`, `multi-asset-fund.blackrock`).
+- Projects wanting exclusive, branded namespaces for their communities.
+- Any situation requiring full control over registration rights and name allocation.
+
+**How to register a public namespace:**
+1. **Choose a Namespace:** Select an available namespace and set the desired price per name (must be a multiple of 0.001 ETH).
+2. **Register Namespace:** Submit a transaction with the required ETH to register the namespace (see [`registerPublicNamespace`][api-registerPublicNamespace] in the API docs). Any excess will be refunded.
+
+As the public namespace creator, you have an exclusive 30-day window to register or sponsor any name within your namespace. After this period, anyone can freely register names.
+
+**How to register a private namespace:**
+1. **Choose a Namespace:** Select an available namespace and set the desired price per name (must be a multiple of 0.001 ETH).
+2. **Register Namespace:** Submit a transaction with the required ETH to register the namespace (see [`registerPrivateNamespace`][api-registerPrivateNamespace] in the API docs). Any excess will be refunded.
+
+The private namespace creator registers names via the authorized flow (see [`registerNameWithAuthorization`][api-registerNameWithAuthorization] in the API docs). The namespace creator can also use the [`registerName`][api-registerName] function to register a name for themselves.
+
+**Notes:**
+- The `eth` namespace cannot be registered to avoid confusion with ENS.
+- The XNS contract owner may register namespaces for free during the first year after contract deployment in order to bootstrap the system.
+
+#### Example: Public Namespace Registration via Etherscan
+
+You can register a namespace directly via [Etherscan][etherscan-sepolia].
+
+<img width="665" height="303" alt="image" src="https://github.com/user-attachments/assets/90b4cded-bb3c-468e-a645-5c6405bac0e0" />
+
+> 💡**Note:** In the screenshot, `2000000000000000` (in wei) is the registration fee you set for users to pay when registering names in your namespace.
+
+To register a private namespace, use the [`registerPrivateNamespace`][api-registerPrivateNamespace] function with the same input fields as the public version. The required registration fee is **10 ETH** (entered in the first field instead of 50); if you send more than 10 ETH, the excess will be automatically refunded.
+
+**Example script:**
+* [Public/Private namespace registration][script-registerNamespace]
+
+### Namespace Infos
+
+You can retrieve namespace details using [`getNamespaceInfo`][api-getNamespaceInfo]. The details include:
 - Price per name
 - Creator address
 - Creation timestamp
 - Whether it's private or public
 
-> 💡 **For technical details**, see the [API Reference](docs/API.md) for `getNamespaceInfo` function.
+**Example script:**
+* [Query namespace info][script-getNamespaceInfo]
 
+### Registration Fees
 
+**Name Registration Fees:**
+- **90%** of ETH is permanently burned (supporting Ethereum's deflationary mechanism)
+- **10%** is distributed as fees:
+  - **Public namespaces**: 5% to namespace creator + 5% to XNS contract owner
+  - **Private namespaces**: 10% to contract owner
 
+**Namespace Registration Fees:**
+- **90%** of ETH is permanently burned
+- **10%** goes to the contract owner
+
+>**Note:** Namespace creators only receive fees from name registrations in their namespace (public namespaces only).
+
+All ETH burns are recorded via the [DETH contract](https://github.com/Walodja1987/deth), a global ETH sink and burn attestation registry. Burns are tracked and verifiable as non-transferrable DETH credits minted at a 1:1 ratio, providing proof of contribution to Ethereum's deflationary mechanism.
+
+#### Claiming Fees
+
+Fees earned by namespace creators and the XNS contract owner accumulate within the XNS contract and must be claimed to be withdrawn. You can:
+- Check pending fees for any address ([`getPendingFees`][api-getPendingFees])
+- Claim fees to yourself ([`claimFeesToSelf`][api-claimFeesToSelf])
+- Claim fees to a different recipient ([`claimFees`][api-claimFees])
+
+**Example scripts:**
+* [Check pending fees][script-getPendingFees]
+* [Claim fees to self][script-claimFeesToSelf]
+* [Claim fees to a different recipient][script-claimFees]
 
 ## 🔥 XNS Price list
 
-| Namespace | ETH Amount   |
-|  | --  |
-| xns       | 0.001 ETH    | 
-| more to come...        |     |
+> **Note**: The [price list](#🔥-xns-price-list) may not be complete as new namespaces can be added over time. It also does not include private namespaces.
 
-
-
-
-## 👥 Namespace Creator Privileges
-
-**Important:** The namespace creator address is set at namespace creation time and **never changes**.
-
-- Creator privileges are tied to the specific address that created the namespace
-- These privileges are **immutable** and cannot be transferred
-
-### Public Namespace Creators
-
-- During the 30-day exclusivity period, only the creator can:
-  - Register paid names for themselves via `registerName`
-  - Sponsor paid name registrations for others via `registerNameWithAuthorization`
-- After 30 days, anyone can register names in the public namespace
-- Public namespace creators receive **5%** of all name registration fees forever
-
-### Private Namespace Creators
-
-- **Permanent exclusive rights**: Only the creator can register names forever (no time limit)
-- The creator can register names for themselves via `registerName`, or sponsor registrations for others via `registerNameWithAuthorization`
-- Private namespace creators receive **0%** of name registration fees (contract owner receives 10%)
-
-
-
-### Exclusive Period
-
-#### Public Namespaces
-
-For the first **30 days** after a public namespace is created:
-
-- **Only the namespace creator** may register paid names under that namespace
-- The creator can:
-  - Register a name for themselves using `registerName`
-  - Sponsor name registrations for others using `registerNameWithAuthorization` (requires recipient's EIP-712 signature)
-- Public `registerName` is **disabled** for non-creators during this period
-
-After 30 days:
-
-- Anyone may register paid names via `registerName`
-- Anyone may sponsor name registrations via `registerNameWithAuthorization`
-
-#### Private Namespaces
-
-- **Permanent exclusivity**: Only the namespace creator can register names forever
-- The creator can register names for themselves via `registerName`, or sponsor registrations for others via `registerNameWithAuthorization`
-- Non-creators cannot use `registerName` for private namespaces (they must be sponsored by the creator)
-
+| Namespace        | ETH Amount   |
+|------------------|-------------|
+| xns              | 0.001 ETH   |
+| more to come...  |             |
 
 
 ## 🧾 Contract Address
 
-The XNS contract is deployed on Ethereum at the following address: [xxx](https://etherscan.io/address/xxx)
+### Ethereum Mainnet
 
-<!-- [Contract deployment transaction](https://etherscan.io/tx/xxx) -->
+The official XNS contract is live on Ethereum mainnet at: [xxx][etherscan-mainnet]
 
-For testing purposes, you can use the deployed contract on Sepolia at: [0x04c9AafC2d30857781dd1B3540411e24FA536e39](https://sepolia.etherscan.io/address/0x04c9AafC2d30857781dd1B3540411e24FA536e39)
+This contract also owns the XNS "bare name": `xns`.
+
+### Sepolia Testnet
+
+For testing purposes, you can use the deployed contract on Sepolia at: [0x04c9AafC2d30857781dd1B3540411e24FA536e39][etherscan-sepolia-contract]
 
 The testnet contract has been parametrized as follows:
 - Public namespace registration fee: 0.1 ether (instead of 50 ether)
@@ -289,43 +274,19 @@ The testnet contract has been parametrized as follows:
 - Bare name price: 0.2 ether (instead of 10 ether)
 
 
-
-## 💰 Fees
-
-**Name Registration Fees:**
-- **90%** of ETH is permanently burned (supporting Ethereum's deflationary mechanism)
-- **10%** is distributed as fees:
-  - **Public namespaces**: 5% to namespace creator + 5% to contract owner
-  - **Private namespaces**: 10% to contract owner (creator receives 0%)
-
-**Namespace Registration Fees:**
-- **90%** of ETH is permanently burned
-- **10%** goes to the contract owner (namespace creator receives 0%)
-
-**Important:** Namespace creators only receive fees from name registrations in their namespace (public namespaces only), not from the namespace registration fee itself.
-
-### Claiming Fees
-
-Fees accumulate automatically and must be claimed to be withdrawn. You can:
-- Check pending fees for any address
-- Claim fees to yourself (`claimFeesToSelf`)
-- Claim fees to a different recipient (`claimFees`)
-
-> 💡 **For technical details**, see the [API Reference](docs/API.md) for `getPendingFees`, `claimFees`, and `claimFeesToSelf` functions.
-
-
-
 ## 🔧 Integration Guide for Contract Developers
 
 XNS can be integrated into your smart contracts, allowing users to identify your contract by a human-readable name (e.g., `myprotocol.xns`) instead of a long address.
 
-**Important:** XNS only exists on Ethereum mainnet. If your contract is deployed to the same address on multiple chains, you can register the name on Ethereum and reference it in your documentation for other chains.
+> **Note:** The naming of smart contracts via XNS applies to **new smart contracts** only, not existing ones. Existing contracts cannot be retroactively named.
 
-> 💡 **Full integration examples** and code samples are provided below. For complete function documentation, see the [API Reference](docs/API.md).
+This section includes examples of how to name your smart contracts on Ethereum, the canonical XNS chain, as well as a guide on using XNS with multi-chain deployments.
 
 ### Integration on Ethereum
 
-For contracts deployed only on Ethereum, there are three ways to integrate XNS:
+There are three ways to integrate XNS:
+
+> **Note:** The following examples demonstrate XNS integration for contracts that are only deployed on Ethereum. If you plan to deploy your contract on multiple chains, see the [Using XNS Names with Multi-Chain Deployments](#-using-xns-names-with-multi-chain-deployments) section below for important guidance and considerations.
 
 #### Option 1: Register via Constructor
 
@@ -341,16 +302,16 @@ contract MyProtocol {
     }
 
     /// @notice Optional: Accept ETH refunds from XNS if excess payment is sent.
-    /// Not needed if correct prices is sent, without any excess.
+    /// Not needed if the correct price is sent, without any excess.
     receive() external payable {}
 }
 ```
 
 Deploy with the `label`, `namespace`, and required payment to register the name during contract creation.
 
-> **Note:** In both integration options, any excess payment is refunded by XNS to `msg.sender`, which will be your contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when calling `registerName`.
+See [`contracts/src/mocks/MockERC20A`][contract-MockERC20A] and the [`registerNameForERC20A.ts`][script-registerNameForERC20A] script for an example of how to register a name for an ERC20 token using the constructor method.
 
-See `contracts/src/mocks/MockERC20A` and `scripts/registerNameForERC20A.ts` for an example of how to register a name for an ERC20 token using the constructor method.
+> **Note:** Any excess payment is refunded by XNS to `msg.sender`, which will be your contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when deploying the contract.
 
 #### Option 2: Register via Separate Function
 
@@ -375,18 +336,20 @@ contract MyProtocol {
     }
 
     /// @notice Optional: Accept ETH refunds from XNS if excess payment is sent.
-    /// Not needed if correct prices is sent, without any excess.
+    /// Not needed if the correct price is sent, without any excess.
     receive() external payable {}
 }
 ```
 
 After deployment, call `registerName("myprotocol", "xns")` with the required payment to register the name.
 
-See `contracts/src/mocks/MockERC20B` and `scripts/registerNameForERC20B.ts` for an example of how to register a name for an ERC20 token using the separate `registerName` function approach.
+See [`contracts/src/mocks/MockERC20B`][contract-MockERC20B] and the [`registerNameForERC20B.ts`][script-registerNameForERC20B] script for an example of how to register a name for an ERC20 token using the separate [`registerName`][api-registerName] function approach.
+
+> **Note:** Any excess payment is refunded by XNS to `msg.sender`, which will be your contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when calling [`registerName`][api-registerName].
 
 #### Option 3: Sponsored Registration via EIP-1271
 
-For contracts that implement EIP-1271 (like contract wallets), someone else can sponsor the name registration:
+For contracts that implement EIP-1271, someone else can sponsor the name registration:
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -424,10 +387,10 @@ contract MyContractWallet {
 ```
 
 **How it works:**
-1. The contract (or its owner) signs an EIP-712 message authorizing the name registration
-2. A sponsor calls `registerNameWithAuthorization` on XNS, providing the contract as the recipient
-3. XNS validates the signature via the contract's `isValidSignature` function
-4. The sponsor pays the registration fee
+1. The contract (or its owner) signs an EIP-712 message authorizing the name registration.
+2. A sponsor calls [`registerNameWithAuthorization`][api-registerNameWithAuthorization] on XNS, providing the contract as the recipient.
+3. XNS validates the signature via the contract's `isValidSignature` function (EIP-1271).
+4. The sponsor pays the registration fee.
 
 **Use cases:**
 - Contract wallets (Safe, Argent, etc.) that want to be named
@@ -436,102 +399,144 @@ contract MyContractWallet {
 
 **Note:** The contract must implement EIP-1271's `isValidSignature` function. The sponsor pays all fees and gas costs. Unlike Options 1 and 2 where `receive()` is optional (needed only if excess payment is sent), Option 3 does **not** need a `receive()` function because any refunds go to the sponsor (the transaction sender), not to the contract.
 
-See `contracts/src/mocks/MockERC20C` and  `scripts/registerNameWithAuthorizationForERC20C.ts` for an example of how to register a name for an ERC20 token using the EIP-1271 method.
+See [`contracts/src/mocks/MockERC20C`][contract-MockERC20C] and the [`registerNameWithAuthorizationForERC20C.ts`][script-registerNameWithAuthorizationForERC20C] script for an example of how to register a name for an ERC20 token using the EIP-1271 method.
 
-### Multi-Chain Deployment Considerations
 
-If your protocol will be deployed across multiple chains, follow these best practices:
+### Using XNS Names with Multi-Chain Deployments
 
-#### 1. **Use a Separate Registration Function (Recommended)**
+This section is intended for teams that:
 
-Avoid registering names in the constructor. Instead, use a separate `registerName` function that can be called after deployment once you've confirmed your contract address on Ethereum:
+* Deploy the **same contract** to multiple chains
+* Ensure the contract has the **same address** across those chains (e.g. using `CREATE2`)
+* Deploy at least one instance on **Ethereum mainnet**
+* Want to use an XNS name as a **human-readable identifier** in documentation, dashboards, and address books instead of raw hexadecimal addresses
 
-**Why?**
-- Deploying on the same address across multiple chains requires identical constructor arguments (e.g., using CREATE2 with the same salt)
-- If your contract has different addresses on different chains, registering in the constructor could bind a name to an address that doesn't match on other chains
-- A separate function allows you to verify address consistency before registration
+**Ethereum is the source of truth** for XNS names. Other chains do not resolve XNS names on-chain, but reference them off-chain for clarity.
 
-**Implementation:**
+#### Deployment Pattern
 
-To maintain the same address across chains, you must pass the same constructor arguments. As XNS does not exist outside of Ethereum and would revert when calling `registerName`, use a `chainId` check to fail gracefully on non-Ethereum chains:
+The recommended deployment pattern is to add a dedicated [`registerName`][api-registerName] function to your contract that performs XNS name registration on Ethereum mainnet (`chainId = 1`) and reverts on other chains. Once your contract is deployed, you invoke [`registerName`][api-registerName] on Ethereum mainnet to link the XNS name to your contract address.
+
+Example:
 
 ```solidity
-IXNS public immutable xns;
-
-constructor(address _xns) {
-    // Pass the same XNS address (or address(0)) on all chains to maintain same address
-    require(address(_xns) != address(0), "XNS contract address not set");
-    xns = IXNS(_xns);
-}
-
-function registerName(string calldata label, string calldata namespace) external payable {
-    // Guard: XNS only exists on Ethereum mainnet
-    require(block.chainid == 1, "XNS only available on Ethereum mainnet");
-    xns.registerName{value: msg.value}(label, namespace);
-}
-```
-
-#### 3. **Constructor Registration (Alternative)**
-
-While less flexible, constructor registration is acceptable if you:
-- Ensure consistent deployment addresses across chains (e.g., using CREATE2 with same salt)
-- Document which chains share the same address
-- Accept that the name will only be meaningful on Ethereum and chains with the same address
-
-**Example:**
-```solidity
-IXNS public immutable xns;
-
-constructor(address _xns, string memory label, string memory namespace) payable {
-    // Only set xns on Ethereum mainnet
-    if (block.chainid == 1) {
-        xns = IXNS(_xns);
-        // Register name if label provided
-        if (bytes(label).length > 0) {
-            xns.registerName{value: msg.value}(label, namespace);
-        }
+contract YourContract {
+    // ... Your contract code ...
+    
+    function registerName(string calldata label, string calldata namespace) external payable {
+        require(block.chainid == 1, "XNS only available on Ethereum mainnet");
+        xns.registerName{value: msg.value}(label, namespace);
     }
 }
 ```
 
-### Documentation Strategy for Address Books
-
-When documenting your protocol's contract addresses across multiple chains:
-
-1. **For chains where the contract address matches the one on Ethereum:**
-   - Register the XNS name on Ethereum mainnet
-   - Use the XNS name in your documentation/address book (e.g., `myprotocol.xns`)
-   - Example: "Deployed on Ethereum, Polygon, Arbitrum, Optimism, and Base at `myprotocol.xns`"
-
-2. **For chains where the contract address differs:**
-   - Use the actual contract address (not the XNS name)
-   - Example: "Deployed on Avalanche at `0x1234...5678`"
-
-### Access Control
-
-Consider adding access control to your `registerName` function to prevent unauthorized registrations:
-
-```solidity
-address public owner;
-
-modifier onlyOwner() {
-    require(msg.sender == owner, "Not owner");
-    _;
-}
-
-function registerName(string calldata label, string calldata namespace) external payable onlyOwner {
-    require(address(xns) != address(0), "XNS not available on this chain");
-    xns.registerName{value: msg.value}(label, namespace);
-}
-```
-
-### Getting the XNS Contract Address
-
-After contract deployment, applications can query the address via `getAddress("myprotocol.xns")` on Ethereum.
+>**Note:** Add access control as needed.
 
 
+### Documentation and Address Books
 
- ## 📚 Documentation
-  
-  - [API Reference](docs/API.md) - Complete function documentation
-  - [Audit Information](docs/AUDIT.md) - For auditors and code reviewers
+When publishing contract addresses, use the XNS name (e.g., `myprotocol.xns`) if the contract address matches the Ethereum deployment. If the address is different on another chain, use the raw address instead.
+
+Example:
+
+| Network                         | XNS name / Address         |
+|-------------------------------------|--------------------|
+| Ethereum / Arbitrum / Optimism / Base | `myprotocol.xns`   |
+| Avalanche                           | `0x1234…5678`      |
+
+
+## 📄 License and Deployment Policy
+
+XNS is licensed under the [Business Source License 1.1 (BUSL-1.1)][license].
+
+This choice is intentional and motivated by **technical and user-safety considerations**, not by a desire to restrict innovation.
+
+### Why BUSL?
+
+XNS is an identity and naming primitive. Names like `alice.x` or `bankless` are meant to be
+**globally unique, permanent, and unambiguous**.
+
+Allowing unrestricted third-party deployments of the XNS registry on other chains would lead to:
+- the same name resolving to different addresses on different networks
+- phishing and social-engineering risks
+- user confusion about which contract deployment defines the canonical name-to-address mapping
+
+For identity infrastructure, this is unacceptable.
+
+The BUSL license ensures that:
+- there is a **single canonical XNS registry** on Ethereum
+- users can safely rely on name-address mappings
+- the mental model of XNS remains simple and trustworthy
+
+### What Is Allowed?
+
+- Reading the code
+- Auditing the code
+- Building tools, wallets, indexers, and integrations
+- Importing and using the public interfaces
+- Non-production and research use
+
+Interfaces and auxiliary files are intentionally kept under permissive licenses (MIT) to enable ecosystem adoption.
+
+### Open Source Commitment
+
+In line with BUSL-1.1, this codebase will automatically transition to an open-source license after the specified Change Date.
+
+However, even after the Change Date, XNS remains **Ethereum-canonical**. The identity, meaning, and trust of XNS names derive from the original
+deployment on Ethereum mainnet and its immutable history.
+
+Deployments of this code on other chains after the Change Date are not recognized as XNS and do not share any continuity, guarantees, or
+identity with the canonical registry.
+
+XNS does not support cross-chain name equivalence.
+
+## 📚 API Reference
+
+See the [API Reference][api-reference] for complete documentation of all XNS contract functions, events, state variables, and types.
+
+## 🔧 Developer Notes
+
+See the [Developer Notes][dev-notes] for design decisions, code style guidelines, governance considerations, and known limitations. This document is primarily intended for auditors and developers working on the XNS contract.
+
+<!-- Reference-style link definitions -->
+
+[api-registerName]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#registername
+[api-getAddress]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#getAddress
+[api-getName]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#getName
+[api-getNamespaceInfo]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#getnamespaceinfo
+[api-registerNameWithAuthorization]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#registernamewithauthorization
+[api-batchRegisterNameWithAuthorization]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#batchregisternamewithauthorization
+[api-registerPublicNamespace]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#registerpublicnamespace
+[api-registerPrivateNamespace]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#registerprivatenamespace
+[api-getPendingFees]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#getpendingfees
+[api-claimFeesToSelf]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#claimfeestoself
+[api-claimFees]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#claimfees
+
+[script-registerName]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerName.ts
+[script-registerNameForERC20A]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerNameForERC20A.ts
+[script-registerNameForERC20B]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerNameForERC20B.ts
+[script-registerNameWithAuthorization]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerNameWithAuthorization.ts
+[script-registerNameWithAuthorizationForERC20]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerNameWithAuthorizationForERC20.ts
+[script-batchRegisterNameWithAuthorization]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/batchRegisterNameWithAuthorization.ts
+[script-registerNamespace]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerNamespace.ts
+[script-getAddress]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getAddress.ts
+[script-getName]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getName.ts
+[script-getNamespaceInfo]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getNamespaceInfo.ts
+[script-getPendingFees]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getPendingFees.ts
+[script-claimFeesToSelf]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/claimFeesToSelf.ts
+[script-claimFees]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/claimFees.ts
+
+[contract-MockERC20A]: https://github.com/Walodja1987/xns/blob/main/contracts/src/mocks/MockERC20A.sol
+[contract-MockERC20B]: https://github.com/Walodja1987/xns/blob/main/contracts/src/mocks/MockERC20B.sol
+[contract-MockERC20C]: https://github.com/Walodja1987/xns/blob/main/contracts/src/mocks/MockERC20C.sol
+
+[etherscan-sepolia]: https://sepolia.etherscan.io/address/0x4f1d1F8C7C96C2798B0A473fE35633A47dad37f9
+[etherscan-sepolia-contract]: https://sepolia.etherscan.io/address/0x04c9AafC2d30857781dd1B3540411e24FA536e39
+[etherscan-mainnet]: https://etherscan.io/address/xxx
+
+[license]: https://github.com/Walodja1987/xns/blob/main/LICENSE
+
+[api-reference]: docs/API.md
+[dev-notes]: docs/DEV_NOTES.md
+
+[script-registerNameWithAuthorizationForERC20C]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerNameWithAuthorizationForERC20C.ts

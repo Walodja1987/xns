@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.28;
 
 import {IDETH} from "./interfaces/IDETH.sol";
@@ -17,7 +17,7 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 //////////////////////////////
 
 /// @title XNS
-/// @author Wladimir Weinbender
+/// @author Wladimir Weinbender (DIVA Technologies AG)
 /// @notice An Ethereum-native name registry that maps human-readable names to Ethereum addresses.
 /// Names are **permanent, immutable, and non-transferable**.
 ///
@@ -152,6 +152,9 @@ contract XNS is EIP712 {
     /// @notice Namespace associated with bare names (e.g. "vitalik" = "vitalik.x").
     string public constant BARE_NAME_NAMESPACE = "x";
 
+    /// @notice Price for registering a bare name (e.g. "vitalik").
+    uint256 public constant BARE_NAME_PRICE = 10 ether;
+
     /// @notice Address of DETH contract used to burn ETH and credit the recipient.
     address public constant DETH = 0xE46861C9f28c46F27949fb471986d59B256500a7;
 
@@ -183,16 +186,15 @@ contract XNS is EIP712 {
         OWNER = owner;
         DEPLOYED_AT = uint64(block.timestamp);
 
-        // Register special public namespace "x" as the very first namespace.
-        uint256 specialNamespacePrice = 10 ether;
+        // Register special public namespace "x" associated with bare names as the very first namespace.
         _namespaces[keccak256(bytes(BARE_NAME_NAMESPACE))] = NamespaceData({
-            pricePerName: specialNamespacePrice,
+            pricePerName: BARE_NAME_PRICE,
             creator: owner,
             createdAt: uint64(block.timestamp),
             isPrivate: false
         });
 
-        emit NamespaceRegistered(BARE_NAME_NAMESPACE, specialNamespacePrice, owner, false);
+        emit NamespaceRegistered(BARE_NAME_NAMESPACE, BARE_NAME_PRICE, owner, false);
 
         // Register bare name "xns" for the XNS contract itself.
         string memory contractLabel = "xns";
@@ -212,9 +214,9 @@ contract XNS is EIP712 {
 
     /// @notice Function to register a paid name for `msg.sender`. To register a bare name
     /// (e.g., "vitalik"), use "x" as the namespace parameter. 
-    /// For public namespaces: Namespace creators have a 30-day exclusivity window to register a name for themselves.
+    /// For public namespaces, namespace creators have a 30-day exclusivity window to register a name for themselves.
     /// Registrations are opened to the public after the 30-day exclusivity period.
-    /// For private namespaces: Only the namespace creator may register a name for themselves.
+    /// For private namespaces, only the namespace creator may register a name for themselves.
     ///
     /// **Requirements:**
     /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-',

@@ -1,14 +1,14 @@
 name: "Bug Report"
-description: "Report a bug for Hardhat project template."
+description: "Report a bug for XNS."
 title: "[Bug-Candidate]: "
 labels:
   - bug
 assignees:
-  - pcaversaccio
+  - walodja1987
 body:
   - attributes:
       value: |
-        Please check the [issues tab](https://github.com/pcaversaccio/hardhat-project-template-ts/issues) to avoid duplicates.
+        Please check the [issues tab](https://github.com/Walodja1987/xns/issues) to avoid duplicates.
         Thanks for taking the time to fill out this bug report!
     type: markdown
 
@@ -31,7 +31,7 @@ body:
   - attributes:
       label: "Version:"
       description: |
-        What version of Hardhat are you running? 
+        What version of XNS are you running? 
         Run `npx hardhat --version`.
     id: version
     type: textarea

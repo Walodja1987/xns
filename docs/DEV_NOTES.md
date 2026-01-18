@@ -1,18 +1,79 @@
-# How to run
+# 🎡 Installation
 
 ```bash
 pnpm install
 ```
 
+## Environment Variables Setup
+
+The project uses Hardhat's `vars` system for managing environment variables. Set up the required variables using `npx hardhat vars set` (e.g., `npx hardhat vars set MNEMONIC`):
+
+**Network Independent Variables:**
+```bash
+# Mnemonic for account derivation
+npx hardhat vars set MNEMONIC
+
+# Etherscan API key for contract verification (only relevant for deployment)
+npx hardhat vars set ETHERSCAN_API_KEY
+```
+
+**Network Specific Variables:**
+```bash
+# Sepolia testnet RPC URL
+npx hardhat vars set ETH_SEPOLIA_TESTNET_URL
+
+# Ethereum mainnet RPC URL
+npx hardhat vars set ETH_MAINNET_URL
+```
+
+**Compile and Test:**
 ```bash
 pnpm compile:hh
 ```
 
 ```bash
 pnpm test:hh
-``` 
+```
 
-# Design Decisions
+## Running Example Scripts
+
+This repository contains example scripts that allow you to execute and interact with contract functions directly from the terminal. These scripts demonstrate how to perform core actions such as registering names or namespaces, resolving addresses, claiming fees, and more. They are designed to provide practical, ready-to-run examples for both developers and auditors wishing to test XNS functionality without writing new scripts from scratch.
+
+Example scripts are located in `scripts/examples/`. To run an example script:
+
+```bash
+npx hardhat run scripts/examples/<script_name>.ts --network <network_name>
+```
+
+**Example:**
+```bash
+# Run registerName example on Sepolia testnet
+npx hardhat run scripts/examples/registerName.ts --network sepolia
+```
+
+Replace `sepolia` with `ethMain` to run the script on Ethereum Mainnet.
+
+Available example scripts:
+- [`registerName.ts`](../scripts/examples/registerName.ts) - Register a name for an EOA
+- [`registerNamespace.ts`](../scripts/examples/registerNamespace.ts) - Register a public or private namespace
+- [`registerNameWithAuthorization.ts`](../scripts/examples/registerNameWithAuthorization.ts) - Register a name with EIP-712 authorization
+- [`batchRegisterNameWithAuthorization.ts`](../scripts/examples/batchRegisterNameWithAuthorization.ts) - Batch register names with authorization
+- [`getAddress.ts`](../scripts/examples/getAddress.ts) - Resolve a name to an address
+- [`getName.ts`](../scripts/examples/getName.ts) - Get the name for an address
+- [`getNamespaceInfo.ts`](../scripts/examples/getNamespaceInfo.ts) - Query namespace information
+- [`getPendingFees.ts`](../scripts/examples/getPendingFees.ts) - Check pending fees for an address
+- [`claimFeesToSelf.ts`](../scripts/examples/claimFeesToSelf.ts) - Claim fees to yourself
+- [`claimFees.ts`](../scripts/examples/claimFees.ts) - Claim fees to a different recipient
+- [`registerNameForERC20A.ts`](../scripts/examples/registerNameForERC20A.ts) - Register name via constructor
+- [`registerNameForERC20B.ts`](../scripts/examples/registerNameForERC20B.ts) - Register name via separate function
+- [`registerNameWithAuthorizationForERC20.ts`](../scripts/examples/registerNameWithAuthorizationForERC20.ts) - Register name via EIP-1271
+- [`deployMockERC20C.ts`](../scripts/examples/deployMockERC20C.ts) - Deploy a MockERC20C contract
+- [`generateSignature.ts`](../scripts/examples/generateSignature.ts) - Generate EIP-712 signature for Etherscan execution
+
+> **Note:** Each example script contains a `USER INPUTS` section at the top where you can customize parameters (e.g., label, namespace, signer index) before running the script. Modify these values directly in the script file as needed.
+
+
+# 🎨 Design Decisions
 
 This document outlines the key design decisions regarding code style, governance, and specific contract features. It is primarily intended for auditors and anyone interested in the code.
 
@@ -61,7 +122,7 @@ Front-running is possible but not considered a significant problem because:
 
 ### Front-Running during the First Year
 
-During the first year after contract deployment (the onboarding period), the contract owner is permitted to register namespaces at no cost, whereas all other users must pay a 50 ETH fee per namespace. This mechanism is intended to promote rapid ecosystem adoption by enabling the owner to grant free namespaces to participants and integrators. However, this privilege does introduce a theoretical front-running risk:
+During the first year after contract deployment (the onboarding period), the contract owner is permitted to register namespaces at no cost, whereas all other users must pay fee (50 ETH for public namespaces, 10 ETH for private namespaces). This mechanism is intended to promote rapid ecosystem adoption by enabling the owner to grant free namespaces to participants and integrators. However, this privilege does introduce a theoretical front-running risk:
 
 * **Theoretical scenario**: The owner could monitor the mempool for namespace registration transactions from other users and front-run them to register the namespace first.
 * **Economic disincentive**: Front-running namespace registrations would negatively impact the system's reputation and the owner's future revenue.

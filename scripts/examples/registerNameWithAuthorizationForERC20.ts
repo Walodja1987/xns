@@ -3,11 +3,11 @@
  *
  * USAGE:
  * Run the script with:
- * `npx hardhat run scripts/examples/registerNameWithAuthorizationForERC20C.ts --network <network_name>`
+ * `npx hardhat run scripts/examples/registerNameWithAuthorizationForERC20.ts --network <network_name>`
  *
  * EXAMPLE:
  * To deploy and register on Sepolia:
- * `npx hardhat run scripts/examples/registerNameWithAuthorizationForERC20C.ts --network sepolia`
+ * `npx hardhat run scripts/examples/registerNameWithAuthorizationForERC20.ts --network sepolia`
  *
  * REQUIRED SETUP:
  * Before running, set these environment variables using hardhat-vars:
