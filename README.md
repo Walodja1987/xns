@@ -115,14 +115,14 @@ You can register a name for your EOA directly via [Etherscan][etherscan-sepolia]
 XNS provides simple on-chain resolution for names and addresses.
 
 **Look up Address from Name: [`getAddress`][api-getAddress]**
-- Resolve a name like `vitalik.001` or `nike` to its Ethereum address
-- Works directly on Etherscan or any Ethereum interface
-- Returns `0x0000...` if the name is not registered
+- Resolve a name like `vitalik.001` or `nike` to its Ethereum address.
+- Works directly on Etherscan or any Ethereum interface.
+- Returns `0x0000...` if the name is not registered.
 
 **Look up Name from Address: [`getName`][api-getName]**
-- Find the XNS name for any Ethereum address
-- Returns the full name format (e.g., `alice.001` or just `vitalik` for bare names)
-- Returns an empty string if the address has no name
+- Find the XNS name for any Ethereum address.
+- Returns the full name format (e.g., `alice.001` or just `vitalik` for bare names).
+- Returns an empty string if the address has no name.
 
 ### Namespace Infos
 
@@ -152,11 +152,12 @@ XNS supports **authorized name registration** via [`registerNameWithAuthorizatio
 - For public namespaces: Only the namespace creator can sponsor registrations during the 30-day exclusivity period.
 - For private namespaces: Only the namespace creator can sponsor registrations forever.
 
-**Batch registration:** XNS also supports [`batchRegisterNameWithAuthorization`][api-batchRegisterNameWithAuthorization] to register multiple names in a single transaction. See the API documentation for details.
+**Batch registration:** 
+XNS also supports [`batchRegisterNameWithAuthorization`][api-batchRegisterNameWithAuthorization] to register multiple names in a single transaction. See the API documentation for details.
 
 **Example scripts:**
 * [Name registration with authorization for EOA][script-registerNameWithAuthorization]
-* [Name registration via authorization for ERC20 token][script-registerNameWithAuthorizationForERC20]
+* [Name registration with authorization for ERC20 token][script-registerNameWithAuthorizationForERC20]
 * [Batch name registration with authorization][script-batchRegisterNameWithAuthorization]
 
 ### Namespace Registration
