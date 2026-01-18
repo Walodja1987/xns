@@ -17,7 +17,7 @@
 
 1. [Overview](#-overview)
 2. [How It Works](#-how-it-works) \
-   2.1 [Name Registration](#-name-registration) \
+   2.1 [Name Registration](#name-registration) \
    2.2 [Name Resolution](#-name-resolution) \
    2.3 [Name Registration With Authorization](#-name-registration-with-authorization) \
    2.4 [Namespace Registration](#-namespace-registration) \
