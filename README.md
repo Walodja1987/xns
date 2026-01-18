@@ -125,6 +125,10 @@ XNS provides simple on-chain resolution for names and addresses.
 - Returns the full name format (e.g., `alice.001` or just `vitalik` for bare names).
 - Returns an empty string if the address has no name.
 
+**Example scripts:**
+* [Look up address from name][script-getAddress]
+* [Look up name from address][script-getName]
+
 ### Name Registration With Authorization
 
 XNS supports **authorized name registration** via [`registerNameWithAuthorization`][api-registerNameWithAuthorization], which allows a third party (sponsor) to pay the registration fee and gas costs while the recipient explicitly authorizes the registration via an EIP-712 signature.
@@ -209,6 +213,9 @@ You can retrieve namespace details using [`getNamespaceInfo`][api-getNamespaceIn
 - Creation timestamp
 - Whether it's private or public
 
+**Example script:**
+* [Query namespace info][script-getNamespaceInfo]
+
 ### Registration Fees
 
 **Name Registration Fees:**
@@ -232,7 +239,8 @@ Fees earned by namespace creators and the XNS contract owner accumulate within t
 - Claim fees to yourself ([`claimFeesToSelf`][api-claimFeesToSelf])
 - Claim fees to a different recipient ([`claimFees`][api-claimFees])
 
-**Example script:**
+**Example scripts:**
+* [Check pending fees][script-getPendingFees]
 * [Claim fees to self][script-claimFeesToSelf]
 * [Claim fees to a different recipient][script-claimFees]
 
@@ -511,6 +519,10 @@ See the [Developer Notes][dev-notes] for design decisions, code style guidelines
 [script-registerNameWithAuthorizationForERC20]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerNameWithAuthorizationForERC20.ts
 [script-batchRegisterNameWithAuthorization]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/batchRegisterNameWithAuthorization.ts
 [script-registerNamespace]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerNamespace.ts
+[script-getAddress]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getAddress.ts
+[script-getName]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getName.ts
+[script-getNamespaceInfo]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getNamespaceInfo.ts
+[script-getPendingFees]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getPendingFees.ts
 [script-claimFeesToSelf]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/claimFeesToSelf.ts
 [script-claimFees]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/claimFees.ts
 
