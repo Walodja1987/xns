@@ -785,7 +785,7 @@ contract XNS is EIP712 {
     /// Used in name and namespace registration functions as well as in `isValidSlug` function.
     /// @param slug The label or namespace string to validate.
     /// @return isValid True if the slug is valid, false otherwise.
-    function _isValidSlug(string memory slug) private pure returns (bool isValid) {
+    function _isValidSlug(string calldata slug) private pure returns (bool isValid) {
         bytes memory b = bytes(slug);
         uint256 len = b.length;
         if (len == 0 || len > 20) return false;
@@ -822,7 +822,7 @@ contract XNS is EIP712 {
     /// @param registerNameAuth The struct containing recipient, label, and namespace.
     /// @return registerNameAuthHash The keccak256 hash of the RegisterNameAuth struct.
     function _getRegisterNameAuthHash(
-        RegisterNameAuth memory registerNameAuth
+        RegisterNameAuth calldata registerNameAuth
     ) private pure returns (bytes32 registerNameAuthHash) {
         registerNameAuthHash = keccak256(
             abi.encode(
