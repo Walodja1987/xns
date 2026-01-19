@@ -6019,7 +6019,7 @@ describe("XNS", function () {
         ).to.be.revertedWith("XNS: insufficient payment");
     });
 
-    it("Should revert with `XNS: not namespace creator` error when non-creator tries to sponsor during exclusive period in public namespace", async () => {
+    it("Should revert with `XNS: not namespace creator (exclusivity period)` error when non-creator tries to sponsor during exclusive period in public namespace", async () => {
         // ---------
         // Arrange: Prepare batch registration during exclusivity period with non-creator sponsor
         // ---------
@@ -6074,7 +6074,7 @@ describe("XNS", function () {
         const totalPayment = pricePerName * BigInt(registrations.length);
 
         // ---------
-        // Act & Assert: Should revert with not namespace creator error
+        // Act & Assert: Should revert with "XNS: not namespace creator (exclusivity period)" error
         // owner (non-creator) tries to sponsor during exclusivity period
         // ---------
         await expect(
@@ -6083,7 +6083,7 @@ describe("XNS", function () {
                 signatures,
                 { value: totalPayment }
             )
-        ).to.be.revertedWith("XNS: not namespace creator");
+        ).to.be.revertedWith("XNS: not namespace creator (exclusivity period)");
     });
 
     it("Should revert with `XNS: not namespace creator (private)` error when non-creator tries to sponsor batch in private namespace", async () => {

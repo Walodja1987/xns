@@ -384,7 +384,7 @@ contract XNS is EIP712 {
         if (ns.isPrivate) {
             require(msg.sender == ns.creator, "XNS: not namespace creator (private)");
         } else if (block.timestamp <= ns.createdAt + EXCLUSIVITY_PERIOD) {
-            require(msg.sender == ns.creator, "XNS: not namespace creator"); // @todo add (exclusivity period) like in single version
+            require(msg.sender == ns.creator, "XNS: not namespace creator (exclusivity period)");
         }
 
         // Validate and register all names, skipping where the recipient already has a name
