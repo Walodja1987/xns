@@ -685,7 +685,7 @@ contract XNS is EIP712 {
     /// - Cannot contain consecutive hyphens ('--')
     /// @param slug The label or namespace to check if is valid.
     /// @return isValid True if the slug is valid, false otherwise.
-    function isValidSlug(string memory slug) external pure returns (bool isValid) {
+    function isValidSlug(string calldata slug) external pure returns (bool isValid) {
         return _isValidSlug(slug);
     }
 
