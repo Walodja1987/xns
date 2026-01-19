@@ -321,6 +321,8 @@ See [`MockERC20A`][contract-MockERC20A] and the [`registerNameForERC20A.ts`][scr
 
 > **Note:** Any excess payment is refunded by XNS to `msg.sender`, which will be your contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when deploying the contract.
 
+> **Important:** This option only works for **public namespaces** after the exclusivity period (30 days). For **private namespaces**, contracts must use Option 3 (EIP-1271).
+
 #### Option 2: Register via Separate Function
 
 ```solidity
@@ -355,9 +357,11 @@ See [`MockERC20B`][contract-MockERC20B] and the [`registerNameForERC20B.ts`][scr
 
 > **Note:** Any excess payment is refunded by XNS to `msg.sender`, which will be your contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when calling [`registerName`][api-registerName].
 
+> **Important:** This option only works for **public namespaces** after the exclusivity period (30 days). For **private namespaces**, contracts must use Option 3 (EIP-1271).
+
 #### Option 3: Sponsored Registration via EIP-1271
 
-For contracts that implement EIP-1271, someone else can sponsor the name registration:
+For contracts that implement EIP-1271, someone else can sponsor the name registration. **This is the only way for contracts to register names in private namespaces**, as `registerName` does not support private namespaces.
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -403,6 +407,7 @@ contract MyContractWallet {
 **Use cases:**
 - Contract wallets (Safe, Argent, etc.) that want to be named
 - Contracts that can't send transactions themselves
+- Contracts wanting to register names in **private namespaces** (required)
 - Allow others to pay for your contract's name registration
 
 **Note:** The contract must implement EIP-1271's `isValidSignature` function. The sponsor pays all fees and gas costs. Unlike Options 1 and 2 where `receive()` is optional (needed only if excess payment is sent), Option 3 does **not** need a `receive()` function because any refunds go to the sponsor (the transaction sender), not to the contract.
