@@ -97,6 +97,31 @@ Although using inline assembly for hash computations could save gas, the code de
 
 The contract assigns a fixed owner at deployment, with no mechanism for ownership transfer. This design simplifies the contract and reduces governance complexity. If the owner wallet is ever compromised, fee claiming by the owner remains possible regardless, although increased gas costs may be required to front-run the attacker. Since the designated owner is intended to be a multisig wallet, the risk of a compromise is considered manageable.
 
+### XNS Contract Owner Privileges
+
+The contract owner has specific privileges that differ from regular users:
+
+**During Onboarding Period (First Year After Deployment):**
+
+* **Free namespace registration for others**: The owner can register public or private namespaces for any address at no cost using `registerPublicNamespaceFor` and `registerPrivateNamespaceFor`. These functions are OWNER-only and only available during the onboarding period (first year after contract deployment).
+* **Purpose**: This privilege is intended to enable rapid ecosystem adoption by allowing the owner to bootstrap namespaces for participants and integrators without requiring upfront payment.
+* **Limitations**: These functions cannot be called after the onboarding period expires. After the first year, the owner must use the same self-service functions as all other users (`registerPublicNamespace` and `registerPrivateNamespace`) and pay the standard fees.
+
+**Always (Regardless of Time Period):**
+
+* **Fee collection**: The owner receives 5% of fees from every name registration transaction:
+  * **Public namespaces**: Owner receives 5% of registration fees (namespace creator receives the other 5%)
+  * **Private namespaces**: Owner receives 10% of registration fees (private namespace creators receive 0%)
+* **Fee claiming**: The owner can claim accumulated fees using `claimFees` or `claimFeesToSelf`, just like any other address with pending fees. The owner does not have special privileges for claiming fees—they can only claim fees that were credited to the owner address.
+
+**What the Owner Cannot Do:**
+
+* **Cannot transfer ownership**: The owner address is immutable and cannot be changed after deployment.
+* **Cannot register namespaces for free after onboarding**: After the first year, the owner must pay standard fees like all other users.
+* **Cannot claim fees that aren't theirs**: The owner can only claim fees that were credited to the owner address, same as any other address.
+
+This design balances the need for ecosystem bootstrapping with long-term decentralization, as the owner's special privileges are time-limited and focused on onboarding.
+
 ## Chains
 
 The contract is intended to be deployed exclusively on Ethereum mainnet (and a testnet environment for development and testing). This design choice prevents the possibility of the same address registering different names on multiple chains, ensuring global uniqueness and consistency of name ownership.
