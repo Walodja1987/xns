@@ -89,6 +89,8 @@ Registering an XNS name is straightforward:
 3. **Register Name**: Send a transaction with the required ETH amount to register your name (see [`registerName`][api-registerName] in API docs). Any excess will be refunded.
 4. **Verify Resolution**: Wait a few blocks, then verify your name is registered (see [`getAddress`][api-getAddress] and [`getName`][api-getName] in API docs).
 
+**Note:** [`registerName`][api-registerName] only works for public namespaces after the exclusivity period (30 days). During the exclusivity period or for private namespaces, namespace creators must use [`registerNameWithAuthorization`][api-registerNameWithAuthorization] even for their own registrations.
+
 **Example scripts:**
 * [Name registration for EOA][script-registerName]
 * [Name registration for ERC20 token (via constructor)][script-registerNameForERC20A]
@@ -180,18 +182,22 @@ XNS supports public and private namespaces:
 1. **Choose a Namespace:** Select an available namespace and set the desired price per name (must be >= 0.001 ETH and a multiple of 0.001 ETH).
 2. **Register Namespace:** Submit a transaction with the required ETH to register the namespace (see [`registerPublicNamespace`][api-registerPublicNamespace] in the API docs). Any excess will be refunded.
 
-As the public namespace creator, you have an exclusive 30-day window to register or sponsor any name within your namespace. After this period, anyone can freely register names.
+As the public namespace creator, you have an exclusive 30-day window to register or sponsor any name within your namespace. After this period, anyone can freely register names. **During the exclusivity period, use [`registerNameWithAuthorization`][api-registerNameWithAuthorization] even for your own registrations.**
 
 **How to register a private namespace:**
 1. **Choose a Namespace:** Select an available namespace and set the desired price per name (must be >= 0.001 ETH and a multiple of 0.001 ETH).
 2. **Register Namespace:** Submit a transaction with the required ETH to register the namespace (see [`registerPrivateNamespace`][api-registerPrivateNamespace] in the API docs). Any excess will be refunded.
 
-The private namespace creator registers names via the authorized flow (see [`registerNameWithAuthorization`][api-registerNameWithAuthorization] in the API docs). The namespace creator can also use the [`registerName`][api-registerName] function to register a name for themselves.
+The private namespace creator registers names via the authorized flow (see [`registerNameWithAuthorization`][api-registerNameWithAuthorization] in the API docs). **This is the only way to register names in private namespaces, including registrations for the creator themselves.**
 
 **Notes:**
 - The `eth` namespace cannot be registered to avoid confusion with ENS.
 - Regular users always pay the standard fees when registering namespaces via [`registerPublicNamespace`][api-registerPublicNamespace] or [`registerPrivateNamespace`][api-registerPrivateNamespace].
 - During the onboarding period (first year after contract deployment), the XNS contract owner can optionally bootstrap namespaces for participants and integrators at no cost using [`registerPublicNamespaceFor`][api-registerPublicNamespaceFor] and [`registerPrivateNamespaceFor`][api-registerPrivateNamespaceFor]. These are OWNER-only functions that allow registering namespaces for other addresses during the onboarding period.
+
+  **Example scripts:**
+  * [Register public namespace for another address (OWNER-only)][script-registerPublicNamespaceFor]
+  * [Register private namespace for another address (OWNER-only)][script-registerPrivateNamespaceFor]
 
 #### Example: Public Namespace Registration via Etherscan
 
@@ -203,8 +209,9 @@ You can register a namespace directly via [Etherscan][etherscan-sepolia].
 
 To register a private namespace, use the [`registerPrivateNamespace`][api-registerPrivateNamespace] function with the same input fields as the public version. The required registration fee is **10 ETH** (entered in the first field instead of 50); if you send more than 10 ETH, the excess will be automatically refunded.
 
-**Example script:**
-* [Public/Private namespace registration][script-registerNamespace]
+**Example scripts:**
+* [Public namespace registration][script-registerPublicNamespace]
+* [Private namespace registration][script-registerPrivateNamespace]
 
 ### Namespace Infos
 
@@ -521,7 +528,10 @@ See the [Developer Notes][dev-notes] for design decisions, code style guidelines
 [script-registerNameWithAuthorization]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerNameWithAuthorization.ts
 [script-registerNameWithAuthorizationForERC20]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerNameWithAuthorizationForERC20.ts
 [script-batchRegisterNameWithAuthorization]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/batchRegisterNameWithAuthorization.ts
-[script-registerNamespace]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerNamespace.ts
+[script-registerPublicNamespace]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerPublicNamespace.ts
+[script-registerPrivateNamespace]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerPrivateNamespace.ts
+[script-registerPublicNamespaceFor]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerPublicNamespaceFor.ts
+[script-registerPrivateNamespaceFor]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerPrivateNamespaceFor.ts
 [script-getAddress]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getAddress.ts
 [script-getName]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getName.ts
 [script-getNamespaceInfo]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getNamespaceInfo.ts

@@ -219,23 +219,24 @@ contract XNS is EIP712 {
     // =========================================================================
 
     /// @notice Function to register a paid name for `msg.sender`. To register a bare name
-    /// (e.g., "vitalik"), use "x" as the namespace parameter. 
-    /// For public namespaces, namespace creators have a 30-day exclusivity window to register a name for themselves.
-    /// Registrations are opened to the public after the 30-day exclusivity period.
-    /// For private namespaces, only the namespace creator may register a name for themselves.
+    /// (e.g., "vitalik"), use "x" as the namespace parameter.
+    /// This function only works for public namespaces after the exclusivity period (30 days).
+    /// For private namespaces or during the exclusivity period, use `registerNameWithAuthorization` instead.
     ///
     /// **Requirements:**
     /// - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-',
     ///   cannot contain consecutive hyphens)
-    /// - Namespace must exist.
-    /// - For private namespaces: `msg.sender` must be the namespace creator.
-    /// - For public namespaces: `msg.sender` must be namespace creator if called during the 30-day exclusivity period.
+    /// - Namespace must exist and be public.
+    /// - Namespace must be past the exclusivity period (30 days after creation).
     /// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
     /// - Caller must not already have a name.
     /// - Name must not already be registered.
-    /// 
-    /// **Note:** Due to block reorganization risks, users should wait for a few blocks and verify
-    /// the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
+    ///
+    /// **Note:**
+    /// - During the exclusivity period or for private namespaces, namespace creators must use
+    ///   `registerNameWithAuthorization` even for their own registrations.
+    /// - Due to block reorganization risks, users should wait for a few blocks and verify
+    ///   the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
     ///
     /// @param label The label part of the name to register.
     /// @param namespace The namespace part of the name to register.
@@ -247,18 +248,11 @@ contract XNS is EIP712 {
 
         require(msg.value >= ns.pricePerName, "XNS: insufficient payment");
 
-        // Default to namespace creator as the creator fee recipient (common case: public name registration)
-        address creatorFeeRecipient = ns.creator;
+        // Reject private namespaces - must use registerNameWithAuthorization
+        require(!ns.isPrivate, "XNS: only for public namespaces");
 
-        // Enforce access control: private namespaces require creator, public namespaces follow exclusivity rules
-        if (!ns.isPrivate) {
-            if (block.timestamp < ns.createdAt + EXCLUSIVITY_PERIOD) {
-                require(msg.sender == ns.creator, "XNS: not namespace creator (exclusivity period)");
-            }
-        } else {
-            require(msg.sender == ns.creator, "XNS: not namespace creator (private)");
-            creatorFeeRecipient = OWNER;
-        }
+        // Reject exclusivity period - must use registerNameWithAuthorization
+        require(block.timestamp > ns.createdAt + EXCLUSIVITY_PERIOD, "XNS: use registerNameWithAuthorization during exclusivity period");
 
         require(bytes(_addressToName[msg.sender].label).length == 0, "XNS: address already has a name");
 
@@ -271,14 +265,23 @@ contract XNS is EIP712 {
         emit NameRegistered(label, namespace, msg.sender);
 
         // Process payment: burn 90%, credit fees, and refund excess.
-        _processETHPayment(ns.pricePerName, creatorFeeRecipient);
+        // For public namespaces, creator receives 5% and OWNER receives 5%.
+        _processETHPayment(ns.pricePerName, ns.creator);
     }
 
     /// @notice Function to sponsor a paid name registration for `recipient` who explicitly authorized it via
     /// signature. Allows a third party to pay gas and registration fees while the recipient explicitly approves
-    /// via EIP-712 signature. 
-    /// For public namespaces, only namespace creator may sponsor registrations during exclusivity period. 
-    /// For private namespaces, only namespace creator may sponsor registrations forever.
+    /// via EIP-712 signature.
+    ///
+    /// This function is **required** for:
+    /// - All registrations during the exclusivity period (even namespace creators registering for themselves)
+    /// - All registrations in private namespaces (even namespace creators registering for themselves)
+    /// - All sponsored registrations (when someone else pays the fee)
+    ///
+    /// For public namespaces during exclusivity period: only the namespace creator may sponsor registrations.
+    /// For private namespaces: only the namespace creator may sponsor registrations forever.
+    /// For public namespaces after exclusivity period: anyone may sponsor registrations.
+    ///
     /// Supports both EOA signatures and EIP-1271 contract wallet signatures.
     ///
     /// **Requirements:**
@@ -315,8 +318,8 @@ contract XNS is EIP712 {
         // - Private namespace: creator-only forever.
         if (ns.isPrivate) {
             require(msg.sender == ns.creator, "XNS: not namespace creator (private)");
-        } else if (block.timestamp < ns.createdAt + EXCLUSIVITY_PERIOD) {
-            require(msg.sender == ns.creator, "XNS: not namespace creator (exclusivity period)");
+        } else if (block.timestamp <= ns.createdAt + EXCLUSIVITY_PERIOD) {
+            require(msg.sender == ns.creator, "XNS: not namespace creator (exclusivity period)"); // @todo change to "only namespace creator" and also in other places
         }
 
         require(
@@ -375,7 +378,7 @@ contract XNS is EIP712 {
         // - Public namespace: creator-only during exclusivity.
         if (ns.isPrivate) {
             require(msg.sender == ns.creator, "XNS: not namespace creator (private)");
-        } else if (block.timestamp < ns.createdAt + EXCLUSIVITY_PERIOD) {
+        } else if (block.timestamp <= ns.createdAt + EXCLUSIVITY_PERIOD) {
             require(msg.sender == ns.creator, "XNS: not namespace creator"); // @todo add (exclusivity period) like in single version
         }
 

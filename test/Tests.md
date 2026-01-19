@@ -225,18 +225,15 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
   - Should map name hash to owner address.
   - Should map owner address to name.
   - Should set correct label and namespace.
-- Should allow namespace creator to register a paid name in public namespace during exclusive period.
 - Should allow anyone to register paid names in public namespace after exclusive period (30 days).
 - Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
 - Should refund excess payment when `msg.value` exceeds namespace price.
 - Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (10 ETH) after the exclusive period ends.
 - Should credit correct amount of DETH to `msg.sender`.
-- Should credit correct amount of DETH to namespace creator (`msg.sender`) during exclusive period.
 - Should allow a contract to register a name for itself via `registerName` (in constructor).
 - Should allow a contract to register a name for itself via `registerName` (after deployment).
 - Should refund excess payment to contract when registering in constructor with excess payment.
 - Should refund excess payment to contract when registering via function with excess payment.
-- Should allow private namespace creator to register a name for themselves and process fees correctly (90% burnt, 10% to contract owner, 0% to namespace creator).
 
 #### Events
 
@@ -246,9 +243,9 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 - Should revert with `XNS: invalid label` error for invalid label.
 - Should revert with `XNS: namespace not found` error when namespace doesn't exist.
-- Should revert with `XNS: not namespace creator (private)` error when trying to register in private namespace with non-creator account.
+- Should revert with `XNS: only for public namespaces` error when trying to register in private namespace.
 - Should revert with `XNS: insufficient payment` error when `msg.value` is less than namespace price.
-- Should revert with `XNS: not namespace creator (exclusivity period)` error when non-creator tries to register during exclusive period.
+- Should revert with `XNS: use registerNameWithAuthorization during exclusivity period` error when trying to register during exclusive period.
 - Should revert with `XNS: address already has a name` error when address already owns a name.
 - Should revert with `XNS: name already registered` error when name is already registered.
 
@@ -263,6 +260,8 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
   - Should map name hash to recipient address.
   - Should map recipient address to name.
   - Should set correct label and namespace.
+- Should allow namespace creator to register a paid name in public namespace during exclusive period using authorization.
+- Should allow private namespace creator to register a name for themselves using authorization and process fees correctly (90% burnt, 10% to contract owner, 0% to namespace creator).
 - Should allow namespace creator to sponsor registrations in public namespace during exclusive period (30 days).
 - Should allow anyone to sponsor registrations in public namespace after exclusive period (30 days).
 - Should allow namespace creator to sponsor registrations in private namespace (creator-only forever).

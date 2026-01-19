@@ -54,7 +54,10 @@ Label and namespace string requirements:
 - **Private namespaces:**
   - Fee: 10 ETH
   - Only the namespace creator may register names within their private namespace forever.
-- The XNS contract owner can register namespaces for free in the first year following contract deployment.
+- During the onboarding period (first year after contract deployment), the XNS contract owner can optionally
+  bootstrap namespaces for participants and integrators at no cost using `registerPublicNamespaceFor` and
+  `registerPrivateNamespaceFor`. Regular users always pay standard fees via `registerPublicNamespace` and
+  `registerPrivateNamespace`, including the owner when using self-service functions.
 - The XNS contract owner is set as the creator of the "x" namespace (bare names) at contract deployment.
 - "eth" namespace is disallowed for both public and private namespaces to avoid confusion with ENS.
 
@@ -75,23 +78,24 @@ Label and namespace string requirements:
 
 
 Function to register a paid name for `msg.sender`. To register a bare name
-(e.g., "vitalik"), use "x" as the namespace parameter. 
-For public namespaces, namespace creators have a 30-day exclusivity window to register a name for themselves.
-Registrations are opened to the public after the 30-day exclusivity period.
-For private namespaces, only the namespace creator may register a name for themselves.
+(e.g., "vitalik"), use "x" as the namespace parameter.
+This function only works for public namespaces after the exclusivity period (30 days).
+For private namespaces or during the exclusivity period, use `registerNameWithAuthorization` instead.
 
 **Requirements:**
 - Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-',
   cannot contain consecutive hyphens)
-- Namespace must exist.
-- For private namespaces: `msg.sender` must be the namespace creator.
-- For public namespaces: `msg.sender` must be namespace creator if called during the 30-day exclusivity period.
+- Namespace must exist and be public.
+- Namespace must be past the exclusivity period (30 days after creation).
 - `msg.value` must be >= the namespace's registered price (excess will be refunded).
 - Caller must not already have a name.
 - Name must not already be registered.
 
-**Note:** Due to block reorganization risks, users should wait for a few blocks and verify
-the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
+**Note:**
+- During the exclusivity period or for private namespaces, namespace creators must use
+  `registerNameWithAuthorization` even for their own registrations.
+- Due to block reorganization risks, users should wait for a few blocks and verify
+  the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
 
 ```solidity
 function registerName(string label, string namespace) external payable
@@ -111,9 +115,17 @@ function registerName(string label, string namespace) external payable
 
 Function to sponsor a paid name registration for `recipient` who explicitly authorized it via
 signature. Allows a third party to pay gas and registration fees while the recipient explicitly approves
-via EIP-712 signature. 
-For public namespaces, only namespace creator may sponsor registrations during exclusivity period. 
-For private namespaces, only namespace creator may sponsor registrations forever.
+via EIP-712 signature.
+
+This function is **required** for:
+- All registrations during the exclusivity period (even namespace creators registering for themselves)
+- All registrations in private namespaces (even namespace creators registering for themselves)
+- All sponsored registrations (when someone else pays the fee)
+
+For public namespaces during exclusivity period: only the namespace creator may sponsor registrations.
+For private namespaces: only the namespace creator may sponsor registrations forever.
+For public namespaces after exclusivity period: anyone may sponsor registrations.
+
 Supports both EOA signatures and EIP-1271 contract wallet signatures.
 
 **Requirements:**
@@ -645,7 +657,10 @@ uint256 EXCLUSIVITY_PERIOD
 ### ONBOARDING_PERIOD
 
 
-Period after contract deployment during which the owner pays no namespace registration fee.
+Period after contract deployment during which the owner can use `registerPublicNamespaceFor` and
+`registerPrivateNamespaceFor` to bootstrap namespaces for participants at no cost. After this period, all
+namespace registrations (including by the owner) require standard fees via `registerPublicNamespace` or
+`registerPrivateNamespace`.
 
 ```solidity
 uint256 ONBOARDING_PERIOD
