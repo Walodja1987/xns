@@ -1130,7 +1130,47 @@ describe("XNS", function () {
         ).to.be.revertedWith("XNS: 'eth' namespace forbidden");
     });
 
-    it("Should revert with `XNS: pricePerName must be > 0` error for zero price", async () => {
+    it("Should revert with `XNS: pricePerName too low` error for price less than 0.001 ETH", async () => {
+        // ---------
+        // Arrange: Prepare parameters with price less than PRICE_STEP (0.001 ETH)
+        // ---------
+        const namespace = "low";
+        const pricePerName = ethers.parseEther("0.0005"); // 0.0005 ETH is less than 0.001 ETH
+        const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
+
+        // ---------
+        // Act & Assert: Attempt to register namespace with price less than PRICE_STEP and expect revert
+        // ---------
+        await expect(
+            s.xns.connect(s.user1).registerPublicNamespace(namespace, pricePerName, { value: fee })
+        ).to.be.revertedWith("XNS: pricePerName too low");
+    });
+
+    it("Should allow public namespace registration with minimum price (0.001 ETH)", async () => {
+        // ---------
+        // Arrange: Prepare parameters with minimum price (PRICE_STEP)
+        // ---------
+        const namespace = "minpublic";
+        const pricePerName = await s.xns.PRICE_STEP(); // 0.001 ETH
+        const fee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
+
+        // ---------
+        // Act: Register namespace with minimum price
+        // ---------
+        await expect(
+            s.xns.connect(s.user1).registerPublicNamespace(namespace, pricePerName, { value: fee })
+        )
+            .to.emit(s.xns, "NamespaceRegistered")
+            .withArgs(namespace, pricePerName, s.user1.address, false);
+
+        // ---------
+        // Assert: Verify namespace was created with correct price
+        // ---------
+        const [nsPricePerName] = await s.xns.getNamespaceInfo(namespace);
+        expect(nsPricePerName).to.equal(pricePerName);
+    });
+
+    it("Should revert with `XNS: pricePerName too low` error for zero price", async () => {
         // ---------
         // Arrange: Prepare parameters with zero price
         // ---------
@@ -1143,7 +1183,7 @@ describe("XNS", function () {
         // ---------
         await expect(
             s.xns.connect(s.user1).registerPublicNamespace(namespace, pricePerName, { value: fee })
-        ).to.be.revertedWith("XNS: pricePerName must be > 0");
+        ).to.be.revertedWith("XNS: pricePerName too low");
     });
 
     it("Should revert with `XNS: price must be multiple of 0.001 ETH` error for non-multiple price", async () => {
@@ -2077,6 +2117,30 @@ describe("XNS", function () {
         await expect(
             s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: fee })
         ).to.be.revertedWith("XNS: pricePerName too low");
+    });
+
+    it("Should allow private namespace registration with minimum price (0.001 ETH)", async () => {
+        // ---------
+        // Arrange: Prepare parameters with minimum price (PRICE_STEP)
+        // ---------
+        const namespace = "minprivate";
+        const pricePerName = await s.xns.PRICE_STEP(); // 0.001 ETH
+        const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
+
+        // ---------
+        // Act: Register namespace with minimum price
+        // ---------
+        await expect(
+            s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: fee })
+        )
+            .to.emit(s.xns, "NamespaceRegistered")
+            .withArgs(namespace, pricePerName, s.user1.address, true);
+
+        // ---------
+        // Assert: Verify namespace was created with correct price
+        // ---------
+        const [nsPricePerName] = await s.xns.getNamespaceInfo(namespace);
+        expect(nsPricePerName).to.equal(pricePerName);
     });
 
     it("Should revert with `XNS: price must be multiple of 0.001 ETH` error for non-multiple price", async () => {

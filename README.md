@@ -177,13 +177,13 @@ XNS supports public and private namespaces:
 - Any situation requiring full control over registration rights and name allocation.
 
 **How to register a public namespace:**
-1. **Choose a Namespace:** Select an available namespace and set the desired price per name (must be a multiple of 0.001 ETH).
+1. **Choose a Namespace:** Select an available namespace and set the desired price per name (must be >= 0.001 ETH and a multiple of 0.001 ETH).
 2. **Register Namespace:** Submit a transaction with the required ETH to register the namespace (see [`registerPublicNamespace`][api-registerPublicNamespace] in the API docs). Any excess will be refunded.
 
 As the public namespace creator, you have an exclusive 30-day window to register or sponsor any name within your namespace. After this period, anyone can freely register names.
 
 **How to register a private namespace:**
-1. **Choose a Namespace:** Select an available namespace and set the desired price per name (must be a multiple of 0.001 ETH).
+1. **Choose a Namespace:** Select an available namespace and set the desired price per name (must be >= 0.001 ETH and a multiple of 0.001 ETH).
 2. **Register Namespace:** Submit a transaction with the required ETH to register the namespace (see [`registerPrivateNamespace`][api-registerPrivateNamespace] in the API docs). Any excess will be refunded.
 
 The private namespace creator registers names via the authorized flow (see [`registerNameWithAuthorization`][api-registerNameWithAuthorization] in the API docs). The namespace creator can also use the [`registerName`][api-registerName] function to register a name for themselves.

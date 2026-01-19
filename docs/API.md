@@ -187,7 +187,7 @@ Register a new public namespace.
 - `msg.value` must be >= 50 ETH (excess refunded), except OWNER pays 0 ETH during initial period.
 - Namespace must not already exist.
 - Namespace must not equal "eth".
-- `pricePerName` must be a multiple of 0.001 ETH.
+- `pricePerName` must be >= 0.001 ETH and a multiple of 0.001 ETH.
 
 **Note:**
 - During the onboarding period (1 year following contract deployment),

@@ -435,7 +435,7 @@ contract XNS is EIP712 {
     /// - `msg.value` must be >= 50 ETH (excess refunded), except OWNER pays 0 ETH during initial period.
     /// - Namespace must not already exist.
     /// - Namespace must not equal "eth".
-    /// - `pricePerName` must be a multiple of 0.001 ETH.
+    /// - `pricePerName` must be >= 0.001 ETH and a multiple of 0.001 ETH.
     ///
     /// **Note:**
     /// - During the onboarding period (1 year following contract deployment),
@@ -454,7 +454,7 @@ contract XNS is EIP712 {
         // Forbid "eth" namespace to avoid confusion with ENS.
         require(keccak256(bytes(namespace)) != keccak256(bytes("eth")), "XNS: 'eth' namespace forbidden");
 
-        require(pricePerName > 0, "XNS: pricePerName must be > 0");
+        require(pricePerName >= PRICE_STEP, "XNS: pricePerName too low");
         require(pricePerName % PRICE_STEP == 0, "XNS: price must be multiple of 0.001 ETH");
 
         bytes32 nsHash = keccak256(bytes(namespace));
