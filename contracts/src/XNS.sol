@@ -254,7 +254,7 @@ contract XNS is EIP712 {
     function registerName(string calldata label, string calldata namespace) external payable {
         require(_isValidSlug(label), "XNS: invalid label");
 
-        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
+        NamespaceData memory ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
 
         require(msg.value >= ns.pricePerName, "XNS: insufficient payment");
@@ -319,7 +319,7 @@ contract XNS is EIP712 {
         require(registerNameAuth.recipient != address(0), "XNS: 0x recipient");
 
         bytes32 nsHash = keccak256(bytes(registerNameAuth.namespace));
-        NamespaceData storage ns = _namespaces[nsHash];
+        NamespaceData memory ns = _namespaces[nsHash];
         require(ns.creator != address(0), "XNS: namespace not found");
 
         require(msg.value >= ns.pricePerName, "XNS: insufficient payment");
@@ -381,7 +381,7 @@ contract XNS is EIP712 {
         require(registerNameAuths.length > 0, "XNS: empty array");
 
         bytes32 firstNsHash = keccak256(bytes(registerNameAuths[0].namespace));
-        NamespaceData storage ns = _namespaces[firstNsHash];
+        NamespaceData memory ns = _namespaces[firstNsHash];
         require(ns.creator != address(0), "XNS: namespace not found");
 
         // Enforce sponsorship rules:
@@ -638,7 +638,7 @@ contract XNS is EIP712 {
     /// @param addr The address to lookup the XNS name for.
     /// @return name The XNS name for the address, or empty string if the address has no name.
     function getName(address addr) external view returns (string memory) {
-        Name storage n = _addressToName[addr];
+        Name memory n = _addressToName[addr];
 
         if (bytes(n.label).length == 0) {
             return "";
@@ -661,7 +661,7 @@ contract XNS is EIP712 {
     function getNamespaceInfo(
         string calldata namespace
     ) external view returns (uint256 pricePerName, address creator, uint64 createdAt, bool isPrivate) {
-        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
+        NamespaceData memory ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
         return (ns.pricePerName, ns.creator, ns.createdAt, ns.isPrivate);
     }
@@ -671,7 +671,7 @@ contract XNS is EIP712 {
     /// @param namespace The namespace to retrieve the price for.
     /// @return pricePerName The price per name for the namespace.
     function getNamespacePrice(string calldata namespace) external view returns (uint256 pricePerName) {
-        NamespaceData storage ns = _namespaces[keccak256(bytes(namespace))];
+        NamespaceData memory ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
         return ns.pricePerName;
     }
