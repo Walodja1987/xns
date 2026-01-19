@@ -155,6 +155,12 @@ describe("XNS", function () {
         // Should have correct PRICE_STEP (0.001 ether / 1e15)
         expect(await s.xns.PRICE_STEP()).to.equal(ethers.parseEther("0.001"));
 
+        // Should have correct PUBLIC_NAMESPACE_MIN_PRICE (0.001 ether)
+        expect(await s.xns.PUBLIC_NAMESPACE_MIN_PRICE()).to.equal(ethers.parseEther("0.001"));
+
+        // Should have correct PRIVATE_NAMESPACE_MIN_PRICE (0.005 ether)
+        expect(await s.xns.PRIVATE_NAMESPACE_MIN_PRICE()).to.equal(ethers.parseEther("0.005"));
+
         // Should have correct BARE_NAME_NAMESPACE ("x")
         expect(await s.xns.BARE_NAME_NAMESPACE()).to.equal("x");
 
@@ -2532,11 +2538,27 @@ describe("XNS", function () {
         ).to.be.revertedWith("XNS: 'eth' namespace forbidden");
     });
 
-    it("Should revert with `XNS: pricePerName too low` error for price less than 0.001 ETH", async () => {
+    it("Should revert with `XNS: pricePerName too low for private namespace` error for price less than 0.005 ETH", async () => {
+        // ---------
+        // Arrange: Prepare parameters with price less than 0.005 ETH (private namespace minimum)
+        // ---------
+        const namespace = "low-price";
+        const pricePerName = ethers.parseEther("0.003"); // Less than 0.005 ETH but >= 0.001 ETH
+        const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
+
+        // ---------
+        // Act & Assert: Attempt to register private namespace with price less than 0.005 ETH and expect revert
+        // ---------
+        await expect(
+            s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: fee })
+        ).to.be.revertedWith("XNS: pricePerName too low for private namespace");
+    });
+
+    it("Should revert with `XNS: pricePerName too low for private namespace` error for price less than 0.001 ETH", async () => {
         // ---------
         // Arrange: Prepare parameters with price less than 0.001 ETH
         // ---------
-        const namespace = "low-price";
+        const namespace = "very-low-price";
         const pricePerName = ethers.parseEther("0.0005"); // Less than 0.001 ETH
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
@@ -2545,15 +2567,15 @@ describe("XNS", function () {
         // ---------
         await expect(
             s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: fee })
-        ).to.be.revertedWith("XNS: pricePerName too low");
+        ).to.be.revertedWith("XNS: pricePerName too low for private namespace");
     });
 
-    it("Should allow private namespace registration with minimum price (0.001 ETH)", async () => {
+    it("Should allow private namespace registration with minimum price (0.005 ETH)", async () => {
         // ---------
-        // Arrange: Prepare parameters with minimum price (PRICE_STEP)
+        // Arrange: Prepare parameters with minimum price (PRIVATE_NAMESPACE_MIN_PRICE)
         // ---------
         const namespace = "minprivate";
-        const pricePerName = await s.xns.PRICE_STEP(); // 0.001 ETH
+        const pricePerName = await s.xns.PRIVATE_NAMESPACE_MIN_PRICE(); // 0.005 ETH
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // ---------

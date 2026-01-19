@@ -41,8 +41,8 @@ const RED = "\x1b[31m";
 // Namespace to register (e.g., "my-company", "internal-team")
 const namespace = "my-private-namespace";
 
-// Price per name in ETH (must be multiple of 0.001 ETH)
-const pricePerNameETH = "0.001";
+// Price per name in ETH (must be >= 0.005 ETH and a multiple of 0.001 ETH)
+const pricePerNameETH = "0.005";
 
 // Signer index (0 = account 1, 1 = account 2, 2 = account 3, etc.)
 const signerIndex = 0;

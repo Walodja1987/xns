@@ -160,6 +160,12 @@ contract XNS is EIP712 {
     /// @notice Unit price step (0.001 ETH).
     uint256 public constant PRICE_STEP = 0.001 ether;
 
+    /// @notice Minimum price per name for public namespaces (0.001 ETH).
+    uint256 public constant PUBLIC_NAMESPACE_MIN_PRICE = 0.001 ether;
+
+    /// @notice Minimum price per name for private namespaces (0.005 ETH = 5x public minimum).
+    uint256 public constant PRIVATE_NAMESPACE_MIN_PRICE = 0.005 ether;
+
     /// @notice Namespace associated with bare names (e.g. "vitalik" = "vitalik.x").
     string public constant BARE_NAME_NAMESPACE = "x";
 
@@ -324,7 +330,7 @@ contract XNS is EIP712 {
         if (ns.isPrivate) {
             require(msg.sender == ns.creator, "XNS: not namespace creator (private)");
         } else if (block.timestamp <= ns.createdAt + EXCLUSIVITY_PERIOD) {
-            require(msg.sender == ns.creator, "XNS: not namespace creator (exclusivity period)"); // @todo change to "only namespace creator" and also in other places
+            require(msg.sender == ns.creator, "XNS: not namespace creator (exclusivity period)");
         }
 
         require(
@@ -369,7 +375,7 @@ contract XNS is EIP712 {
     /// @return successfulCount The number of names successfully registered.
     function batchRegisterNameWithAuthorization(
         RegisterNameAuth[] calldata registerNameAuths,
-        bytes[] calldata signatures // @todo add namespace as input to make it explicit
+        bytes[] calldata signatures
     ) external payable returns (uint256 successfulCount) {
         require(registerNameAuths.length == signatures.length, "XNS: length mismatch");
         require(registerNameAuths.length > 0, "XNS: empty array");
@@ -430,7 +436,7 @@ contract XNS is EIP712 {
         if (successful > 0) {
             uint256 actualTotal = ns.pricePerName * successful;
             require(msg.value >= actualTotal, "XNS: insufficient payment");
-            address creatorFeeRecipient = ns.isPrivate ? OWNER : ns.creator; // @todo apply same logic in updated registerName function
+            address creatorFeeRecipient = ns.isPrivate ? OWNER : ns.creator;
             _processETHPayment(actualTotal, creatorFeeRecipient);
             return successful;
         }
@@ -475,7 +481,7 @@ contract XNS is EIP712 {
     /// - `msg.value` must be >= 10 ETH (excess refunded).
     /// - Namespace must not already exist.
     /// - Namespace must not equal "eth".
-    /// - `pricePerName` must be >= 0.001 ETH and a multiple of 0.001 ETH.
+    /// - `pricePerName` must be >= 0.005 ETH and a multiple of 0.001 ETH.
     ///
     /// **Note:**
     /// - During the onboarding period (1 year following contract deployment), the contract owner can optionally
@@ -744,7 +750,8 @@ contract XNS is EIP712 {
     /// - Writes namespace data to storage
     /// - Emits NamespaceRegistered event
     /// @param namespace The namespace to register.
-    /// @param pricePerName The price per name for the namespace.
+    /// @param pricePerName The price per name for the namespace. Must be >= 0.001 ETH for public namespaces,
+    ///   >= 0.005 ETH for private namespaces, and a multiple of 0.001 ETH.
     /// @param creator The address that will be set as the namespace creator.
     /// @param isPrivate Whether the namespace is private.
     /// @dev No ETH logic (no payment processing, no refunds). Pure validation + storage + event.
@@ -754,7 +761,12 @@ contract XNS is EIP712 {
         // Forbid "eth" namespace to avoid confusion with ENS.
         require(keccak256(bytes(namespace)) != keccak256(bytes("eth")), "XNS: 'eth' namespace forbidden");
 
-        require(pricePerName >= PRICE_STEP, "XNS: pricePerName too low"); // @todo 0.005 ETH min for private
+        // Check minimum price based on namespace type (public namespaces are more common, check first)
+        if (!isPrivate) {
+            require(pricePerName >= PUBLIC_NAMESPACE_MIN_PRICE, "XNS: pricePerName too low");
+        } else {
+            require(pricePerName >= PRIVATE_NAMESPACE_MIN_PRICE, "XNS: pricePerName too low for private namespace");
+        }
         require(pricePerName % PRICE_STEP == 0, "XNS: price must be multiple of 0.001 ETH");
 
         bytes32 nsHash = keccak256(bytes(namespace));
