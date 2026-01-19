@@ -59,7 +59,10 @@ Label and namespace string requirements:
 - **Private namespaces:**
   - Fee: 10 ETH
   - Only the namespace creator may register names within their private namespace forever.
-- The XNS contract owner can register namespaces for free in the first year following contract deployment.
+- During the onboarding period (first year after contract deployment), the XNS contract owner can optionally
+  bootstrap namespaces for participants and integrators at no cost using `registerPublicNamespaceFor` and
+  `registerPrivateNamespaceFor`. Regular users always pay standard fees via `registerPublicNamespace` and
+  `registerPrivateNamespace`, including the owner when using self-service functions.
 - The XNS contract owner is set as the creator of the "x" namespace (bare names) at contract deployment.
 - "eth" namespace is disallowed for both public and private namespaces to avoid confusion with ENS.
 
@@ -80,7 +83,7 @@ Label and namespace string requirements:
 
 
 Function to register a paid name for `msg.sender`. To register a bare name
-(e.g., "vitalik"), use "x" as the namespace parameter. 
+(e.g., "vitalik"), use "x" as the namespace parameter.
 This function only works for public namespaces after the exclusivity period (30 days).
 For private namespaces or during the exclusivity period, use `registerNameWithAuthorization` instead.
 
@@ -96,9 +99,8 @@ For private namespaces or during the exclusivity period, use `registerNameWithAu
 **Note:**
 - During the exclusivity period or for private namespaces, namespace creators must use
   `registerNameWithAuthorization` even for their own registrations.
-
-**Note:** Due to block reorganization risks, users should wait for a few blocks and verify
-the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
+- Due to block reorganization risks, users should wait for a few blocks and verify
+  the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
 
 ```solidity
 function registerName(string label, string namespace) external payable
@@ -118,7 +120,7 @@ function registerName(string label, string namespace) external payable
 
 Function to sponsor a paid name registration for `recipient` who explicitly authorized it via
 signature. Allows a third party to pay gas and registration fees while the recipient explicitly approves
-via EIP-712 signature. 
+via EIP-712 signature.
 
 This function is **required** for:
 - All registrations during the exclusivity period (even namespace creators registering for themselves)
@@ -128,6 +130,7 @@ This function is **required** for:
 For public namespaces during exclusivity period: only the namespace creator may sponsor registrations.
 For private namespaces: only the namespace creator may sponsor registrations forever.
 For public namespaces after exclusivity period: anyone may sponsor registrations.
+
 Supports both EOA signatures and EIP-1271 contract wallet signatures.
 
 **Requirements:**
@@ -232,7 +235,7 @@ Register a new private namespace.
 - `msg.value` must be >= 10 ETH (excess refunded).
 - Namespace must not already exist.
 - Namespace must not equal "eth".
-- `pricePerName` must be >= 0.001 ETH and a multiple of 0.001 ETH.
+- `pricePerName` must be >= 0.005 ETH and a multiple of 0.001 ETH.
 
 **Note:**
 - During the onboarding period (1 year following contract deployment), the contract owner can optionally
@@ -659,7 +662,10 @@ uint256 EXCLUSIVITY_PERIOD
 ### ONBOARDING_PERIOD
 
 
-Period after contract deployment during which the owner pays no namespace registration fee.
+Period after contract deployment during which the owner can use `registerPublicNamespaceFor` and
+`registerPrivateNamespaceFor` to bootstrap namespaces for participants at no cost. After this period, all
+namespace registrations (including by the owner) require standard fees via `registerPublicNamespace` or
+`registerPrivateNamespace`.
 
 ```solidity
 uint256 ONBOARDING_PERIOD
@@ -676,6 +682,32 @@ Unit price step (0.001 ETH).
 
 ```solidity
 uint256 PRICE_STEP
+```
+
+
+
+
+
+### PUBLIC_NAMESPACE_MIN_PRICE
+
+
+Minimum price per name for public namespaces (0.001 ETH).
+
+```solidity
+uint256 PUBLIC_NAMESPACE_MIN_PRICE
+```
+
+
+
+
+
+### PRIVATE_NAMESPACE_MIN_PRICE
+
+
+Minimum price per name for private namespaces (0.005 ETH = 5x public minimum).
+
+```solidity
+uint256 PRIVATE_NAMESPACE_MIN_PRICE
 ```
 
 

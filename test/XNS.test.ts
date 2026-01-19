@@ -1549,7 +1549,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters for private namespace registration
         // ---------
         const namespace = "for-user1-private";
-        const pricePerName = ethers.parseEther("0.002");
+        const pricePerName = ethers.parseEther("0.005");
         const creator = s.user1.address;
         
         // Confirm that this registration is within the ONBOARDING_PERIOD
@@ -1584,7 +1584,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters for private namespace registration
         // ---------
         const namespace = "for-user2-private";
-        const pricePerName = ethers.parseEther("0.003");
+        const pricePerName = ethers.parseEther("0.005");
         const creator = s.user2.address;
 
         // ---------
@@ -1608,7 +1608,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters for private namespace registration
         // ---------
         const namespace = "for-user2-event";
-        const pricePerName = ethers.parseEther("0.004");
+        const pricePerName = ethers.parseEther("0.005");
         const creator = s.user2.address;
 
         // ---------
@@ -1738,7 +1738,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with empty namespace
         // ---------
         const namespace = "";
-        const pricePerName = ethers.parseEther("0.002");
+        const pricePerName = ethers.parseEther("0.005");
         const creator = s.user1.address;
 
         // ---------
@@ -1754,7 +1754,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with namespace longer than 20 characters
         // ---------
         const namespace = "a".repeat(21); // 21 characters
-        const pricePerName = ethers.parseEther("0.002");
+        const pricePerName = ethers.parseEther("0.005");
         const creator = s.user1.address;
 
         // ---------
@@ -1770,7 +1770,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with namespace containing invalid characters
         // ---------
         const namespace = "INVALID";
-        const pricePerName = ethers.parseEther("0.002");
+        const pricePerName = ethers.parseEther("0.005");
         const creator = s.user1.address;
 
         // ---------
@@ -1786,7 +1786,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with namespace starting with hyphen
         // ---------
         const namespace = "-invalid";
-        const pricePerName = ethers.parseEther("0.002");
+        const pricePerName = ethers.parseEther("0.005");
         const creator = s.user1.address;
 
         // ---------
@@ -1802,7 +1802,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with namespace ending with hyphen
         // ---------
         const namespace = "invalid-";
-        const pricePerName = ethers.parseEther("0.002");
+        const pricePerName = ethers.parseEther("0.005");
         const creator = s.user1.address;
 
         // ---------
@@ -1818,7 +1818,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with namespace containing consecutive hyphens
         // ---------
         const namespace = "in--valid";
-        const pricePerName = ethers.parseEther("0.002");
+        const pricePerName = ethers.parseEther("0.005");
         const creator = s.user1.address;
 
         // ---------
@@ -1834,7 +1834,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with "eth" namespace
         // ---------
         const namespace = "eth";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const creator = s.user1.address;
 
         // ---------
@@ -1845,7 +1845,7 @@ describe("XNS", function () {
         ).to.be.revertedWith("XNS: 'eth' namespace forbidden");
     });
 
-    it("Should revert with `XNS: pricePerName too low` error for price less than 0.001 ETH", async () => {
+    it("Should revert with `XNS: pricePerName too low for private namespace` error for price less than 0.005 ETH", async () => {
         // ---------
         // Arrange: Prepare parameters with price less than PRICE_STEP (0.001 ETH)
         // ---------
@@ -1858,10 +1858,10 @@ describe("XNS", function () {
         // ---------
         await expect(
             s.xns.connect(s.owner).registerPrivateNamespaceFor(creator, namespace, pricePerName)
-        ).to.be.revertedWith("XNS: pricePerName too low");
+        ).to.be.revertedWith("XNS: pricePerName too low for private namespace");
     });
 
-    it("Should revert with `XNS: pricePerName too low` error for zero price", async () => {
+    it("Should revert with `XNS: pricePerName too low for private namespace` error for zero price", async () => {
         // ---------
         // Arrange: Prepare parameters with zero price
         // ---------
@@ -1874,7 +1874,7 @@ describe("XNS", function () {
         // ---------
         await expect(
             s.xns.connect(s.owner).registerPrivateNamespaceFor(creator, namespace, pricePerName)
-        ).to.be.revertedWith("XNS: pricePerName too low");
+        ).to.be.revertedWith("XNS: pricePerName too low for private namespace");
     });
 
     it("Should revert with `XNS: price must be multiple of 0.001 ETH` error when price is not a multiple of PRICE_STEP", async () => {
@@ -1882,7 +1882,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with price not a multiple of PRICE_STEP
         // ---------
         const namespace = "non-multiple-private";
-        const pricePerName = ethers.parseEther("0.0015"); // 0.0015 ETH is not a multiple of 0.001 ETH
+        const pricePerName = ethers.parseEther("0.0055"); // 0.0055 ETH is not a multiple of 0.001 ETH
         const creator = s.user1.address;
 
         // ---------
@@ -1898,7 +1898,7 @@ describe("XNS", function () {
         // Arrange: First register a namespace, then attempt to register it again
         // ---------
         const namespace = "already-exists-priv";
-        const pricePerName = ethers.parseEther("0.002");
+        const pricePerName = ethers.parseEther("0.005");
         const creator = s.user1.address;
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
@@ -1931,7 +1931,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters for private namespace registration
         // ---------
         const namespace = "my-private-ns";
-        const pricePerName = ethers.parseEther("0.002");
+        const pricePerName = ethers.parseEther("0.005");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // ---------
@@ -1967,7 +1967,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters for private namespace registration
         // ---------
         const namespace = "after-period";
-        const pricePerName = ethers.parseEther("0.002");
+        const pricePerName = ethers.parseEther("0.005");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // ---------
@@ -1997,7 +1997,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters and verify we're within the initial period
         // ---------
         const namespace = "dao-private";
-        const pricePerName = ethers.parseEther("0.004");
+        const pricePerName = ethers.parseEther("0.005");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
         
         // Confirm that this registration is within the ONBOARDING_PERIOD
@@ -2358,7 +2358,7 @@ describe("XNS", function () {
         // ---------
         const namespace1 = "ns1-private";
         const namespace2 = "ns2-private";
-        const pricePerName = ethers.parseEther("0.002"); // Same price for both
+        const pricePerName = ethers.parseEther("0.005"); // Same price for both
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // ---------
@@ -2431,7 +2431,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with empty namespace
         // ---------
         const namespace = "";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // ---------
@@ -2447,7 +2447,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with private namespace longer than 20 characters
         // ---------
         const namespace = "a".repeat(21); // 21 characters
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // ---------
@@ -2463,7 +2463,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with private namespace containing invalid characters
         // ---------
         const namespace = "aBc-private"; // Contains uppercase letter
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // ---------
@@ -2479,7 +2479,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with private namespace starting with hyphen
         // ---------
         const namespace = "-private-ns";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // ---------
@@ -2495,7 +2495,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with private namespace ending with hyphen
         // ---------
         const namespace = "private-ns-";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // ---------
@@ -2511,7 +2511,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with private namespace containing consecutive hyphens
         // ---------
         const namespace = "private--ns";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // ---------
@@ -2527,7 +2527,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with "eth" namespace
         // ---------
         const namespace = "eth";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // ---------
@@ -2599,7 +2599,7 @@ describe("XNS", function () {
         // Arrange: Prepare parameters with price that is not a multiple of 0.001 ETH
         // ---------
         const namespace = "mult-private";
-        const pricePerName = ethers.parseEther("0.0015"); // 0.0015 ETH is not a multiple of 0.001 ETH
+        const pricePerName = ethers.parseEther("0.0055"); // 0.0055 ETH is not a multiple of 0.001 ETH
         const fee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // ---------
@@ -3323,7 +3323,7 @@ describe("XNS", function () {
         // ---------
         const namespace = "private";
         const label = "test";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // Register private namespace
@@ -3614,7 +3614,7 @@ describe("XNS", function () {
         const namespace = "private-creator";
         const label = "myname";
         const recipient = s.user1.address; // Creator registers for themselves
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // Register private namespace with user1 as creator
@@ -3805,7 +3805,7 @@ describe("XNS", function () {
         const namespace = "private";
         const label = "private-sponsored";
         const recipient = s.user2.address; // user2 is the recipient
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // Register private namespace by user1 (creator)
@@ -3925,7 +3925,7 @@ describe("XNS", function () {
         const namespace = "private-payment";
         const label = "paymenttest";
         const recipient = s.user2.address; // user2 is the recipient
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // Register private namespace by user1 (creator)
@@ -4377,7 +4377,7 @@ describe("XNS", function () {
         const namespace = "private-revert";
         const label = "test";
         const recipient = s.user2.address;
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // Register private namespace by user1 (creator)
@@ -5130,7 +5130,7 @@ describe("XNS", function () {
         // Arrange: Register a private namespace and prepare parameters with some registrations that will be skipped
         // ---------
         const namespace = "private-payment";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // Register private namespace by user1 (creator)
@@ -5499,7 +5499,7 @@ describe("XNS", function () {
         // Arrange: Register a private namespace and prepare parameters
         // ---------
         const namespace = "private-batch";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // Register private namespace by user1 (creator)
@@ -6113,7 +6113,7 @@ describe("XNS", function () {
         // Arrange: Register a private namespace and prepare batch registration with non-creator sponsor
         // ---------
         const namespace = "private-batch-re";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // Register private namespace by user1 (creator)
@@ -6594,7 +6594,7 @@ describe("XNS", function () {
         // Arrange: Register a private namespace and accumulate fees
         // ---------
         const namespace = "private-fees";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
         const recipient = s.user2.address; // Non-owner recipient
 
@@ -6686,7 +6686,7 @@ describe("XNS", function () {
         // Arrange: Register a private namespace and sponsor name registrations
         // ---------
         const namespace = "private-zero-fee";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // Register private namespace by user1 (creator)
@@ -7152,7 +7152,7 @@ describe("XNS", function () {
         // Arrange: Register a private namespace and sponsor name registrations
         // ---------
         const namespace = "private-claim-se";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
         // Register private namespace by user1 (creator)
@@ -7609,7 +7609,7 @@ describe("XNS", function () {
         // Arrange: Register a private namespace and sponsor a name registration
         // ---------
         const namespace = "my-private-ns";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
         const label = "alice";
         const recipient = s.user2.address;
@@ -7653,7 +7653,7 @@ describe("XNS", function () {
         // Arrange: Register a private namespace but don't register any names
         // ---------
         const namespace = "private-test";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
         const label = "unregistered";
 
@@ -7682,7 +7682,7 @@ describe("XNS", function () {
         // Arrange: Register a long private namespace (20 characters) and sponsor a name registration
         // ---------
         const namespace = "my-private-namespace"; // 20 characters (max length for private namespaces)
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
         const label = "test";
         const recipient = s.user2.address;
@@ -8252,7 +8252,7 @@ describe("XNS", function () {
       // Arrange: Register a private namespace and sponsor a name registration
       // ---------
       const namespace = "my-private";
-      const pricePerName = ethers.parseEther("0.001");
+      const pricePerName = ethers.parseEther("0.005");
       const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
       const label = "alice";
       const recipient = s.user2.address;
@@ -8358,7 +8358,7 @@ describe("XNS", function () {
         // Arrange: Register a long private namespace (20 characters) and sponsor a name registration
         // ---------
         const namespace = "my-private-namespace"; // 20 characters (max length for private namespaces)
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
         const label = "label";
         const recipient = s.user2.address;
@@ -8404,7 +8404,7 @@ describe("XNS", function () {
         // Arrange: Register a private namespace "my-private" and sponsor a name registration
         // ---------
         const namespace = "my-private";
-        const pricePerName = ethers.parseEther("0.001");
+        const pricePerName = ethers.parseEther("0.005");
         const privateNamespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
         const label = "label";
         const recipient = s.user2.address;
@@ -8494,7 +8494,7 @@ describe("XNS", function () {
       // ---------
       const namespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
       const namespace = "private-test";
-      const pricePerName = ethers.parseEther("0.001");
+      const pricePerName = ethers.parseEther("0.005");
       const signers = await ethers.getSigners();
       const user3 = signers[3];
 
@@ -8582,7 +8582,7 @@ describe("XNS", function () {
       // ---------
       const namespaceFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
       const namespace = "private-price";
-      const pricePerName = ethers.parseEther("0.002");
+      const pricePerName = ethers.parseEther("0.005");
       const signers = await ethers.getSigners();
       const user3 = signers[3];
 

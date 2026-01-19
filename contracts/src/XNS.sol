@@ -313,7 +313,7 @@ contract XNS is EIP712 {
     /// @param signature EIP-712 signature by `recipient` (EOA) or EIP-1271 contract signature.
     function registerNameWithAuthorization(
         RegisterNameAuth calldata registerNameAuth,
-        bytes calldata signature // @todo reentrancy risk?
+        bytes calldata signature
     ) external payable {
         require(_isValidSlug(registerNameAuth.label), "XNS: invalid label");
         require(registerNameAuth.recipient != address(0), "XNS: 0x recipient");
@@ -432,7 +432,6 @@ contract XNS is EIP712 {
             successful++;
         }
 
-        // @todo check reentrancy
         if (successful > 0) {
             uint256 actualTotal = ns.pricePerName * successful;
             require(msg.value >= actualTotal, "XNS: insufficient payment");
@@ -470,7 +469,7 @@ contract XNS is EIP712 {
 
         _registerNamespace(namespace, pricePerName, msg.sender, false);
 
-        _processETHPayment(PUBLIC_NAMESPACE_REGISTRATION_FEE, OWNER); // @todo reentrancy risk oder vor register reinnehmen
+        _processETHPayment(PUBLIC_NAMESPACE_REGISTRATION_FEE, OWNER);
     }
 
     /// @notice Register a new private namespace.
@@ -495,7 +494,7 @@ contract XNS is EIP712 {
 
         _registerNamespace(namespace, pricePerName, msg.sender, true);
 
-        _processETHPayment(PRIVATE_NAMESPACE_REGISTRATION_FEE, OWNER); // @todo reentrancy risk oder vor register reinnehmen
+        _processETHPayment(PRIVATE_NAMESPACE_REGISTRATION_FEE, OWNER);
     }
 
     /// @notice OWNER-only function to register a public namespace for another address during the onboarding period.
