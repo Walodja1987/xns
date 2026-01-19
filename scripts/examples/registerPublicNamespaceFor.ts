@@ -1,0 +1,158 @@
+/**
+ * Script to register a public namespace for another address (OWNER-only, onboarding period only)
+ *
+ * USAGE:
+ * Run the script with:
+ * `npx hardhat run scripts/examples/registerPublicNamespaceFor.ts --network <network_name>`
+ *
+ * EXAMPLE:
+ * To register a public namespace on Sepolia:
+ * `npx hardhat run scripts/examples/registerPublicNamespaceFor.ts --network sepolia`
+ *
+ * REQUIRED SETUP:
+ * Before running, set these environment variables using hardhat-vars:
+ *
+ * 1. Network Independent Setup:
+ *    - MNEMONIC:          `npx hardhat vars set MNEMONIC`
+ *    - ETHERSCAN_API_KEY: `npx hardhat vars set ETHERSCAN_API_KEY`
+ *
+ * 2. Network Specific Setup:
+ *    - ETH_SEPOLIA_TESTNET_URL: `npx hardhat vars set ETH_SEPOLIA_TESTNET_URL`
+ *
+ * NOTE:
+ * - Only the contract OWNER can call this function
+ * - Only works during the onboarding period (1 year after contract deployment)
+ * - No fees are charged for onboarding registrations
+ * - The creator address will be set as the namespace creator (can be different from OWNER)
+ */
+
+import hre from "hardhat";
+import { formatEther, parseEther } from "ethers";
+import { XNS_ADDRESS } from "../../constants/addresses";
+
+// Colour codes for terminal prints
+const RESET = "\x1b[0m";
+const GREEN = "\x1b[32m";
+const YELLOW = "\x1b[33m";
+const RED = "\x1b[31m";
+
+/*//////////////////////////////////////////////////////////////
+                            USER INPUTS
+//////////////////////////////////////////////////////////////*/
+
+// Namespace to register (e.g., "yolo", "ape", "100x")
+const namespace = "my-public-namespace";
+
+// Price per name in ETH (must be multiple of 0.001 ETH)
+const pricePerNameETH = "0.001";
+
+// Address that will be set as the namespace creator (can be different from OWNER)
+// Use OWNER address to register for yourself, or another address to bootstrap for others
+const creatorAddress = "0x0000000000000000000000000000000000000000"; // Replace with actual address
+
+// Signer index (must be OWNER address, 0 = account 1, 1 = account 2, etc.)
+const signerIndex = 0;
+
+async function main() {
+  const networkName = hre.network.name;
+
+  // Get XNS address for the current network
+  const contractAddress = XNS_ADDRESS[networkName];
+  if (!contractAddress) {
+    throw new Error(
+      `XNS contract address not set for network: ${networkName}. Please add address to constants/addresses.ts`,
+    );
+  }
+
+  // Get XNS contract instance
+  const xns = await hre.ethers.getContractAt("XNS", contractAddress);
+
+  // Get signer
+  const signers = await hre.ethers.getSigners();
+  const signer = signers[signerIndex];
+
+  console.log(`\nNetwork: ${GREEN}${networkName}${RESET}`);
+  console.log(`XNS contract: ${GREEN}${contractAddress}${RESET}`);
+  console.log(`Calling with account: ${GREEN}${signer.address}${RESET}\n`);
+
+  // Verify signer is OWNER
+  const owner = await xns.OWNER();
+  if (signer.address.toLowerCase() !== owner.toLowerCase()) {
+    throw new Error(
+      `Only contract OWNER can call this function. Signer: ${signer.address}, OWNER: ${owner}`,
+    );
+  }
+
+  // Verify we're in onboarding period
+  const deployedAt = await xns.DEPLOYED_AT();
+  const onboardingPeriod = await xns.ONBOARDING_PERIOD();
+  const onboardingEndTime = Number(deployedAt) + Number(onboardingPeriod);
+  const currentTime = Math.floor(Date.now() / 1000);
+
+  if (currentTime > onboardingEndTime) {
+    throw new Error(
+      `Onboarding period has ended. Ended at: ${new Date(onboardingEndTime * 1000).toISOString()}`,
+    );
+  }
+
+  // Validate creator address
+  if (!creatorAddress || creatorAddress === "0x0000000000000000000000000000000000000000") {
+    throw new Error("Creator address must be set and cannot be zero address");
+  }
+
+  // Check if namespace already exists
+  const getNamespaceInfo = xns.getFunction("getNamespaceInfo(string)");
+  try {
+    await getNamespaceInfo(namespace);
+    throw new Error(`Namespace "${namespace}" already exists`);
+  } catch (error: unknown) {
+    // If error message doesn't contain "namespace not found", rethrow
+    if (error instanceof Error && !error.message.includes("namespace not found")) {
+      throw error;
+    }
+    // Otherwise, namespace doesn't exist, which is what we want
+  }
+
+  // Convert price to wei
+  const pricePerName = parseEther(pricePerNameETH);
+
+  console.log(`Namespace: ${GREEN}${namespace}${RESET}`);
+  console.log(`Type: ${GREEN}public${RESET}`);
+  console.log(`Price per name: ${GREEN}${pricePerNameETH} ETH${RESET}`);
+  console.log(`Namespace creator: ${GREEN}${creatorAddress}${RESET}`);
+  console.log(`Registration fee: ${GREEN}0 ETH${RESET} (onboarding period)\n`);
+
+  // Register namespace
+  console.log(`Registering public namespace for creator: ${GREEN}${creatorAddress}${RESET}`);
+  console.log(`Namespace: ${GREEN}${namespace}${RESET}\n`);
+
+  const registerTx = await xns.connect(signer).registerPublicNamespaceFor(
+    creatorAddress,
+    namespace,
+    pricePerName,
+    {
+      value: 0,
+    },
+  );
+
+  console.log(`Transaction hash: ${GREEN}${registerTx.hash}${RESET}\n`);
+
+  console.log("Waiting for confirmation...\n");
+  const receipt = await registerTx.wait();
+
+  // Verify registration
+  const [returnedPrice, creator, createdAt, isPrivateReturned] = await getNamespaceInfo(namespace);
+
+  console.log(`\n${GREEN}✓ Namespace registration successful!${RESET}\n`);
+  console.log(`Namespace: ${GREEN}${namespace}${RESET}`);
+  console.log(`Type: ${GREEN}${isPrivateReturned ? "private" : "public"}${RESET}`);
+  console.log(`Price per name: ${GREEN}${formatEther(returnedPrice)} ETH${RESET}`);
+  console.log(`Creator: ${GREEN}${creator}${RESET}`);
+  console.log(`Created at: ${GREEN}${new Date(Number(createdAt) * 1000).toISOString()}${RESET}\n`);
+}
+
+main().catch((error: unknown) => {
+  console.error(RED + (error instanceof Error ? error.message : String(error)) + RESET);
+  process.exitCode = 1;
+});
+

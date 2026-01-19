@@ -23,6 +23,8 @@ interface IXNS {
     ) external payable returns (uint256 successfulCount);
     function registerPublicNamespace(string calldata namespace, uint256 pricePerName) external payable;
     function registerPrivateNamespace(string calldata namespace, uint256 pricePerName) external payable;
+    function registerPublicNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external payable;
+    function registerPrivateNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external payable;
     function claimFees(address recipient) external;
     function claimFeesToSelf() external;
 

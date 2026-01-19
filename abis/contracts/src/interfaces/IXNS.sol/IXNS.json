@@ -16,5 +16,7 @@
   "function registerName(string,string) payable",
   "function registerNameWithAuthorization(tuple(address,string,string),bytes) payable",
   "function registerPrivateNamespace(string,uint256) payable",
-  "function registerPublicNamespace(string,uint256) payable"
+  "function registerPrivateNamespaceFor(address,string,uint256) payable",
+  "function registerPublicNamespace(string,uint256) payable",
+  "function registerPublicNamespaceFor(address,string,uint256) payable"
 ]

@@ -184,19 +184,15 @@ Register a new public namespace.
 
 **Requirements:**
 - Namespace must be valid (length 1–20, consists only of [a-z0-9-], cannot start or end with '-', cannot contain consecutive hyphens).
-- `msg.value` must be >= 50 ETH (excess refunded), except OWNER pays 0 ETH during initial period.
+- `msg.value` must be >= 50 ETH (excess refunded).
 - Namespace must not already exist.
 - Namespace must not equal "eth".
 - `pricePerName` must be >= 0.001 ETH and a multiple of 0.001 ETH.
 
 **Note:**
-- During the onboarding period (1 year following contract deployment),
-  the owner pays no namespace registration fee.
-- Anyone can register a namespace for a 50 ETH fee within the onboarding period.
-- Front-running namespace registrations by the owner during the onboarding period
-  provides no economic benefit: the owner would only receive 5% of name
-  registration fees (vs 50 ETH upfront fee), and users can mitigate this by waiting until
-  after the 1-year period. This is an accepted design trade-off for simplicity.
+- During the onboarding period (1 year following contract deployment), the contract owner can optionally
+  bootstrap namespaces for participants via `registerPublicNamespaceFor` at no cost.
+- All self-service registrations (including by the owner) require the full 50 ETH fee.
 
 ```solidity
 function registerPublicNamespace(string namespace, uint256 pricePerName) external payable
@@ -219,19 +215,15 @@ Register a new private namespace.
 **Requirements:**
 - Namespace must be valid (length 1–20, consists only of [a-z0-9-],
   cannot start or end with '-', cannot contain consecutive hyphens).
-- `msg.value` must be >= 10 ETH (excess refunded), except OWNER pays 0 ETH during initial period.
+- `msg.value` must be >= 10 ETH (excess refunded).
 - Namespace must not already exist.
 - Namespace must not equal "eth".
 - `pricePerName` must be >= 0.001 ETH and a multiple of 0.001 ETH.
 
 **Note:**
-- During the onboarding period (1 year following contract deployment),
-  the owner pays no namespace registration fee.
-- Anyone can register a namespace for a 10 ETH fee within the onboarding period.
-- Front-running namespace registrations by the owner during the onboarding period
-  provides no economic benefit: the owner would only receive 10% of name
-  registration fees (vs 10 ETH upfront fee), and users can mitigate this by waiting until
-  after the 1-year period. This is an accepted design trade-off for simplicity.
+- During the onboarding period (1 year following contract deployment), the contract owner can optionally
+  bootstrap namespaces for participants via `registerPrivateNamespaceFor` at no cost.
+- All self-service registrations (including by the owner) require the full 10 ETH fee.
 
 ```solidity
 function registerPrivateNamespace(string namespace, uint256 pricePerName) external payable
@@ -242,6 +234,62 @@ function registerPrivateNamespace(string namespace, uint256 pricePerName) extern
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
+| namespace | string | The namespace to register. |
+| pricePerName | uint256 | The price per name for the namespace. |
+
+
+### registerPublicNamespaceFor
+
+
+OWNER-only function to register a public namespace for another address during the onboarding period.
+This function allows the contract owner to bootstrap namespaces for participants and integrators at no cost
+during the first year after contract deployment. No fees are charged and no ETH is processed.
+
+**Requirements:**
+- `msg.sender` must be the contract owner.
+- Must be called during the onboarding period (first year after contract deployment).
+- `creator` must not be the zero address.
+- `msg.value` must be 0 (no ETH should be sent).
+- All validation requirements from `registerPublicNamespace` apply (namespace format, price, etc.).
+
+```solidity
+function registerPublicNamespaceFor(address creator, string namespace, uint256 pricePerName) external payable
+```
+
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| creator | address | The address that will be set as the namespace creator. |
+| namespace | string | The namespace to register. |
+| pricePerName | uint256 | The price per name for the namespace. |
+
+
+### registerPrivateNamespaceFor
+
+
+OWNER-only function to register a private namespace for another address during the onboarding period.
+This function allows the contract owner to bootstrap namespaces for participants and integrators at no cost
+during the first year after contract deployment. No fees are charged and no ETH is processed.
+
+**Requirements:**
+- `msg.sender` must be the contract owner.
+- Must be called during the onboarding period (first year after contract deployment).
+- `creator` must not be the zero address.
+- `msg.value` must be 0 (no ETH should be sent).
+- All validation requirements from `registerPrivateNamespace` apply (namespace format, price, etc.).
+
+```solidity
+function registerPrivateNamespaceFor(address creator, string namespace, uint256 pricePerName) external payable
+```
+
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| creator | address | The address that will be set as the namespace creator. |
 | namespace | string | The namespace to register. |
 | pricePerName | uint256 | The price per name for the namespace. |
 

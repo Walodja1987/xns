@@ -190,7 +190,8 @@ The private namespace creator registers names via the authorized flow (see [`reg
 
 **Notes:**
 - The `eth` namespace cannot be registered to avoid confusion with ENS.
-- The XNS contract owner may register namespaces for free during the first year after contract deployment in order to bootstrap the system.
+- Regular users always pay the standard fees when registering namespaces via [`registerPublicNamespace`][api-registerPublicNamespace] or [`registerPrivateNamespace`][api-registerPrivateNamespace].
+- During the onboarding period (first year after contract deployment), the XNS contract owner can optionally bootstrap namespaces for participants and integrators at no cost using [`registerPublicNamespaceFor`][api-registerPublicNamespaceFor] and [`registerPrivateNamespaceFor`][api-registerPrivateNamespaceFor]. These are OWNER-only functions that allow registering namespaces for other addresses during the onboarding period.
 
 #### Example: Public Namespace Registration via Etherscan
 
@@ -508,6 +509,8 @@ See the [Developer Notes][dev-notes] for design decisions, code style guidelines
 [api-batchRegisterNameWithAuthorization]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#batchregisternamewithauthorization
 [api-registerPublicNamespace]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#registerpublicnamespace
 [api-registerPrivateNamespace]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#registerprivatenamespace
+[api-registerPublicNamespaceFor]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#registerpublicnamespacefor
+[api-registerPrivateNamespaceFor]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#registerprivatenamespacefor
 [api-getPendingFees]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#getpendingfees
 [api-claimFeesToSelf]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#claimfeestoself
 [api-claimFees]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#claimfees

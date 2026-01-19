@@ -1,13 +1,13 @@
 /**
- * Script to register a namespace on XNS
+ * Script to register a private namespace on XNS
  *
  * USAGE:
  * Run the script with:
- * `npx hardhat run scripts/examples/registerNamespace.ts --network <network_name>`
+ * `npx hardhat run scripts/examples/registerPrivateNamespace.ts --network <network_name>`
  *
  * EXAMPLE:
- * To register a namespace on Sepolia:
- * `npx hardhat run scripts/examples/registerNamespace.ts --network sepolia`
+ * To register a private namespace on Sepolia:
+ * `npx hardhat run scripts/examples/registerPrivateNamespace.ts --network sepolia`
  *
  * REQUIRED SETUP:
  * Before running, set these environment variables using hardhat-vars:
@@ -18,6 +18,10 @@
  *
  * 2. Network Specific Setup:
  *    - ETH_SEPOLIA_TESTNET_URL: `npx hardhat vars set ETH_SEPOLIA_TESTNET_URL`
+ *
+ * NOTE:
+ * - This script always requires the full fee payment (10 ETH) for self-service registration
+ * - Owner must use registerPrivateNamespaceFor for free onboarding registrations
  */
 
 import hre from "hardhat";
@@ -34,14 +38,11 @@ const RED = "\x1b[31m";
                             USER INPUTS
 //////////////////////////////////////////////////////////////*/
 
-// Namespace to register (e.g., "yolo", "ape", "100x")
-const namespace = "my-namespace";
+// Namespace to register (e.g., "my-company", "internal-team")
+const namespace = "my-private-namespace";
 
 // Price per name in ETH (must be multiple of 0.001 ETH)
 const pricePerNameETH = "0.001";
-
-// Set to true for private namespace, false for public namespace
-const isPrivate = false;
 
 // Signer index (0 = account 1, 1 = account 2, 2 = account 3, etc.)
 const signerIndex = 0;
@@ -82,29 +83,16 @@ async function main() {
   }
 
   // Get required fee
-  const namespaceType = isPrivate ? "private" : "public";
-  const registrationFee = isPrivate
-    ? await xns.PRIVATE_NAMESPACE_REGISTRATION_FEE()
-    : await xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
-
-  // Check if owner is registering during onboarding period (free)
-  const owner = await xns.OWNER();
-  const deployedAt = await xns.DEPLOYED_AT();
-  const onboardingPeriod = await xns.ONBOARDING_PERIOD();
-  const isOwner = signer.address.toLowerCase() === owner.toLowerCase();
-  const isInOnboardingPeriod = Number(deployedAt) + Number(onboardingPeriod) > Date.now() / 1000;
-
-  const requiredFee = isOwner && isInOnboardingPeriod ? 0n : registrationFee;
+  const registrationFee = await xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
 
   console.log(`Namespace: ${GREEN}${namespace}${RESET}`);
-  console.log(`Type: ${GREEN}${namespaceType}${RESET}`);
+  console.log(`Type: ${GREEN}private${RESET}`);
   console.log(`Price per name: ${GREEN}${pricePerNameETH} ETH${RESET}`);
-  if (requiredFee === 0n) {
-    console.log(`Registration fee: ${GREEN}0 ETH${RESET} (owner in onboarding period)`);
-  } else {
-    console.log(`Registration fee: ${GREEN}${formatEther(requiredFee)} ETH${RESET}`);
-  }
+  console.log(`Registration fee: ${GREEN}${formatEther(registrationFee)} ETH${RESET}`);
   console.log(`Namespace creator: ${GREEN}${signer.address}${RESET}\n`);
+
+  // Note: Owner must use registerPrivateNamespaceFor for free onboarding registrations
+  // This script always requires the full fee payment for self-service registration
 
   // Check signer balance
   const balance = await hre.ethers.provider.getBalance(signer.address);
@@ -112,9 +100,9 @@ async function main() {
     `Account balance: ${GREEN}${formatEther(balance)} ETH${RESET}\n`,
   );
 
-  if (requiredFee > 0n && balance < requiredFee) {
+  if (balance < registrationFee) {
     throw new Error(
-      `Insufficient balance. Need ${formatEther(requiredFee)} ETH, but have ${formatEther(balance)} ETH`,
+      `Insufficient balance. Need ${formatEther(registrationFee)} ETH, but have ${formatEther(balance)} ETH`,
     );
   }
 
@@ -122,20 +110,12 @@ async function main() {
   const pricePerName = parseEther(pricePerNameETH);
 
   // Register namespace
-  console.log(`Registering ${namespaceType} namespace: ${GREEN}${namespace}${RESET}`);
-  if (requiredFee > 0n) {
-    console.log(`Sending ${GREEN}${formatEther(requiredFee)} ETH${RESET}...\n`);
-  } else {
-    console.log(`No fee required (owner in onboarding period)\n`);
-  }
+  console.log(`Registering private namespace: ${GREEN}${namespace}${RESET}`);
+  console.log(`Sending ${GREEN}${formatEther(registrationFee)} ETH${RESET}...\n`);
 
-  const registerTx = isPrivate
-    ? await xns.connect(signer).registerPrivateNamespace(namespace, pricePerName, {
-        value: requiredFee,
-      })
-    : await xns.connect(signer).registerPublicNamespace(namespace, pricePerName, {
-        value: requiredFee,
-      });
+  const registerTx = await xns.connect(signer).registerPrivateNamespace(namespace, pricePerName, {
+    value: registrationFee,
+  });
 
   console.log(
     `Transaction hash: ${GREEN}${registerTx.hash}${RESET}\n`,

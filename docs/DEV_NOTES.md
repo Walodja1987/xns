@@ -122,11 +122,23 @@ Front-running is possible but not considered a significant problem because:
 
 ### Front-Running during the First Year
 
-During the first year after contract deployment (the onboarding period), the contract owner is permitted to register namespaces at no cost, whereas all other users must pay fee (50 ETH for public namespaces, 10 ETH for private namespaces). This mechanism is intended to promote rapid ecosystem adoption by enabling the owner to grant free namespaces to participants and integrators. However, this privilege does introduce a theoretical front-running risk:
+During the first year after contract deployment (the onboarding period), the contract owner can optionally bootstrap namespaces for participants and integrators at no cost using dedicated OWNER-only functions (`registerPublicNamespaceFor` and `registerPrivateNamespaceFor`). This mechanism is intended to promote rapid ecosystem adoption by enabling the owner to grant free namespaces to participants and integrators.
 
-* **Theoretical scenario**: The owner could monitor the mempool for namespace registration transactions from other users and front-run them to register the namespace first.
+**Design Decision: Separation of Self-Service and Onboarding Functions**
+
+The contract separates self-service namespace registration (which always charges fees) from owner-only onboarding functions (which are free during the onboarding period). This design provides several benefits:
+
+* **Clear separation of concerns**: Regular users always pay standard fees via `registerPublicNamespace` and `registerPrivateNamespace`, while onboarding is handled through dedicated functions.
+* **Transparency**: The distinction between self-service and onboarding functions makes the system's behavior explicit and easier to audit.
+* **Consistent fee enforcement**: Self-service functions consistently enforce fees, eliminating conditional logic that could introduce bugs or confusion.
+
+**Front-Running Considerations:**
+
+Even with this separation, there remains a theoretical front-running risk:
+
+* **Theoretical scenario**: The owner could monitor the mempool for namespace registration transactions from other users and front-run them using `registerPublicNamespaceFor` or `registerPrivateNamespaceFor` to register the namespace first for a different address.
 * **Economic disincentive**: Front-running namespace registrations would negatively impact the system's reputation and the owner's future revenue.
-* **User mitigation**: Users can mitigate this risk by waiting until after the 1-year period to register namespaces, at which point everyone pays the same 50 ETH fee (including the owner).
+* **User mitigation**: Users can mitigate this risk by waiting until after the 1-year onboarding period to register namespaces, at which point everyone pays the same fees (including the owner, who must use the self-service functions).
 
 ## Block Reorganization Risk
 
