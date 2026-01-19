@@ -534,6 +534,8 @@ contract XNS is EIP712 {
 
         emit NamespaceRegistered(namespace, pricePerName, msg.sender, true);
 
+        // Process payment: burn 90%, credit fees, and refund excess (if any).
+        // `requiredAmount` = 0 within onboarding period (1 year after contract deployment).
         if (requiredAmount > 0) {
             _processETHPayment(requiredAmount, OWNER);
         } else if (msg.value > 0) {
