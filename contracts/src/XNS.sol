@@ -38,10 +38,15 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 ///
 /// ### Name registration with public namespaces
 /// - Users call `registerName(label, namespace)` and send ETH.
+/// - This function only works for public namespaces **after** the exclusivity period (30 days).
 /// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
 /// - Each address can own at most one name.
 ///
 /// ### Sponsorship via authorization (EIP-712 + EIP-1271)
+/// - `registerNameWithAuthorization` is **required** for:
+///   - All registrations during the exclusivity period (even namespace creators registering for themselves)
+///   - All registrations in private namespaces (even namespace creators registering for themselves)
+///   - All sponsored registrations (when someone else pays the fee)
 /// - `registerNameWithAuthorization` allows a sponsor to pay and register a name for a recipient
 ///   who explicitly authorized it via an EIP-712 signature.
 /// - Public namespaces: during the creator's 30-day exclusivity window, only the creator may sponsor.
@@ -61,9 +66,9 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - **Public namespaces:**
 ///   - Fee: 50 ETH
 ///   - Namespace creators receive a 30-day exclusive window for registering paid names within the registered namespace.
-///   - During this period, the creator can use `registerName` to register a name for themselves and sponsor registrations via
-///     `registerNameWithAuthorization` for others.
-///   - After the exclusivity period, the namespace is opened to the public for registrations.
+///   - During this period, the creator must use `registerNameWithAuthorization` to register names (even for themselves)
+///     and sponsor registrations for others.
+///   - After the exclusivity period, the namespace is opened to the public for registrations using `registerName`.
 /// - **Private namespaces:**
 ///   - Fee: 10 ETH
 ///   - Only the namespace creator may register names within their private namespace forever.
