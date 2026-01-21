@@ -563,7 +563,7 @@ contract XNS is EIP712 {
         if (!isPrivate) {
             require(pricePerName >= PUBLIC_NAMESPACE_MIN_PRICE, "XNS: pricePerName too low");
         } else {
-            require(pricePerName >= PRIVATE_NAMESPACE_MIN_PRICE, "XNS: pricePerName too low for private namespace");
+            require(pricePerName >= PRIVATE_NAMESPACE_MIN_PRICE, "XNS: pricePerName too low");
         }
         require(pricePerName % PRICE_STEP == 0, "XNS: price must be multiple of 0.001 ETH");
 
