@@ -202,6 +202,7 @@ The private namespace creator registers names via the authorized flow (see [`reg
 - The `eth` namespace cannot be registered to avoid confusion with ENS.
 - Regular users always pay the standard fees when registering namespaces via [`registerPublicNamespace`][api-registerPublicNamespace] or [`registerPrivateNamespace`][api-registerPrivateNamespace].
 - During the onboarding period (first year after contract deployment), the XNS contract owner can optionally bootstrap namespaces for participants and integrators at no cost using [`registerPublicNamespaceFor`][api-registerPublicNamespaceFor] and [`registerPrivateNamespaceFor`][api-registerPrivateNamespaceFor]. These are OWNER-only functions that allow registering namespaces for other addresses during the onboarding period.
+- **Security recommendation:** Namespace creators should consider using multisig wallets to reduce the risk of wallet access loss or compromise. This is especially important for public namespace creators who receive ongoing fee rewards, and for private namespace creators who maintain exclusive control over their namespace.
 
   **Example scripts:**
   * [Register public namespace for another address (OWNER-only)][script-registerPublicNamespaceFor]
