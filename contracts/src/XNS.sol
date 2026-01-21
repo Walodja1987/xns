@@ -407,9 +407,6 @@ contract XNS is EIP712 {
             bytes32 nsHash = keccak256(bytes(auth.namespace));
             require(nsHash == firstNsHash, "XNS: namespace mismatch");
 
-            // Verify that the signature is valid.
-            require(_isValidSignature(auth, signatures[i]), "XNS: bad authorization");
-
             // Skip if recipient already has a name (protection against griefing attacks).
             if (bytes(_addressToName[auth.recipient].label).length > 0) {
                 continue;
@@ -421,6 +418,9 @@ contract XNS is EIP712 {
             if (_nameHashToAddress[key] != address(0)) {
                 continue;
             }
+
+            // Verify that the signature is valid.
+            require(_isValidSignature(auth, signatures[i]), "XNS: bad authorization");
 
             _nameHashToAddress[key] = auth.recipient;
             _addressToName[auth.recipient] = Name({
