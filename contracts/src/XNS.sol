@@ -543,6 +543,45 @@ contract XNS is EIP712 {
         _registerNamespace(namespace, pricePerName, creator, true);
     }
 
+    /// @dev Helper function to register a namespace (used in `registerPublicNamespace`, `registerPrivateNamespace`,
+    /// `registerPublicNamespaceFor`, and `registerPrivateNamespaceFor`):
+    /// - Validates namespace and pricePerName
+    /// - Checks namespace doesn't exist
+    /// - Writes namespace data to storage
+    /// - Emits NamespaceRegistered event
+    /// @param namespace The namespace to register.
+    /// @param pricePerName The price per name for the namespace. Must be >= 0.001 ETH for public namespaces,
+    ///   >= 0.005 ETH for private namespaces, and a multiple of 0.001 ETH.
+    /// @param creator The address that will be set as the namespace creator.
+    /// @param isPrivate Whether the namespace is private.
+    /// @dev No ETH logic (no payment processing, no refunds). Pure validation + storage + event.
+    function _registerNamespace(string calldata namespace, uint256 pricePerName, address creator, bool isPrivate) private {
+        require(_isValidSlug(namespace), "XNS: invalid namespace");
+
+        // Forbid "eth" namespace to avoid confusion with ENS.
+        require(keccak256(bytes(namespace)) != keccak256(bytes("eth")), "XNS: 'eth' namespace forbidden");
+
+        // Check minimum price based on namespace type (public namespaces are more common, check first)
+        if (!isPrivate) {
+            require(pricePerName >= PUBLIC_NAMESPACE_MIN_PRICE, "XNS: pricePerName too low");
+        } else {
+            require(pricePerName >= PRIVATE_NAMESPACE_MIN_PRICE, "XNS: pricePerName too low for private namespace");
+        }
+        require(pricePerName % PRICE_STEP == 0, "XNS: price must be multiple of 0.001 ETH");
+
+        bytes32 nsHash = keccak256(bytes(namespace));
+        require(_namespaces[nsHash].creator == address(0), "XNS: namespace already exists");
+
+        _namespaces[nsHash] = NamespaceData({
+            pricePerName: pricePerName,
+            creator: creator,
+            createdAt: uint64(block.timestamp),
+            isPrivate: isPrivate
+        });
+
+        emit NamespaceRegistered(namespace, pricePerName, creator, isPrivate);
+    }
+
     /// @notice Function to claim accumulated fees for `msg.sender` and send to `recipient`.
     /// Withdraws all pending fees. Partial claims are not possible.
     ///
@@ -618,10 +657,15 @@ contract XNS is EIP712 {
     /// @notice Function to resolve a name to an address taking separate label and namespace parameters.
     /// @dev This version is more gas efficient than `getAddress(string calldata fullName)` as it does not
     /// require string splitting. Returns `address(0)` if not registered.
+    /// If `namespace` is empty, it is treated as a bare name (equivalent to "x" namespace).
     /// @param label The label part of the name.
-    /// @param namespace The namespace part of the name.
+    /// @param namespace The namespace part of the name. Use empty string "" for bare names.
     /// @return addr The address associated with the name, or `address(0)` if not registered.
     function getAddress(string calldata label, string calldata namespace) external view returns (address addr) {
+        // If namespace is empty, treat as bare name (use "x" namespace)
+        if (bytes(namespace).length == 0) {
+            return _getAddress(label, BARE_NAME_NAMESPACE);
+        }
         return _getAddress(label, namespace);
     }
 
@@ -674,6 +718,18 @@ contract XNS is EIP712 {
         NamespaceData memory ns = _namespaces[keccak256(bytes(namespace))];
         require(ns.creator != address(0), "XNS: namespace not found");
         return ns.pricePerName;
+    }
+
+    /// @notice Function to check if a namespace is currently within its exclusivity period.
+    /// @dev Returns `true` if `block.timestamp <= createdAt + EXCLUSIVITY_PERIOD`, `false` otherwise.
+    /// For private namespaces, this function will return `false` after the exclusivity period, but private namespaces
+    /// remain creator-only forever regardless of this value.
+    /// @param namespace The namespace to check.
+    /// @return inExclusivityPeriod `true` if the namespace is within its exclusivity period, `false` otherwise.
+    function isInExclusivityPeriod(string calldata namespace) external view returns (bool inExclusivityPeriod) {
+        NamespaceData memory ns = _namespaces[keccak256(bytes(namespace))];
+        require(ns.creator != address(0), "XNS: namespace not found");
+        return block.timestamp <= ns.createdAt + EXCLUSIVITY_PERIOD;
     }
 
     /// @notice Function to check if a label or namespace is valid (returns bool, does not revert).
@@ -740,45 +796,6 @@ contract XNS is EIP712 {
             (bool success, ) = msg.sender.call{value: excess}("");
             require(success, "XNS: refund failed");
         }
-    }
-
-    /// @dev Helper function to register a namespace (used in `registerPublicNamespace`, `registerPrivateNamespace`,
-    /// `registerPublicNamespaceFor`, and `registerPrivateNamespaceFor`):
-    /// - Validates namespace and pricePerName
-    /// - Checks namespace doesn't exist
-    /// - Writes namespace data to storage
-    /// - Emits NamespaceRegistered event
-    /// @param namespace The namespace to register.
-    /// @param pricePerName The price per name for the namespace. Must be >= 0.001 ETH for public namespaces,
-    ///   >= 0.005 ETH for private namespaces, and a multiple of 0.001 ETH.
-    /// @param creator The address that will be set as the namespace creator.
-    /// @param isPrivate Whether the namespace is private.
-    /// @dev No ETH logic (no payment processing, no refunds). Pure validation + storage + event.
-    function _registerNamespace(string calldata namespace, uint256 pricePerName, address creator, bool isPrivate) private {
-        require(_isValidSlug(namespace), "XNS: invalid namespace");
-
-        // Forbid "eth" namespace to avoid confusion with ENS.
-        require(keccak256(bytes(namespace)) != keccak256(bytes("eth")), "XNS: 'eth' namespace forbidden");
-
-        // Check minimum price based on namespace type (public namespaces are more common, check first)
-        if (!isPrivate) {
-            require(pricePerName >= PUBLIC_NAMESPACE_MIN_PRICE, "XNS: pricePerName too low");
-        } else {
-            require(pricePerName >= PRIVATE_NAMESPACE_MIN_PRICE, "XNS: pricePerName too low for private namespace");
-        }
-        require(pricePerName % PRICE_STEP == 0, "XNS: price must be multiple of 0.001 ETH");
-
-        bytes32 nsHash = keccak256(bytes(namespace));
-        require(_namespaces[nsHash].creator == address(0), "XNS: namespace already exists");
-
-        _namespaces[nsHash] = NamespaceData({
-            pricePerName: pricePerName,
-            creator: creator,
-            createdAt: uint64(block.timestamp),
-            isPrivate: isPrivate
-        });
-
-        emit NamespaceRegistered(namespace, pricePerName, creator, isPrivate);
     }
 
     /// @dev Helper function to check if a label or namespace is valid (same rules for both).

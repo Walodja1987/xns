@@ -7604,6 +7604,42 @@ describe("XNS", function () {
         expect(ownerAddressByFullName).to.equal(s.user2.address);
     });
 
+    it("Should treat empty namespace as bare name (equivalent to \"x\" namespace)", async () => {
+        // ---------
+        // Arrange: Register a name in the special "x" namespace (bare name)
+        // ---------
+        const namespace = "x";
+        const pricePerName = ethers.parseEther("10"); // Special namespace price
+        const label = "bankless";
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Register bare name for user2
+        await s.xns.connect(s.user2).registerName(label, namespace, { value: pricePerName });
+
+        // ---------
+        // Act: Get address for the bare name using empty namespace ""
+        // ---------
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const ownerAddressWithEmptyNamespace = await getAddressByLabelAndNamespace(label, "");
+
+        // Also verify that using "x" explicitly returns the same address
+        const ownerAddressWithX = await getAddressByLabelAndNamespace(label, "x");
+
+        // ---------
+        // Assert: Empty namespace should resolve to the same address as "x" namespace
+        // ---------
+        expect(ownerAddressWithEmptyNamespace).to.equal(s.user2.address);
+        expect(ownerAddressWithEmptyNamespace).to.equal(ownerAddressWithX);
+
+        // Verify that unregistered label with empty namespace returns address(0)
+        const unregisteredLabel = "unregistered";
+        const unregisteredAddress = await getAddressByLabelAndNamespace(unregisteredLabel, "");
+        expect(unregisteredAddress).to.equal(ethers.ZeroAddress);
+    });
+
     it("Should return correct recipient address for sponsored name in private namespace", async () => {
         // ---------
         // Arrange: Register a private namespace and sponsor a name registration
@@ -8636,6 +8672,92 @@ describe("XNS", function () {
       const getNamespacePriceByString = s.xns.getFunction("getNamespacePrice(string)");
       await expect(
         getNamespacePriceByString(nonExistentNamespace)
+      ).to.be.revertedWith("XNS: namespace not found");
+    });
+
+  });
+
+  describe("isInExclusivityPeriod", function () {
+    let s: SetupOutput;
+
+    beforeEach(async () => {
+      s = await loadFixture(setup);
+    });
+
+    // -----------------------
+    // Functionality
+    // -----------------------
+
+    it("Should return `true` for namespace within exclusivity period (30 days after creation)", async () => {
+      // ---------
+      // Arrange: Register a new public namespace for testing
+      // ---------
+      const namespaceFee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
+      const namespace = "test-excl";
+      const pricePerName = ethers.parseEther("0.005");
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      // Register public namespace
+      await s.xns.connect(user3).registerPublicNamespace(namespace, pricePerName, { value: namespaceFee });
+
+      // ---------
+      // Act: Check if namespace is in exclusivity period
+      // ---------
+      const isInExclusivityPeriod = s.xns.getFunction("isInExclusivityPeriod(string)");
+      const result = await isInExclusivityPeriod(namespace);
+
+      // ---------
+      // Assert: Should return true (namespace was just created, within 30 days)
+      // ---------
+      expect(result).to.equal(true);
+    });
+
+    it("Should return `false` for namespace after exclusivity period has ended", async () => {
+      // ---------
+      // Arrange: Register a new public namespace and fast-forward past exclusivity period
+      // ---------
+      const namespaceFee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
+      const namespace = "test-excl-past";
+      const pricePerName = ethers.parseEther("0.005");
+      const signers = await ethers.getSigners();
+      const user3 = signers[3];
+
+      // Register public namespace
+      await s.xns.connect(user3).registerPublicNamespace(namespace, pricePerName, { value: namespaceFee });
+
+      // Fast-forward past exclusivity period (30 days + 1 day)
+      const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
+      await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+      // ---------
+      // Act: Check if namespace is in exclusivity period
+      // ---------
+      const isInExclusivityPeriod = s.xns.getFunction("isInExclusivityPeriod(string)");
+      const result = await isInExclusivityPeriod(namespace);
+
+      // ---------
+      // Assert: Should return false (exclusivity period has ended)
+      // ---------
+      expect(result).to.equal(false);
+    });
+
+    // -----------------------
+    // Reverts
+    // -----------------------
+
+    it("Should revert with `XNS: namespace not found` error for non-existent namespace", async () => {
+      // ---------
+      // Arrange: Use a non-existent namespace
+      // ---------
+      const nonExistentNamespace = "none";
+
+      // ---------
+      // Act & Assert: Attempt to check exclusivity period for non-existent namespace
+      // ---------
+      const isInExclusivityPeriod = s.xns.getFunction("isInExclusivityPeriod(string)");
+      await expect(
+        isInExclusivityPeriod(nonExistentNamespace)
       ).to.be.revertedWith("XNS: namespace not found");
     });
 

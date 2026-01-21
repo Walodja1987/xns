@@ -380,14 +380,15 @@ function getAddress(string label, string namespace) external view returns (addre
 ```
 
 _This version is more gas efficient than `getAddress(string calldata fullName)` as it does not
-require string splitting. Returns `address(0)` if not registered._
+require string splitting. Returns `address(0)` if not registered.
+If `namespace` is empty, it is treated as a bare name (equivalent to "x" namespace)._
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | label | string | The label part of the name. |
-| namespace | string | The namespace part of the name. |
+| namespace | string | The namespace part of the name. Use empty string "" for bare names. |
 
 #### Return Values
 
@@ -467,6 +468,31 @@ _More gas efficient than `getNamespaceInfo` if only the price is needed._
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | pricePerName | uint256 | The price per name for the namespace. |
+
+### isInExclusivityPeriod
+
+
+Function to check if a namespace is currently within its exclusivity period.
+
+```solidity
+function isInExclusivityPeriod(string namespace) external view returns (bool isInExclusivityPeriod)
+```
+
+_Returns `true` if `block.timestamp <= createdAt + EXCLUSIVITY_PERIOD`, `false` otherwise.
+For private namespaces, this function will return `false` after the exclusivity period, but private namespaces
+remain creator-only forever regardless of this value._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| namespace | string | The namespace to check. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| isInExclusivityPeriod | bool | `true` if the namespace is within its exclusivity period, `false` otherwise. |
 
 ### isValidSlug
 

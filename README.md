@@ -151,7 +151,7 @@ XNS supports **authorized name registration** via [`registerNameWithAuthorizatio
 - For private namespaces: Only the namespace creator can sponsor registrations forever.
 
 **Batch registration:** 
-XNS also supports [`batchRegisterNameWithAuthorization`][api-batchRegisterNameWithAuthorization] to register multiple names in a single transaction. See the API documentation for details.
+- XNS also supports [`batchRegisterNameWithAuthorization`][api-batchRegisterNameWithAuthorization] to register multiple names within the same namespace in a single transaction. See the API documentation for details.
 
 **Example scripts:**
 * [Name registration with authorization for EOA][script-registerNameWithAuthorization]
@@ -221,8 +221,11 @@ You can retrieve namespace details using [`getNamespaceInfo`][api-getNamespaceIn
 - Creation timestamp
 - Whether it's private or public
 
-**Example script:**
+You can also check if a namespace is within its exclusivity period using [`isInExclusivityPeriod`][api-isInExclusivityPeriod], which returns `true` if the namespace is still within the 30-day exclusivity window.
+
+**Example scripts:**
 * [Query namespace info][script-getNamespaceInfo]
+* [Check exclusivity period][script-isInExclusivityPeriod]
 
 ### Registration Fees
 
@@ -399,10 +402,10 @@ contract MyContractWallet {
 ```
 
 **How it works:**
-1. The contract (or its owner) signs an EIP-712 message authorizing the name registration.
+1. The contract (or its owner) signs an EIP-712 message authorizing the name registration. The recipient in the authorization must be the contract's address itself (the address of the `MyContractWallet` contract in this example).
 2. A sponsor calls [`registerNameWithAuthorization`][api-registerNameWithAuthorization] on XNS, providing the contract as the recipient.
 3. XNS validates the signature via the contract's `isValidSignature` function (EIP-1271).
-4. The sponsor pays the registration fee.
+4. The contract is assigned a name. The sponsor pays the registration fee.
 
 **Use cases:**
 - Contract wallets (Safe, Argent, etc.) that want to be named
@@ -517,6 +520,7 @@ See the [Developer Notes][dev-notes] for design decisions, code style guidelines
 [api-getAddress]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#getAddress
 [api-getName]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#getName
 [api-getNamespaceInfo]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#getnamespaceinfo
+[api-isInExclusivityPeriod]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#isinexclusivityperiod
 [api-registerNameWithAuthorization]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#registernamewithauthorization
 [api-batchRegisterNameWithAuthorization]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#batchregisternamewithauthorization
 [api-registerPublicNamespace]: https://github.com/Walodja1987/xns/blob/main/docs/API.md#registerpublicnamespace
@@ -540,6 +544,7 @@ See the [Developer Notes][dev-notes] for design decisions, code style guidelines
 [script-getAddress]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getAddress.ts
 [script-getName]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getName.ts
 [script-getNamespaceInfo]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getNamespaceInfo.ts
+[script-isInExclusivityPeriod]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/isInExclusivityPeriod.ts
 [script-getPendingFees]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getPendingFees.ts
 [script-claimFeesToSelf]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/claimFeesToSelf.ts
 [script-claimFees]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/claimFees.ts

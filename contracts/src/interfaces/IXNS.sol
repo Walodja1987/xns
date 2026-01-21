@@ -33,6 +33,7 @@ interface IXNS {
     function getName(address addr) external view returns (string memory);
     function getNamespaceInfo(string calldata namespace) external view returns (uint256 pricePerName, address creator, uint64 createdAt, bool isPrivate);
     function getNamespacePrice(string calldata namespace) external view returns (uint256 pricePerName);
+    function isInExclusivityPeriod(string calldata namespace) external view returns (bool inExclusivityPeriod);
     function isValidSlug(string memory slug) external pure returns (bool isValid);
     function isValidSignature(
         RegisterNameAuth calldata registerNameAuth,

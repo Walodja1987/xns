@@ -409,6 +409,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should return correct owner address for registered name.
 - Should return `address(0)` for unregistered name.
 - Should handle special namespace "x" correctly.
+- Should treat empty namespace as bare name (equivalent to "x" namespace).
 - Should return correct recipient address for sponsored name in private namespace.
 - Should return `address(0)` for unregistered name in private namespace.
 - Should return correct address for long private namespace (up to 20 characters).
@@ -480,6 +481,19 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should return correct price for public namespace.
 - Should return correct price for private namespace.
 - Should return correct price for special namespace 'x' (bare names).
+
+#### Reverts
+
+- Should revert with `XNS: namespace not found` error for non-existent namespace.
+
+---
+
+### isInExclusivityPeriod
+
+#### Functionality
+
+- Should return `true` for namespace within exclusivity period (30 days after creation).
+- Should return `false` for namespace after exclusivity period has ended.
 
 #### Reverts
 
