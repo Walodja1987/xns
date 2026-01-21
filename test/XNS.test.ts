@@ -1330,7 +1330,7 @@ describe("XNS", function () {
         ).to.be.revertedWith("XNS: 0x creator");
     });
 
-    it("Should revert with `XNS: no ETH` when `msg.value != 0`", async () => {
+    it("Should revert when ETH is sent (function is non-payable)", async () => {
         // ---------
         // Arrange: Prepare parameters with ETH value
         // ---------
@@ -1341,10 +1341,11 @@ describe("XNS", function () {
 
         // ---------
         // Act & Assert: Attempt to register namespace with ETH value and expect revert
+        // (Function is non-payable, so EVM will reject the transaction)
         // ---------
         await expect(
             s.xns.connect(s.owner).registerPublicNamespaceFor(creator, namespace, pricePerName, { value: ethToSend })
-        ).to.be.revertedWith("XNS: no ETH");
+        ).to.be.reverted;
     });
 
     // -----------------------
@@ -1712,7 +1713,7 @@ describe("XNS", function () {
         ).to.be.revertedWith("XNS: 0x creator");
     });
 
-    it("Should revert with `XNS: no ETH` when `msg.value != 0`", async () => {
+    it("Should revert when ETH is sent (function is non-payable)", async () => {
         // ---------
         // Arrange: Prepare parameters with ETH value
         // ---------
@@ -1723,10 +1724,11 @@ describe("XNS", function () {
 
         // ---------
         // Act & Assert: Attempt to register private namespace with ETH value and expect revert
+        // (Function is non-payable, so EVM will reject the transaction)
         // ---------
         await expect(
             s.xns.connect(s.owner).registerPrivateNamespaceFor(creator, namespace, pricePerName, { value: ethToSend })
-        ).to.be.revertedWith("XNS: no ETH");
+        ).to.be.reverted;
     });
 
     // -----------------------

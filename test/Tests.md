@@ -169,7 +169,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: not owner` when called by non-owner.
 - Should revert with `XNS: onboarding over` when called after onboarding period.
 - Should revert with `XNS: 0x creator` when creator is zero address.
-- Should revert with `XNS: no ETH` when `msg.value != 0`.
+- Should revert when ETH is sent (function is non-payable).
 - Should revert with `XNS: invalid namespace` error for empty namespace.
 - Should revert with `XNS: invalid namespace` error for namespace longer than 20 characters.
 - Should revert with `XNS: invalid namespace` error for namespace with invalid characters.
@@ -202,7 +202,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: not owner` when called by non-owner.
 - Should revert with `XNS: onboarding over` when called after onboarding period.
 - Should revert with `XNS: 0x creator` when creator is zero address.
-- Should revert with `XNS: no ETH` when `msg.value != 0`.
+- Should revert when ETH is sent (function is non-payable).
 - Should revert with `XNS: invalid namespace` error for empty namespace.
 - Should revert with `XNS: invalid namespace` error for namespace longer than 20 characters.
 - Should revert with `XNS: invalid namespace` error for namespace with invalid characters.

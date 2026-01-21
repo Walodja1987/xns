@@ -266,11 +266,11 @@ during the first year after contract deployment. No fees are charged and no ETH 
 - `msg.sender` must be the contract owner.
 - Must be called during the onboarding period (first year after contract deployment).
 - `creator` must not be the zero address.
-- `msg.value` must be 0 (no ETH should be sent).
+- No ETH should be sent (function is non-payable).
 - All validation requirements from `registerPublicNamespace` apply (namespace format, price, etc.).
 
 ```solidity
-function registerPublicNamespaceFor(address creator, string namespace, uint256 pricePerName) external payable
+function registerPublicNamespaceFor(address creator, string namespace, uint256 pricePerName) external
 ```
 
 
@@ -294,11 +294,11 @@ during the first year after contract deployment. No fees are charged and no ETH 
 - `msg.sender` must be the contract owner.
 - Must be called during the onboarding period (first year after contract deployment).
 - `creator` must not be the zero address.
-- `msg.value` must be 0 (no ETH should be sent).
+- No ETH should be sent (function is non-payable).
 - All validation requirements from `registerPrivateNamespace` apply (namespace format, price, etc.).
 
 ```solidity
-function registerPrivateNamespaceFor(address creator, string namespace, uint256 pricePerName) external payable
+function registerPrivateNamespaceFor(address creator, string namespace, uint256 pricePerName) external
 ```
 
 
@@ -475,7 +475,7 @@ _More gas efficient than `getNamespaceInfo` if only the price is needed._
 Function to check if a namespace is currently within its exclusivity period.
 
 ```solidity
-function isInExclusivityPeriod(string namespace) external view returns (bool isInExclusivityPeriod)
+function isInExclusivityPeriod(string namespace) external view returns (bool inExclusivityPeriod)
 ```
 
 _Returns `true` if `block.timestamp <= createdAt + EXCLUSIVITY_PERIOD`, `false` otherwise.
@@ -492,7 +492,7 @@ remain creator-only forever regardless of this value._
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| isInExclusivityPeriod | bool | `true` if the namespace is within its exclusivity period, `false` otherwise. |
+| inExclusivityPeriod | bool | `true` if the namespace is within its exclusivity period, `false` otherwise. |
 
 ### isValidSlug
 
