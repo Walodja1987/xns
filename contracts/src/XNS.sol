@@ -505,17 +505,16 @@ contract XNS is EIP712 {
     /// - `msg.sender` must be the contract owner.
     /// - Must be called during the onboarding period (first year after contract deployment).
     /// - `creator` must not be the zero address.
-    /// - `msg.value` must be 0 (no ETH should be sent).
+    /// - No ETH should be sent (function is non-payable).
     /// - All validation requirements from `registerPublicNamespace` apply (namespace format, price, etc.).
     ///
     /// @param creator The address that will be set as the namespace creator.
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace.
-    function registerPublicNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external payable {
+    function registerPublicNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external {
         require(msg.sender == OWNER, "XNS: not owner");
         require(block.timestamp <= DEPLOYED_AT + ONBOARDING_PERIOD, "XNS: onboarding over");
         require(creator != address(0), "XNS: 0x creator");
-        require(msg.value == 0, "XNS: no ETH");
 
         _registerNamespace(namespace, pricePerName, creator, false);
     }
@@ -528,17 +527,16 @@ contract XNS is EIP712 {
     /// - `msg.sender` must be the contract owner.
     /// - Must be called during the onboarding period (first year after contract deployment).
     /// - `creator` must not be the zero address.
-    /// - `msg.value` must be 0 (no ETH should be sent).
+    /// - No ETH should be sent (function is non-payable).
     /// - All validation requirements from `registerPrivateNamespace` apply (namespace format, price, etc.).
     ///
     /// @param creator The address that will be set as the namespace creator.
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace.
-    function registerPrivateNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external payable {
+    function registerPrivateNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external {
         require(msg.sender == OWNER, "XNS: not owner");
         require(block.timestamp <= DEPLOYED_AT + ONBOARDING_PERIOD, "XNS: onboarding over");
         require(creator != address(0), "XNS: 0x creator");
-        require(msg.value == 0, "XNS: no ETH");
 
         _registerNamespace(namespace, pricePerName, creator, true);
     }
