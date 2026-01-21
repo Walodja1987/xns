@@ -126,7 +126,6 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should credit correct amount of DETH to non-owner registrant after initial period.
 - Should allow multiple private namespaces with the same price (no price uniqueness).
 - Should allow private namespace registration with minimum price (0.005 ETH).
-- Should revert with `XNS: pricePerName too low` error for price less than 0.005 ETH.
 
 #### Events
 
@@ -177,7 +176,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: invalid namespace` error for namespace ending with hyphen.
 - Should revert with `XNS: invalid namespace` error for namespace with consecutive hyphens.
 - Should revert with `XNS: 'eth' namespace forbidden` error when trying to register "eth" namespace.
-- Should revert with `XNS: pricePerName too low` error for price less than 0.005 ETH.
+- Should revert with `XNS: pricePerName too low` error for price less than 0.001 ETH.
 - Should revert with `XNS: pricePerName too low` error for zero price.
 - Should revert with `XNS: price must be multiple of 0.001 ETH` error when price is not a multiple of PRICE_STEP.
 - Should revert with `XNS: namespace already exists` error when namespace already exists.
@@ -210,7 +209,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: invalid namespace` error for namespace ending with hyphen.
 - Should revert with `XNS: invalid namespace` error for namespace with consecutive hyphens.
 - Should revert with `XNS: 'eth' namespace forbidden` error when trying to register "eth" namespace.
-- Should revert with `XNS: pricePerName too low` error for price less than 0.001 ETH.
+- Should revert with `XNS: pricePerName too low` error for price less than 0.005 ETH.
 - Should revert with `XNS: pricePerName too low` error for zero price.
 - Should revert with `XNS: price must be multiple of 0.001 ETH` error when price is not a multiple of PRICE_STEP.
 - Should revert with `XNS: namespace already exists` error when namespace already exists.

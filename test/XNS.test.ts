@@ -1849,14 +1849,14 @@ describe("XNS", function () {
 
     it("Should revert with `XNS: pricePerName too low` error for price less than 0.005 ETH", async () => {
         // ---------
-        // Arrange: Prepare parameters with price less than PRICE_STEP (0.001 ETH)
+        // Arrange: Prepare parameters with price less than PRIVATE_NAMESPACE_MIN_PRICE (0.005 ETH)
         // ---------
         const namespace = "low-price-private";
-        const pricePerName = ethers.parseEther("0.0005"); // 0.0005 ETH is less than 0.001 ETH
+        const pricePerName = ethers.parseEther("0.0049"); // 0.0005 ETH is less than PRIVATE_NAMESPACE_MIN_PRICE (0.005 ETH)
         const creator = s.user1.address;
 
         // ---------
-        // Act & Assert: Attempt to register private namespace with price less than PRICE_STEP and expect revert
+        // Act & Assert: Attempt to register private namespace with price less than PRIVATE_NAMESPACE_MIN_PRICE and expect revert
         // ---------
         await expect(
             s.xns.connect(s.owner).registerPrivateNamespaceFor(creator, namespace, pricePerName)
