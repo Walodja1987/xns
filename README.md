@@ -21,8 +21,7 @@
    2.2 [Name Resolution](#name-resolution) \
    2.3 [Name Registration With Authorization](#name-registration-with-authorization) \
    2.4 [Namespace Registration](#namespace-registration) \
-   2.5 [Namespace Infos](#namespace-infos) \
-   2.6 [Registration Fees](#registration-fees)
+   2.5 [Registration Fees](#registration-fees)
 3. [XNS Price list](#-xns-price-list)
 4. [Contract Address](#-contract-address)
 5. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
@@ -222,7 +221,7 @@ To register a private namespace, use the [`registerPrivateNamespace`][api-regist
 * [Public namespace registration][script-registerPublicNamespace]
 * [Private namespace registration][script-registerPrivateNamespace]
 
-### Namespace Infos
+#### Querying Namespace Information
 
 You can retrieve namespace details using [`getNamespaceInfo`][api-getNamespaceInfo]. The details include:
 - Price per name
