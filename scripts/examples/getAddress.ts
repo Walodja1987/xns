@@ -37,7 +37,7 @@ const RED = "\x1b[31m";
 const label = "alice";
 const namespace = "xns";
 
-// Option 2: Use full name string (e.g., "vitalik", "nike", "alice.xns")
+// Option 2: Use full name string (e.g., "vitalik", "bob", "alice.xns")
 // Set to null to use label + namespace instead
 const fullName: string | null = null;
 

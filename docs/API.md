@@ -16,6 +16,7 @@ Examples:
 - vitalik.100x
 - garry.ape
 
+### String rules
 Label and namespace string requirements:
 - Must be 1–20 characters long
 - Must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
@@ -23,45 +24,46 @@ Label and namespace string requirements:
 - Cannot contain consecutive hyphens ('--')
 - "eth" as namespace is disallowed to avoid confusion with ENS
 
-### Name registration with public namespaces
-- Users call `registerName(label, namespace)` and send ETH.
-- `msg.value` must be >= the namespace's registered price (excess will be refunded).
-- Each address can own at most one name.
+### Namespaces
+- Anyone can register new namespaces by paying a one-time fee.
+- XNS features two types of namespaces: public and private.
+- **Public namespaces (50 ETH):**
+  - Open to everyone after a 30-day exclusivity period post namespace registration.
+  - During exclusivity, only the creator can register or sponsor names (via `registerNameWithAuthorization`
+    or `batchRegisterNameWithAuthorization`).
+  - After exclusivity, anyone can register or sponsor names (via `registerName`
+    or `batchRegisterNameWithAuthorization`).
+  - Creators receive 5% of all name registration fees in perpetuity.
+- **Private namespaces (10 ETH):**
+  - Only the creator can register names (via `registerNameWithAuthorization`
+    or `batchRegisterNameWithAuthorization`).
+  - Creators do not receive fees; all fees go to the XNS contract owner.
+- During the first year post XNS contract deployment, the contract owner can register
+  namespaces for others at no cost.
+- The "eth" namespace is disallowed to avoid confusion with ENS.
+- The "x" namespace is associated with bare names (e.g. "vitalik" = "vitalik.x").
+- The contract owner is set as the creator of the "x" namespace at deployment.
 
-### Sponsorship via authorization (EIP-712 + EIP-1271)
-- `registerNameWithAuthorization` allows a sponsor to pay and register a name for a recipient
-  who explicitly authorized it via an EIP-712 signature.
-- Public namespaces: during the creator's 30-day exclusivity window, only the creator may sponsor.
-- Private namespaces: only the creator may sponsor forever. Public registrations are disabled.
+### Bare Names
+- Bare names are names without a namespace (e.g., "vitalik" instead of "vitalik.x").
+- Internally, bare names use the special "x" namespace, so "vitalik" and "vitalik.x" resolve to the same address.
+- Bare names are premium and cost 10 ETH per name.
+
+### Name Registration
+- Users can register names in public namespaces after the 30-day exclusivity period using `registerName`.
+- Each address can own at most one name.
+- Registration fees vary by namespace
+- Any excess payment is refunded.
+
+### Authorized Name Registration
+- XNS features authorized name registration via EIP-712 signatures.
+- Allows sponsors to pay registration fees on behalf of recipients who authorize it via signature.
 - Supports both EOA signatures and EIP-1271 contract wallet signatures.
 
-### Bare names
-- A bare name is a name without a namespace (e.g., "vitalik" or "bankless").
-- Bare names are equivalent to names in the special "x" namespace, i.e., "vitalik" = "vitalik.x"
-  or "bankless" = "bankless.x". That is, both "vitalik" and "vitalik.x" resolve to the same address.
-- Bare names are considered premium names and cost 10 ETH per name.
-
-### Namespace registration
-- Anyone can register new namespaces by paying a one-time fee.
-- Namespaces can be public or private. Public namespaces are open to the public for registrations,
-  while private namespaces are only open to the namespace creator and their authorized recipients.
-- **Public namespaces:**
-  - Fee: 50 ETH
-  - Namespace creators receive a 30-day exclusive window for registering paid names within the registered namespace.
-  - During this period, the creator can use `registerName` to register a name for themselves and sponsor registrations via
-    `registerNameWithAuthorization` for others.
-  - After the exclusivity period, the namespace is opened to the public for registrations.
-- **Private namespaces:**
-  - Fee: 10 ETH
-  - Only the namespace creator may register names within their private namespace forever.
-- The XNS contract owner can register namespaces for free in the first year following contract deployment.
-- The XNS contract owner is set as the creator of the "x" namespace (bare names) at contract deployment.
-- "eth" namespace is disallowed for both public and private namespaces to avoid confusion with ENS.
-
-### Economics
+### ETH Burn and Fee Distribution
 - 90% of ETH sent is burnt via DETH.
-- 10% is credited as fees.
-  - Public namespaces: 5% to namespace creator + 5% to XNS owner
+- 10% is credited as fees:
+  - Public namespaces: 5% to namespace creator, 5% to XNS contract owner
   - Private namespaces: 10% to XNS owner
 
 
@@ -75,23 +77,28 @@ Label and namespace string requirements:
 
 
 Function to register a paid name for `msg.sender`. To register a bare name
-(e.g., "vitalik"), use "x" as the namespace parameter. 
-For public namespaces, namespace creators have a 30-day exclusivity window to register a name for themselves.
-Registrations are opened to the public after the 30-day exclusivity period.
-For private namespaces, only the namespace creator may register a name for themselves.
+(e.g., "vitalik"), use "x" as the namespace parameter.
+This function only works for public namespaces after the exclusivity period (30 days) has ended.
 
 **Requirements:**
-- Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-',
-  cannot contain consecutive hyphens)
-- Namespace must exist.
-- For private namespaces: `msg.sender` must be the namespace creator.
-- For public namespaces: `msg.sender` must be namespace creator if called during the 30-day exclusivity period.
+- Label must be valid (non-empty, length 1–20, only lowercase letters, digits, and hyphens,
+  cannot start or end with '-', cannot contain consecutive hyphens ('--')).
+- Namespace must exist and be public.
 - `msg.value` must be >= the namespace's registered price (excess will be refunded).
+- Namespace must be past the exclusivity period (30 days after creation).
 - Caller must not already have a name.
 - Name must not already be registered.
 
-**Note:** Due to block reorganization risks, users should wait for a few blocks and verify
-the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
+**Fee Distribution:**
+- 90% of ETH is permanently burned via DETH.
+- 5% is credited to the `OWNER`.
+- 5% is credited to the namespace creator.
+
+**Note:**
+- During the exclusivity period or for private namespaces, namespace creators must use
+  `registerNameWithAuthorization` even for their own registrations.
+- Due to block reorganization risks, users should wait for a few blocks and verify
+  the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
 
 ```solidity
 function registerName(string label, string namespace) external payable
@@ -110,24 +117,36 @@ function registerName(string label, string namespace) external payable
 
 
 Function to sponsor a paid name registration for `recipient` who explicitly authorized it via
-signature. Allows a third party to pay gas and registration fees while the recipient explicitly approves
-via EIP-712 signature. 
-For public namespaces, only namespace creator may sponsor registrations during exclusivity period. 
-For private namespaces, only namespace creator may sponsor registrations forever.
+an EIP-712 signature.
+
+This function is **required** for:
+- All registrations in public namespaces during the exclusivity period (only namespace creator).
+- All sponsored registrations in public namespaces after the exclusivity period (anyone).
+- All registrations in private namespaces.
+
 Supports both EOA signatures and EIP-1271 contract wallet signatures.
 
 **Requirements:**
-- Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-').
+- Label must be valid (non-empty, length 1–20, only lowercase letters, digits, and hyphens,
+  cannot start or end with '-', cannot contain consecutive hyphens ('--')).
 - `recipient` must not be the zero address.
-- Namespace must exist (public or private).
+- Namespace must exist.
 - `msg.value` must be >= the namespace's registered price (excess will be refunded).
+- `msg.sender` must be the namespace creator for public namespaces during the exclusivity period
+  or the `OWNER` for private namespaces.
 - Recipient must not already have a name.
 - Name must not already be registered.
 - Signature must be valid EIP-712 signature from `recipient` (EOA) or EIP-1271 contract signature.
+
+**Fee Distribution:**
+- 90% of ETH is permanently burned via DETH.
+- For public namespaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
+- For private namespaces: 10% is credited to the `OWNER`.
+
+**Note:**
 - If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271
   for signature validation.
-
-**Note:** Due to block reorganization risks, users should wait for a few blocks and verify
+- Due to block reorganization risks, users should wait for a few blocks and verify
 the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
 
 ```solidity
@@ -139,7 +158,7 @@ function registerNameWithAuthorization(struct XNS.RegisterNameAuth registerNameA
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| registerNameAuth | struct XNS.RegisterNameAuth | The argument for the function, including label, namespace, and recipient. |
+| registerNameAuth | struct XNS.RegisterNameAuth | The argument for the function, including recipient, label, and namespace. |
 | signature | bytes | EIP-712 signature by `recipient` (EOA) or EIP-1271 contract signature. |
 
 
@@ -147,28 +166,34 @@ function registerNameWithAuthorization(struct XNS.RegisterNameAuth registerNameA
 
 
 Batch version of `registerNameWithAuthorization` to register multiple names with a single transaction.
-All registrations must be in the same namespace. Skips registrations where the recipient already has a name
-or the name is already registered. Skipped items are not charged; excess payment is refunded.
+All registrations must be in the same namespace. Skips registrations (i.e. does not revert) where the recipient already has
+a name or the name is already registered (griefing protection). Skipped items are not charged; excess payment is refunded.
 
 **Requirements:**
-- All registrations must be in the same namespace.
 - Array arguments must have equal length and be non-empty.
+- All registrations must be in the same namespace.
 - `msg.value` must be >= `pricePerName * successfulCount` (excess will be refunded).
 - All individual requirements from `registerNameWithAuthorization` apply to each registration.
+
+**Fee Distribution:**
+- 90% of ETH is permanently burned via DETH.
+- For public namespaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
+- For private namespaces: 10% is credited to the `OWNER`.
+
+**Note:** Input validation errors (invalid label, zero recipient, namespace mismatch, invalid signature)
+cause the entire batch to revert. Errors that could occur due to front-running the batch tx (recipient already
+has a name, or name already registered) are skipped (i.e. batch tx does not revert) to provide griefing protection.
 
 ```solidity
 function batchRegisterNameWithAuthorization(struct XNS.RegisterNameAuth[] registerNameAuths, bytes[] signatures) external payable returns (uint256 successfulCount)
 ```
 
-_**Note:** Input validation errors (invalid label, zero recipient, namespace mismatch, invalid signature)
-cause the entire batch to revert. Errors that could occur due to front-running the batch tx (recipient already
-has a name, or name already registered) are skipped to provide griefing protection._
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| registerNameAuths | struct XNS.RegisterNameAuth[] | Array of `RegisterNameAuth` structs, each including label, namespace, and recipient. |
+| registerNameAuths | struct XNS.RegisterNameAuth[] | Array of `RegisterNameAuth` structs, each including recipient, label, and namespace. |
 | signatures | bytes[] | Array of EIP-712 signatures by recipients (EOA) or EIP-1271 contract signatures. |
 
 #### Return Values
@@ -183,20 +208,18 @@ has a name, or name already registered) are skipped to provide griefing protecti
 Register a new public namespace.
 
 **Requirements:**
-- Namespace must be valid (length 1–20, consists only of [a-z0-9-], cannot start or end with '-', cannot contain consecutive hyphens).
-- `msg.value` must be >= 50 ETH (excess refunded), except OWNER pays 0 ETH during initial period.
-- Namespace must not already exist.
+- `msg.value` must be >= 50 ETH (excess refunded).
+- Namespace must be valid (non-empty, length 1–20, only lowercase letters, digits, and hyphens,
+  cannot start or end with '-', cannot contain consecutive hyphens ('--')).
 - Namespace must not equal "eth".
-- `pricePerName` must be a multiple of 0.001 ETH.
+- Namespace must not already exist.
+- `pricePerName` must be >= 0.001 ETH and a multiple of 0.001 ETH (0.001, 0.002, 0.003, etc.).
 
 **Note:**
-- During the onboarding period (1 year following contract deployment),
-  the owner pays no namespace registration fee.
-- Anyone can register a namespace for a 50 ETH fee within the onboarding period.
-- Front-running namespace registrations by the owner during the onboarding period
-  provides no economic benefit: the owner would only receive 5% of name
-  registration fees (vs 50 ETH upfront fee), and users can mitigate this by waiting until
-  after the 1-year period. This is an accepted design trade-off for simplicity.
+- During the onboarding period (1 year following contract deployment), the contract owner can
+  register namespaces for free (via `registerPublicNamespaceFor`) to foster adoption.
+- For the avoidance of doubt, anyone can register a new namespace during the onboarding period
+  by paying the standard 50 ETH registration fee.
 
 ```solidity
 function registerPublicNamespace(string namespace, uint256 pricePerName) external payable
@@ -217,21 +240,18 @@ function registerPublicNamespace(string namespace, uint256 pricePerName) externa
 Register a new private namespace.
 
 **Requirements:**
-- Namespace must be valid (length 1–20, consists only of [a-z0-9-],
-  cannot start or end with '-', cannot contain consecutive hyphens).
-- `msg.value` must be >= 10 ETH (excess refunded), except OWNER pays 0 ETH during initial period.
-- Namespace must not already exist.
+- `msg.value` must be >= 10 ETH (excess refunded).
+- Namespace must be valid (non-empty, length 1–20, only lowercase letters, digits, and hyphens,
+  cannot start or end with '-', cannot contain consecutive hyphens ('--')).
 - Namespace must not equal "eth".
-- `pricePerName` must be >= 0.001 ETH and a multiple of 0.001 ETH.
+- Namespace must not already exist.
+- `pricePerName` must be >= 0.005 ETH and a multiple of 0.001 ETH (0.005, 0.006, 0.007, etc.).
 
 **Note:**
-- During the onboarding period (1 year following contract deployment),
-  the owner pays no namespace registration fee.
-- Anyone can register a namespace for a 10 ETH fee within the onboarding period.
-- Front-running namespace registrations by the owner during the onboarding period
-  provides no economic benefit: the owner would only receive 10% of name
-  registration fees (vs 10 ETH upfront fee), and users can mitigate this by waiting until
-  after the 1-year period. This is an accepted design trade-off for simplicity.
+- During the onboarding period (1 year following contract deployment), the contract owner can
+  register namespaces for free (via `registerPrivateNamespaceFor`) to foster adoption.
+- For the avoidance of doubt, anyone can register a new namespace during the onboarding period
+  by paying the standard 10 ETH registration fee.
 
 ```solidity
 function registerPrivateNamespace(string namespace, uint256 pricePerName) external payable
@@ -242,6 +262,62 @@ function registerPrivateNamespace(string namespace, uint256 pricePerName) extern
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
+| namespace | string | The namespace to register. |
+| pricePerName | uint256 | The price per name for the namespace. |
+
+
+### registerPublicNamespaceFor
+
+
+OWNER-only function to register a public namespace for another address during the onboarding period.
+This function allows the contract owner to register namespaces for free during the first year to
+foster adoption. No ETH is processed (function is non-payable) and no fees are charged.
+
+**Requirements:**
+- `msg.sender` must be the contract owner.
+- Must be called during the onboarding period (first year after contract deployment).
+- `creator` must not be the zero address.
+- No ETH should be sent (function is non-payable).
+- All validation requirements from `registerPublicNamespace` apply.
+
+```solidity
+function registerPublicNamespaceFor(address creator, string namespace, uint256 pricePerName) external
+```
+
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| creator | address | The address that will be assigned as the namespace creator (who will receive creator fees). |
+| namespace | string | The namespace to register. |
+| pricePerName | uint256 | The price per name for the namespace. |
+
+
+### registerPrivateNamespaceFor
+
+
+OWNER-only function to register a private namespace for another address during the onboarding period.
+This function allows the contract owner to register namespaces for free during the first year to
+foster adoption. No ETH is processed (function is non-payable) and no fees are charged.
+
+**Requirements:**
+- `msg.sender` must be the contract owner.
+- Must be called during the onboarding period (first year after contract deployment).
+- `creator` must not be the zero address.
+- No ETH should be sent (function is non-payable).
+- All validation requirements from `registerPrivateNamespace` apply.
+
+```solidity
+function registerPrivateNamespaceFor(address creator, string namespace, uint256 pricePerName) external
+```
+
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| creator | address | The address that will be assigned as the namespace creator. |
 | namespace | string | The namespace to register. |
 | pricePerName | uint256 | The price per name for the namespace. |
 
@@ -284,14 +360,14 @@ function claimFeesToSelf() external
 ### getAddress
 
 
-Function to resolve a name string like "nike", "nike.x", "vitalik.001", "alice.my-private" to an address.
+Function to resolve a name string like "vitalik", "bob.007", "alice.gm-web3" to an address.
+Returns `address(0)` for anything not registered or malformed. 
+If `fullName` contains no '.', it is treated as a bare name.
 
 ```solidity
 function getAddress(string fullName) external view returns (address addr)
 ```
 
-_Returns `address(0)` for anything not registered or malformed. 
-If `fullName` contains no '.', it is treated as a bare name._
 
 #### Parameters
 
@@ -309,20 +385,21 @@ If `fullName` contains no '.', it is treated as a bare name._
 
 
 Function to resolve a name to an address taking separate label and namespace parameters.
+This version is more gas efficient than `getAddress(string calldata fullName)` as it does not
+require string splitting. Returns `address(0)` if not registered.
+If `namespace` is empty, it is treated as a bare name (equivalent to "x" namespace).
 
 ```solidity
 function getAddress(string label, string namespace) external view returns (address addr)
 ```
 
-_This version is more gas efficient than `getAddress(string calldata fullName)` as it does not
-require string splitting. Returns `address(0)` if not registered._
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | label | string | The label part of the name. |
-| namespace | string | The namespace part of the name. |
+| namespace | string | The namespace part of the name. Use empty string "" for bare names. |
 
 #### Return Values
 
@@ -334,14 +411,14 @@ require string splitting. Returns `address(0)` if not registered._
 
 
 Function to lookup the XNS name for an address.
+Returns an empty string if the address has no name. For bare names (namespace "x"),
+returns just the label without the ".x" suffix. For regular names, returns the full name
+in format "label.namespace".
 
 ```solidity
 function getName(address addr) external view returns (string)
 ```
 
-_Returns an empty string if the address has no name. For bare names (namespace "x"),
-returns just the label without the ".x" suffix. For regular names, returns the full name
-in format "label.namespace"._
 
 #### Parameters
 
@@ -384,12 +461,12 @@ function getNamespaceInfo(string namespace) external view returns (uint256 price
 
 
 Function to retrieve only the price per name for a given namespace.
+More gas efficient than `getNamespaceInfo` if only the price is needed.
 
 ```solidity
 function getNamespacePrice(string namespace) external view returns (uint256 pricePerName)
 ```
 
-_More gas efficient than `getNamespaceInfo` if only the price is needed._
 
 #### Parameters
 
@@ -403,7 +480,32 @@ _More gas efficient than `getNamespaceInfo` if only the price is needed._
 | ---- | ---- | ----------- |
 | pricePerName | uint256 | The price per name for the namespace. |
 
-### isValidSlug
+### isInExclusivityPeriod
+
+
+Function to check if a namespace is currently within its exclusivity period.
+Returns `true` if `block.timestamp <= createdAt + EXCLUSIVITY_PERIOD`, `false` otherwise.
+For private namespaces, this function will return `false` after the exclusivity period, but private namespaces
+remain creator-only forever regardless of this value.
+
+```solidity
+function isInExclusivityPeriod(string namespace) external view returns (bool inExclusivityPeriod)
+```
+
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| namespace | string | The namespace to check. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| inExclusivityPeriod | bool | `true` if the namespace is within its exclusivity period, `false` otherwise. |
+
+### isValidLabelOrNamespace
 
 
 Function to check if a label or namespace is valid (returns bool, does not revert).
@@ -415,7 +517,7 @@ Function to check if a label or namespace is valid (returns bool, does not rever
 - Cannot contain consecutive hyphens ('--')
 
 ```solidity
-function isValidSlug(string slug) external pure returns (bool isValid)
+function isValidLabelOrNamespace(string labelOrNamespace) external pure returns (bool isValid)
 ```
 
 
@@ -423,19 +525,19 @@ function isValidSlug(string slug) external pure returns (bool isValid)
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| slug | string | The label or namespace to check if is valid. |
+| labelOrNamespace | string | The label or namespace to check if is valid. |
 
 #### Return Values
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| isValid | bool | True if the slug is valid, false otherwise. |
+| isValid | bool | True if the labelOrNamespace is valid, false otherwise. |
 
 ### isValidSignature
 
 
-Function to check if a signature, to be used in `registerNameWithAuthorization`
-or `batchRegisterNameWithAuthorization`, is valid.
+Function to check if a signature is valid (be used in `registerNameWithAuthorization`
+or `batchRegisterNameWithAuthorization`).
 
 ```solidity
 function isValidSignature(struct XNS.RegisterNameAuth registerNameAuth, bytes signature) external view returns (bool isValid)
@@ -489,8 +591,7 @@ function getPendingFees(address recipient) external view returns (uint256 amount
 event NameRegistered(string label, string namespace, address owner)
 ```
 
-_Emitted in `registerName`, `registerNameWithAuthorization`,
-and `batchRegisterNameWithAuthorization` functions._
+_Emitted in name registration functions._
 
 
 
@@ -518,7 +619,7 @@ _Emitted in constructor when "x" namespace is registered, and in namespace regis
 event FeesClaimed(address recipient, uint256 amount)
 ```
 
-_Emitted in `claimFees` and `claimFeesToSelf` functions._
+_Emitted in fee claiming functions._
 
 
 
@@ -597,7 +698,10 @@ uint256 EXCLUSIVITY_PERIOD
 ### ONBOARDING_PERIOD
 
 
-Period after contract deployment during which the owner pays no namespace registration fee.
+Period after contract deployment during which the owner can use `registerPublicNamespaceFor` and
+`registerPrivateNamespaceFor` to bootstrap namespaces for participants at no cost. After this period, all
+namespace registrations (including by the owner) require standard fees via `registerPublicNamespace` or
+`registerPrivateNamespace`.
 
 ```solidity
 uint256 ONBOARDING_PERIOD
@@ -614,6 +718,32 @@ Unit price step (0.001 ETH).
 
 ```solidity
 uint256 PRICE_STEP
+```
+
+
+
+
+
+### PUBLIC_NAMESPACE_MIN_PRICE
+
+
+Minimum price per name for public namespaces (0.001 ETH).
+
+```solidity
+uint256 PUBLIC_NAMESPACE_MIN_PRICE
+```
+
+
+
+
+
+### PRIVATE_NAMESPACE_MIN_PRICE
+
+
+Minimum price per name for private namespaces (0.005 ETH = 5x public minimum).
+
+```solidity
+uint256 PRIVATE_NAMESPACE_MIN_PRICE
 ```
 
 

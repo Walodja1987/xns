@@ -11,10 +11,13 @@
   "function getNamespaceInfo(string) view returns (uint256, address, uint64, bool)",
   "function getNamespacePrice(string) view returns (uint256)",
   "function getPendingFees(address) view returns (uint256)",
+  "function isInExclusivityPeriod(string) view returns (bool)",
+  "function isValidLabelOrNamespace(string) pure returns (bool)",
   "function isValidSignature(tuple(address,string,string),bytes) view returns (bool)",
-  "function isValidSlug(string) pure returns (bool)",
   "function registerName(string,string) payable",
   "function registerNameWithAuthorization(tuple(address,string,string),bytes) payable",
   "function registerPrivateNamespace(string,uint256) payable",
-  "function registerPublicNamespace(string,uint256) payable"
+  "function registerPrivateNamespaceFor(address,string,uint256)",
+  "function registerPublicNamespace(string,uint256) payable",
+  "function registerPublicNamespaceFor(address,string,uint256)"
 ]

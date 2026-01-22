@@ -36,31 +36,31 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
-### isValidSlug
+### isValidLabelOrNamespace
 
 #### Functionality
-
-- Should return `true` for valid slugs with lowercase letters.
-- Should return `true` for valid slugs with digits.
-- Should return `true` for valid slugs with hyphens.
-- Should return `true` for valid slugs combining letters, digits, and hyphens.
-- Should return `true` for minimum length (1 character).
-- Should return `true` for maximum length (20 characters).
-
+isValidLabelabelOrNamespaceamespace
+- Should return `true` for valid labelOrNamespaces with lowercase letters.
+- Should return `true` for valid labelOrNamespaces with digits.
+- Should return `true` for valid labelOrNamespaces with hyphens.
+- Should return `true` for valid labelOrNamespaces combining letters, digits, and hyphens.
+- Should return `true` for minimulabelOrNamespacength (1 character).
+- Should return `true` for maximulabelOrNamespacength (20 characters).
+labelOrNamespace
 #### Reverts
 
 - Should return `false` for empty string.
-- Should return `false` for slugs longer than 20 characters.
-- Should return `false` for slugs starting with hyphen.
-- Should return `false` for slugs ending with hyphen.
-- Should return `false` for slugs containing uppercase letters.
-- Should return `false` for slugs containing spaces.
-- Should return `false` for slugs containing special characters (except hyphen).
-- Should return `false` for slugs containing underscores.
-- Should return `false` for slugs containing consecutive hyphens.
-
----
-
+- Should return `false` for labelOrNamespaces longer than 20 characters.
+- Should return `false` for labelOrNamespaces starting with hyphen.
+- Should return `false` for labelOrNamespaces ending with hyphen.
+- Should return `false` for labelOrNamespaces containing uppercase letters.
+- Should return `false` for labelOrNamespaces containing spaces.
+- Should return `false` for labelOrNamespaces containing special characters (except hyphen).
+- Should return `false` for labelOrNamespaces containing underscores.
+- Should return `false` for labelOrNamespaces containing consecutive hyphens.
+labelOrNamespace
+---labelOrNamespace
+labelOrNamespace
 ### registerPublicNamespace
 
 #### Functionality
@@ -70,20 +70,18 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
   - Should set namespace creator to `msg.sender`.
   - Should set `isPrivate = false`.
   - Should set `createdAt` timestamp.
-- Should allow owner to register public namespace without fee (`msg.value = 0`) during initial period (1 year).
-- Should require owner to pay fee after 1 year.
-- Should refund all ETH to owner if owner sends ETH during initial period.
+- Should require owner to pay fee (same as any other user).
 - Should allow anyone (non-owner) to register public namespace with fee during initial period.
 - Should allow anyone (non-owner) to register public namespace with fee after initial period.
 - Should refund excess payment when non-owner pays more than 50 ETH.
-- Should refund excess payment when owner pays more than required fee after initial period.
+- Should refund excess payment when owner pays more than required fee.
 - Should process the ETH payment correctly (90% burnt, 10% to contract owner) when fee is paid.
-- Should not distribute fees when owner registers with `msg.value > 0` during initial period.
 - Should credit correct amount of DETH to non-owner registrant during initial period.
 - Should credit correct amount of DETH to owner after initial period.
 - Should credit correct amount of DETH to non-owner registrant after initial period.
 - Should allow multiple public namespaces with the same price (no price uniqueness).
 - Should allow public namespace with hyphens (e.g., 'my-public-ns').
+- Should allow public namespace registration with minimum price (0.001 ETH).
 
 #### Events
 
@@ -98,12 +96,13 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: invalid namespace` error for public namespace ending with hyphen.
 - Should revert with `XNS: invalid namespace` error for public namespace with consecutive hyphens.
 - Should revert with `XNS: 'eth' namespace forbidden` error when trying to register "eth" namespace.
-- Should revert with `XNS: pricePerName must be > 0` error for zero price.
-- Should revert with `XNS: price must be multiple of 0.001 ETH` error for non-multiple price.
+- Should revert with `XNS: pricePerName too low` error for price less than 0.001 ETH.
+- Should revert with `XNS: price not multiple of 0.001 ETH` error for non-multiple price.
 - Should revert with `XNS: namespace already exists` error when namespace already exists.
 - Should revert with `XNS: insufficient namespace fee` error when non-owner pays incorrect fee during initial period.
 - Should revert with `XNS: insufficient namespace fee` error when non-owner pays incorrect fee after initial period.
-- Should revert with `XNS: refund failed` error if refund to owner fails during initial period.
+- Should revert with `XNS: insufficient namespace fee` error when owner pays incorrect fee.
+- Should revert with `XNS: price not multiple of 0.001 ETHs when excess payment is sent.
 
 ---
 
@@ -116,19 +115,17 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
   - Should set namespace creator to `msg.sender`.
   - Should set `isPrivate = true`.
   - Should set `createdAt` timestamp.
-- Should allow owner to register private namespace without fee (`msg.value = 0`) during initial period (1 year).
-- Should require owner to pay fee after 1 year.
-- Should refund all ETH to owner if owner sends ETH during initial period.
+- Should require owner to pay fee (same as any other user).
 - Should allow anyone (non-owner) to register private namespace with fee during initial period.
 - Should allow anyone (non-owner) to register private namespace with fee after initial period.
 - Should refund excess payment when non-owner pays more than 10 ETH.
-- Should refund excess payment when owner pays more than required fee after initial period.
+- Should refund excess payment when owner pays more than required fee.
 - Should process the ETH payment correctly (90% burnt, 10% to contract owner, 0% to namespace creator) when fee is paid.
-- Should not distribute fees when owner registers with `msg.value > 0` during initial period.
 - Should credit correct amount of DETH to non-owner registrant during initial period.
 - Should credit correct amount of DETH to owner after initial period.
 - Should credit correct amount of DETH to non-owner registrant after initial period.
 - Should allow multiple private namespaces with the same price (no price uniqueness).
+- Should allow private namespace registration with minimum price (0.005 ETH).
 
 #### Events
 
@@ -143,12 +140,79 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: invalid namespace` error for private namespace ending with hyphen.
 - Should revert with `XNS: invalid namespace` error for private namespace with consecutive hyphens.
 - Should revert with `XNS: 'eth' namespace forbidden` error when trying to register "eth" namespace.
-- Should revert with `XNS: pricePerName too low` error for price less than 0.001 ETH.
-- Should revert with `XNS: price must be multiple of 0.001 ETH` error for non-multiple price.
+- Should revert with `XNS: pricePerName too low` error for price less than 0.005 ETH.
+- Should revert with `XNS: price not multiple of 0.001 ETH` error for non-multiple price.
 - Should revert with `XNS: namespace already exists` error when namespace already exists.
 - Should revert with `XNS: insufficient namespace fee` error when non-owner pays incorrect fee during initial period.
 - Should revert with `XNS: insufficient namespace fee` error when non-owner pays incorrect fee after initial period.
-- Should revert with `XNS: refund failed` error if refund to owner fails during initial period.
+- Should revert with `XNS: insufficient namespace fee` error when owner pays incorrect fee.
+- Should revert with `XNS: refund failed` error if refund fails when excess payment is sent.
+XNS: price not multiple of 0.001 ETH
+---
+
+### registerPublicNamespaceFor
+
+#### Functionality
+
+- Should allow OWNER to register public namespace for another address during onboarding.
+- Should register namespace with correct creator (not OWNER).
+- Should emit `NamespaceRegistered` event with correct parameters.
+- Should not process any payment (no fees, no burns).
+
+#### Events
+
+- Should emit `NamespaceRegistered` event with correct parameters.
+
+#### Reverts
+
+- Should revert with `XNS: not owner` when called by non-owner.
+- Should revert with `XNS: onboarding over` when called after onboarding period.
+- Should revert with `XNS: 0x creator` when creator is zero address.
+- Should revert when ETH is sent (function is non-payable).
+- Should revert with `XNS: invalid namespace` error for empty namespace.
+- Should revert with `XNS: invalid namespace` error for namespace longer than 20 characters.
+- Should revert with `XNS: invalid namespace` error for namespace with invalid characters.
+- Should revert with `XNS: invalid namespace` error for namespace starting with hyphen.
+- Should revert with `XNS: invalid namespace` error for namespace ending with hyphen.
+- Should revert with `XNS: invalid namespace` error for namespace with consecutive hyphens.
+- Should revert with `XNS: 'eth' namespace forbidden` error when trying to register "eth" namespace.
+- Should revert with `XNS: pricePerName too low` error for price less than 0.001 ETH.
+- Should revert with `XNS: pricePerName too low` error for zero price.
+- Should revert with `XNS: price not multiple of 0.001 ETH` error when price is not a multiple of PRICE_STEP.
+- Should revert with `XNS: namespace already exists` error when namespace already exists.
+
+---
+
+### registerPrivateNamespaceFor
+
+#### Functionality
+
+- Should allow OWNER to register private namespace for another address during onboarding.
+- Should register namespace with correct creator (not OWNER).
+- Should emit `NamespaceRegistered` event with correct parameters and `isPrivate = true`.
+- Should not process any payment (no fees, no burns).
+
+#### Events
+
+- Should emit `NamespaceRegistered` event with correct parameters and `isPrivate = true`.
+
+#### Reverts
+
+- Should revert with `XNS: not owner` when called by non-owner.
+- Should revert with `XNS: onboarding over` when called after onboarding period.
+- Should revert with `XNS: 0x creator` when creator is zero address.
+- Should revert when ETH is sent (function is non-payable).
+- Should revert with `XNS: invalid namespace` error for empty namespace.
+- Should revert with `XNS: invalid namespace` error for namespace longer than 20 characters.
+- Should revert with `XNS: invalid namespace` error for namespace with invalid characters.
+- Should revert with `XNS: invalid namespace` error for namespace starting with hyphen.
+- Should revert with `XNS: invalid namespace` error for namespace ending with hyphen.
+- Should revert with `XNS: invalid namespace` error for namespace with consecutive hyphens.
+- Should revert with `XNS: 'eth' namespace forbidden` error when trying to register "eth" namespace.
+- Should revert with `XNS: pricePerName too low` error for price less than 0.005 ETH.
+- Should revert with `XNS: pricePerName too low` error for zero price.
+- Should revert with `XNS: price not multiple of 0.001 ETH` error when price is not a multiple of PRICE_STEP.
+- Should revert with `XNS: namespace already exists` error when namespace already exists.
 
 ---
 
@@ -161,18 +225,15 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
   - Should map name hash to owner address.
   - Should map owner address to name.
   - Should set correct label and namespace.
-- Should allow namespace creator to register a paid name in public namespace during exclusive period.
 - Should allow anyone to register paid names in public namespace after exclusive period (30 days).
 - Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
 - Should refund excess payment when `msg.value` exceeds namespace price.
 - Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (10 ETH) after the exclusive period ends.
 - Should credit correct amount of DETH to `msg.sender`.
-- Should credit correct amount of DETH to namespace creator (`msg.sender`) during exclusive period.
 - Should allow a contract to register a name for itself via `registerName` (in constructor).
 - Should allow a contract to register a name for itself via `registerName` (after deployment).
 - Should refund excess payment to contract when registering in constructor with excess payment.
 - Should refund excess payment to contract when registering via function with excess payment.
-- Should allow private namespace creator to register a name for themselves and process fees correctly (90% burnt, 10% to contract owner, 0% to namespace creator).
 
 #### Events
 
@@ -182,9 +243,9 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 - Should revert with `XNS: invalid label` error for invalid label.
 - Should revert with `XNS: namespace not found` error when namespace doesn't exist.
-- Should revert with `XNS: not namespace creator (private)` error when trying to register in private namespace with non-creator account.
+- Should revert with `XNS: only for public namespaces` error when trying to register in private namespace.
 - Should revert with `XNS: insufficient payment` error when `msg.value` is less than namespace price.
-- Should revert with `XNS: not namespace creator (exclusivity period)` error when non-creator tries to register during exclusive period.
+- Should revert with `XNS: in exclusivity period` error when trying to register during exclusive period.
 - Should revert with `XNS: address already has a name` error when address already owns a name.
 - Should revert with `XNS: name already registered` error when name is already registered.
 
@@ -199,6 +260,8 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
   - Should map name hash to recipient address.
   - Should map recipient address to name.
   - Should set correct label and namespace.
+- Should allow namespace creator to register a paid name in public namespace during exclusive period using authorization.
+- Should allow private namespace creator to register a name for themselves using authorization and process fees correctly (90% burnt, 10% to contract owner, 0% to namespace creator).
 - Should allow namespace creator to sponsor registrations in public namespace during exclusive period (30 days).
 - Should allow anyone to sponsor registrations in public namespace after exclusive period (30 days).
 - Should allow namespace creator to sponsor registrations in private namespace (creator-only forever).
@@ -345,6 +408,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should return correct owner address for registered name.
 - Should return `address(0)` for unregistered name.
 - Should handle special namespace "x" correctly.
+- Should treat empty namespace as bare name (equivalent to "x" namespace).
 - Should return correct recipient address for sponsored name in private namespace.
 - Should return `address(0)` for unregistered name in private namespace.
 - Should return correct address for long private namespace (up to 20 characters).
@@ -416,6 +480,19 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should return correct price for public namespace.
 - Should return correct price for private namespace.
 - Should return correct price for special namespace 'x' (bare names).
+
+#### Reverts
+
+- Should revert with `XNS: namespace not found` error for non-existent namespace.
+
+---
+
+### isInExclusivityPeriod
+
+#### Functionality
+
+- Should return `true` for namespace within exclusivity period (30 days after creation).
+- Should return `false` for namespace after exclusivity period has ended.
 
 #### Reverts
 

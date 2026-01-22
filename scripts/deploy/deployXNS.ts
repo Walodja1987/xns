@@ -85,10 +85,16 @@ export default async function main(hre: HardhatRuntimeEnvironment) {
         `[${i + 1}/${NAMESPACE_TIERS.length}] Registering namespace "${tier.namespace}" at ${tier.priceETH} ETH...`,
       );
 
-      // Owner registers without fee during initial period (90 days)
-      const tx = await xns.connect(deployer).registerPublicNamespace(tier.namespace, priceWei, {
-        value: 0,
-      });
+      // Use registerPublicNamespaceFor for free onboarding registration (deployer is the owner during deployment)
+      // This registers the namespace with deployer as the creator at no cost during the onboarding period
+      const tx = await xns.connect(deployer).registerPublicNamespaceFor(
+        deployer.address,
+        tier.namespace,
+        priceWei,
+        {
+          value: 0,
+        },
+      );
       await tx.wait();
 
       console.log(

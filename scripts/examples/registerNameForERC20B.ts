@@ -1,6 +1,13 @@
 /**
  * Script to deploy a MockERC20B contract and register an XNS name for it
  *
+ * NOTE:
+ * - This script uses `registerName`, which only works for public namespaces
+ *   after the exclusivity period (30 days after namespace creation on Ethereum Mainnet).
+ * - For private namespaces or during exclusivity period, use
+ *   `registerNameWithAuthorization` instead (see registerNameForERC20C.ts).
+ * - The script will validate these conditions and throw an error if they're not met.
+ *
  * USAGE:
  * Run the script with:
  * `npx hardhat run scripts/examples/registerNameForERC20B.ts --network <network_name>`
@@ -77,15 +84,34 @@ async function main() {
     `Account balance: ${GREEN}${formatEther(balance)} ETH${RESET}\n`,
   );
 
-  // Get namespace info to determine price
+  // Get namespace info to determine price and validate usage
   const xns = await hre.ethers.getContractAt("XNS", contractAddress);
   console.log(`Fetching namespace info for "${namespace}"...\n`);
   const getNamespaceInfo = xns.getFunction("getNamespaceInfo(string)");
-  const [pricePerName, creator, createdAt] = await getNamespaceInfo(namespace);
+  const [pricePerName, creator, createdAt, isPrivate] = await getNamespaceInfo(namespace);
 
   console.log(`Namespace: ${GREEN}${namespace}${RESET}`);
   console.log(`Price per name: ${GREEN}${formatEther(pricePerName)} ETH${RESET}`);
-  console.log(`Namespace creator: ${GREEN}${creator}${RESET}\n`);
+  console.log(`Namespace creator: ${GREEN}${creator}${RESET}`);
+  console.log(`Is private: ${GREEN}${isPrivate}${RESET}\n`);
+
+  // Validate that registerName can be used (public namespace after exclusivity period)
+  if (isPrivate) {
+    throw new Error(
+      `Cannot use registerName for private namespace "${namespace}". Use registerNameWithAuthorization instead (see registerNameForERC20C.ts).`,
+    );
+  }
+
+  const EXCLUSIVITY_PERIOD = 30n * 24n * 60n * 60n; // 30 days in seconds
+  const exclusivityEnd = createdAt + EXCLUSIVITY_PERIOD;
+  const currentTimestamp = BigInt(Math.floor(Date.now() / 1000));
+
+  if (currentTimestamp <= exclusivityEnd) {
+    const exclusivityEndDate = new Date(Number(exclusivityEnd) * 1000);
+    throw new Error(
+      `Cannot use registerName during exclusivity period. Exclusivity period ends at ${exclusivityEndDate.toLocaleString()}. Use registerNameWithAuthorization instead (see registerNameForERC20C.ts).`,
+    );
+  }
 
   // Check if name is already registered
   const getAddress = xns.getFunction("getAddress(string,string)");

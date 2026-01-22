@@ -1,5 +1,12 @@
 /**
- * Script to register a name on XNS
+ * Script to register a name on XNS using registerName
+ *
+ * NOTE:
+ * - This script uses `registerName`, which only works for public namespaces
+ *   after the exclusivity period (30 days after namespace creation on Ethereum Mainnet).
+ * - For private namespaces or during exclusivity period, use
+ *   `registerNameWithAuthorization` instead (see registerNameWithAuthorization.ts).
+ * - The script will validate these conditions and throw an error if they're not met.
  *
  * USAGE:
  * Run the script with:
@@ -65,18 +72,37 @@ async function main() {
   console.log(`XNS contract: ${GREEN}${contractAddress}${RESET}`);
   console.log(`Registering with account: ${GREEN}${signer.address}${RESET}\n`);
 
-  // Get namespace info to determine price
+  // Get namespace info to determine price and validate usage
   console.log(`Fetching namespace info for "${namespace}"...\n`);
   const getNamespaceInfo = xns.getFunction("getNamespaceInfo(string)");
-  const [pricePerName, creator, createdAt] = await getNamespaceInfo(namespace);
+  const [pricePerName, creator, createdAt, isPrivate] = await getNamespaceInfo(namespace);
 
   console.log(`Namespace: ${GREEN}${namespace}${RESET}`);
   console.log(`Price per name: ${GREEN}${formatEther(pricePerName)} ETH${RESET}`);
-  console.log(`Namespace creator: ${GREEN}${creator}${RESET}\n`);
+  console.log(`Namespace creator: ${GREEN}${creator}${RESET}`);
+  console.log(`Is private: ${GREEN}${isPrivate}${RESET}\n`);
   const createdAtDate = new Date(Number(createdAt) * 1000);
   console.log(
     `Created at: ${GREEN}${createdAt}${RESET} [${createdAtDate.toLocaleString()}]\n`
   );
+
+  // Validate that registerName can be used (public namespace after exclusivity period)
+  if (isPrivate) {
+    throw new Error(
+      `Cannot use registerName for private namespace "${namespace}". Use registerNameWithAuthorization instead.`,
+    );
+  }
+
+  const EXCLUSIVITY_PERIOD = 30n * 24n * 60n * 60n; // 30 days in seconds
+  const exclusivityEnd = createdAt + EXCLUSIVITY_PERIOD;
+  const currentTimestamp = BigInt(Math.floor(Date.now() / 1000));
+
+  if (currentTimestamp <= exclusivityEnd) {
+    const exclusivityEndDate = new Date(Number(exclusivityEnd) * 1000);
+    throw new Error(
+      `Cannot use registerName during exclusivity period. Exclusivity period ends at ${exclusivityEndDate.toLocaleString()}. Use registerNameWithAuthorization instead.`,
+    );
+  }
 
   // Check if address already has a name
   const getName = xns.getFunction("getName(address)");

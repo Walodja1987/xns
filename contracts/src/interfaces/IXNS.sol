@@ -23,6 +23,8 @@ interface IXNS {
     ) external payable returns (uint256 successfulCount);
     function registerPublicNamespace(string calldata namespace, uint256 pricePerName) external payable;
     function registerPrivateNamespace(string calldata namespace, uint256 pricePerName) external payable;
+    function registerPublicNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external;
+    function registerPrivateNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external;
     function claimFees(address recipient) external;
     function claimFeesToSelf() external;
 
@@ -31,7 +33,8 @@ interface IXNS {
     function getName(address addr) external view returns (string memory);
     function getNamespaceInfo(string calldata namespace) external view returns (uint256 pricePerName, address creator, uint64 createdAt, bool isPrivate);
     function getNamespacePrice(string calldata namespace) external view returns (uint256 pricePerName);
-    function isValidSlug(string memory slug) external pure returns (bool isValid);
+    function isInExclusivityPeriod(string calldata namespace) external view returns (bool inExclusivityPeriod);
+    function isValidLabelOrNamespace(string memory labelOrNamespace) external pure returns (bool isValid);
     function isValidSignature(
         RegisterNameAuth calldata registerNameAuth,
         bytes calldata signature
