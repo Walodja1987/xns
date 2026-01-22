@@ -97,12 +97,12 @@ labelOrNamespace
 - Should revert with `XNS: invalid namespace` error for public namespace with consecutive hyphens.
 - Should revert with `XNS: 'eth' namespace forbidden` error when trying to register "eth" namespace.
 - Should revert with `XNS: pricePerName too low` error for price less than 0.001 ETH.
-- Should revert with `XNS: price must be multiple of 0.001 ETH` error for non-multiple price.
+- Should revert with `XNS: price not multiple of 0.001 ETH` error for non-multiple price.
 - Should revert with `XNS: namespace already exists` error when namespace already exists.
 - Should revert with `XNS: insufficient namespace fee` error when non-owner pays incorrect fee during initial period.
 - Should revert with `XNS: insufficient namespace fee` error when non-owner pays incorrect fee after initial period.
 - Should revert with `XNS: insufficient namespace fee` error when owner pays incorrect fee.
-- Should revert with `XNS: refund failed` error if refund fails when excess payment is sent.
+- Should revert with `XNS: price not multiple of 0.001 ETHs when excess payment is sent.
 
 ---
 
@@ -141,13 +141,13 @@ labelOrNamespace
 - Should revert with `XNS: invalid namespace` error for private namespace with consecutive hyphens.
 - Should revert with `XNS: 'eth' namespace forbidden` error when trying to register "eth" namespace.
 - Should revert with `XNS: pricePerName too low` error for price less than 0.005 ETH.
-- Should revert with `XNS: price must be multiple of 0.001 ETH` error for non-multiple price.
+- Should revert with `XNS: price not multiple of 0.001 ETH` error for non-multiple price.
 - Should revert with `XNS: namespace already exists` error when namespace already exists.
 - Should revert with `XNS: insufficient namespace fee` error when non-owner pays incorrect fee during initial period.
 - Should revert with `XNS: insufficient namespace fee` error when non-owner pays incorrect fee after initial period.
 - Should revert with `XNS: insufficient namespace fee` error when owner pays incorrect fee.
 - Should revert with `XNS: refund failed` error if refund fails when excess payment is sent.
-
+XNS: price not multiple of 0.001 ETH
 ---
 
 ### registerPublicNamespaceFor
@@ -178,7 +178,7 @@ labelOrNamespace
 - Should revert with `XNS: 'eth' namespace forbidden` error when trying to register "eth" namespace.
 - Should revert with `XNS: pricePerName too low` error for price less than 0.001 ETH.
 - Should revert with `XNS: pricePerName too low` error for zero price.
-- Should revert with `XNS: price must be multiple of 0.001 ETH` error when price is not a multiple of PRICE_STEP.
+- Should revert with `XNS: price not multiple of 0.001 ETH` error when price is not a multiple of PRICE_STEP.
 - Should revert with `XNS: namespace already exists` error when namespace already exists.
 
 ---
@@ -211,7 +211,7 @@ labelOrNamespace
 - Should revert with `XNS: 'eth' namespace forbidden` error when trying to register "eth" namespace.
 - Should revert with `XNS: pricePerName too low` error for price less than 0.005 ETH.
 - Should revert with `XNS: pricePerName too low` error for zero price.
-- Should revert with `XNS: price must be multiple of 0.001 ETH` error when price is not a multiple of PRICE_STEP.
+- Should revert with `XNS: price not multiple of 0.001 ETH` error when price is not a multiple of PRICE_STEP.
 - Should revert with `XNS: namespace already exists` error when namespace already exists.
 
 ---

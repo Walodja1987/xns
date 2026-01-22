@@ -1026,7 +1026,7 @@ describe("XNS", function () {
         ).to.be.revertedWith("XNS: pricePerName too low");
     });
 
-    it("Should revert with `XNS: price must be multiple of 0.001 ETH` error for non-multiple price", async () => {
+    it("Should revert with `XNS: price not multiple of 0.001 ETH` error for non-multiple price", async () => {
         // ---------
         // Arrange: Prepare parameters with price that is not a multiple of 0.001 ETH
         // ---------
@@ -1039,7 +1039,7 @@ describe("XNS", function () {
         // ---------
         await expect(
             s.xns.connect(s.user1).registerPublicNamespace(namespace, pricePerName, { value: fee })
-        ).to.be.revertedWith("XNS: price must be multiple of 0.001 ETH");
+        ).to.be.revertedWith("XNS: price not multiple of 0.001 ETH");
     });
 
     it("Should revert with `XNS: namespace already exists` error when namespace already exists", async () => {
@@ -1496,7 +1496,7 @@ describe("XNS", function () {
         ).to.be.revertedWith("XNS: pricePerName too low");
     });
 
-    it("Should revert with `XNS: price must be multiple of 0.001 ETH` error when price is not a multiple of PRICE_STEP", async () => {
+    it("Should revert with `XNS: price not multiple of 0.001 ETH` error when price is not a multiple of PRICE_STEP", async () => {
         // ---------
         // Arrange: Prepare parameters with price not a multiple of PRICE_STEP
         // ---------
@@ -1509,7 +1509,7 @@ describe("XNS", function () {
         // ---------
         await expect(
             s.xns.connect(s.owner).registerPublicNamespaceFor(creator, namespace, pricePerName)
-        ).to.be.revertedWith("XNS: price must be multiple of 0.001 ETH");
+        ).to.be.revertedWith("XNS: price not multiple of 0.001 ETH");
     });
 
     it("Should revert with `XNS: namespace already exists` error when namespace already exists", async () => {
@@ -1879,7 +1879,7 @@ describe("XNS", function () {
         ).to.be.revertedWith("XNS: pricePerName too low");
     });
 
-    it("Should revert with `XNS: price must be multiple of 0.001 ETH` error when price is not a multiple of PRICE_STEP", async () => {
+    it("Should revert with `XNS: price not multiple of 0.001 ETH` error when price is not a multiple of PRICE_STEP", async () => {
         // ---------
         // Arrange: Prepare parameters with price not a multiple of PRICE_STEP
         // ---------
@@ -1892,7 +1892,7 @@ describe("XNS", function () {
         // ---------
         await expect(
             s.xns.connect(s.owner).registerPrivateNamespaceFor(creator, namespace, pricePerName)
-        ).to.be.revertedWith("XNS: price must be multiple of 0.001 ETH");
+        ).to.be.revertedWith("XNS: price not multiple of 0.001 ETH");
     });
 
     it("Should revert with `XNS: namespace already exists` error when namespace already exists", async () => {
@@ -2596,7 +2596,7 @@ describe("XNS", function () {
         expect(nsPricePerName).to.equal(pricePerName);
     });
 
-    it("Should revert with `XNS: price must be multiple of 0.001 ETH` error for non-multiple price", async () => {
+    it("Should revert with `XNS: price not multiple of 0.001 ETH` error for non-multiple price", async () => {
         // ---------
         // Arrange: Prepare parameters with price that is not a multiple of 0.001 ETH
         // ---------
@@ -2609,7 +2609,7 @@ describe("XNS", function () {
         // ---------
         await expect(
             s.xns.connect(s.user1).registerPrivateNamespace(namespace, pricePerName, { value: fee })
-        ).to.be.revertedWith("XNS: price must be multiple of 0.001 ETH");
+        ).to.be.revertedWith("XNS: price not multiple of 0.001 ETH");
     });
 
     it("Should revert with `XNS: namespace already exists` error when namespace already exists", async () => {

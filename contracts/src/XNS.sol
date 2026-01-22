@@ -29,6 +29,7 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - vitalik.100x
 /// - garry.ape
 ///
+/// ### String rules
 /// Label and namespace string requirements:
 /// - Must be 1–20 characters long
 /// - Must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
@@ -36,53 +37,46 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - Cannot contain consecutive hyphens ('--')
 /// - "eth" as namespace is disallowed to avoid confusion with ENS
 ///
-/// ### Name registration with public namespaces
-/// - Users call `registerName(label, namespace)` and send ETH.
-/// - This function only works for public namespaces **after** the exclusivity period (30 days).
-/// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
-/// - Each address can own at most one name.
+/// ### Namespaces
+/// - Anyone can register new namespaces by paying a one-time fee.
+/// - XNS features two types of namespaces: public and private.
+/// - **Public namespaces (50 ETH):**
+///   - Open to everyone after a 30-day exclusivity period post namespace registration.
+///   - During exclusivity, only the creator can register or sponsor names (via `registerNameWithAuthorization`
+///     or `batchRegisterNameWithAuthorization`).
+///   - After exclusivity, anyone can register ro sponsor names (via `registerName`
+///     or `batchRegisterNameWithAuthorization`).
+///   - Creators receive 5% of all name registration fees in perpetuity.
+/// - **Private namespaces (10 ETH):**
+///   - Only the creator can register names (via `registerNameWithAuthorization`
+///     or `batchRegisterNameWithAuthorization`).
+///   - Creators do not receive fees; all fees go to the XNS contract owner.
+/// - During the first year post XNS contract deployment, the contract owner can register
+///   namespaces for others at no cost.
+/// - The "eth" namespace is disallowed to avoid confusion with ENS.
+/// - The "x" namespace is associated with bare names (e.g. "vitalik" = "vitalik.x").
+/// - The contract owner is set as the creator of the "x" namespace at deployment.
 ///
-/// ### Sponsorship via authorization (EIP-712 + EIP-1271)
-/// - `registerNameWithAuthorization` is **required** for:
-///   - All registrations during the exclusivity period (even namespace creators registering for themselves)
-///   - All registrations in private namespaces (even namespace creators registering for themselves)
-///   - All sponsored registrations (when someone else pays the fee)
-/// - `registerNameWithAuthorization` allows a sponsor to pay and register a name for a recipient
-///   who explicitly authorized it via an EIP-712 signature.
-/// - Public namespaces: during the creator's 30-day exclusivity window, only the creator may sponsor.
-/// - Private namespaces: only the creator may sponsor forever. Public registrations are disabled.
+/// ### Bare Names
+/// - Bare names are names without a namespace (e.g., "vitalik" instead of "vitalik.x").
+/// - Internally, bare names use the special "x" namespace, so "vitalik" and "vitalik.x" resolve to the same address.
+/// - Bare names are premium and cost 10 ETH per name.
+///
+/// ### Name Registration
+/// - Users can register names in public namespaces after the 30-day exclusivity period using `registerName`.
+/// - Each address can own at most one name.
+/// - Registration fees vary by namespace
+/// - Any excess payment is refunded.
+///
+/// ### Authorized Name Registration
+/// - XNS features authorized name registration via EIP-712 signatures.
+/// - Allows sponsors to pay registration fees on behalf of recipients who authorize it via signature.
 /// - Supports both EOA signatures and EIP-1271 contract wallet signatures.
 ///
-/// ### Bare names
-/// - A bare name is a name without a namespace (e.g., "vitalik" or "bankless").
-/// - Bare names are equivalent to names in the special "x" namespace, i.e., "vitalik" = "vitalik.x"
-///   or "bankless" = "bankless.x". That is, both "vitalik" and "vitalik.x" resolve to the same address.
-/// - Bare names are considered premium names and cost 10 ETH per name.
-///
-/// ### Namespace registration
-/// - Anyone can register new namespaces by paying a one-time fee.
-/// - Namespaces can be public or private. Public namespaces are open to the public for registrations,
-///   while private namespaces are only open to the namespace creator and their authorized recipients.
-/// - **Public namespaces:**
-///   - Fee: 50 ETH
-///   - Namespace creators receive a 30-day exclusive window for registering paid names within the registered namespace.
-///   - During this period, the creator must use `registerNameWithAuthorization` to register names (even for themselves)
-///     and sponsor registrations for others.
-///   - After the exclusivity period, the namespace is opened to the public for registrations using `registerName`.
-/// - **Private namespaces:**
-///   - Fee: 10 ETH
-///   - Only the namespace creator may register names within their private namespace forever.
-/// - During the onboarding period (first year after contract deployment), the XNS contract owner can optionally
-///   bootstrap namespaces for participants and integrators at no cost using `registerPublicNamespaceFor` and
-///   `registerPrivateNamespaceFor`. Regular users always pay standard fees via `registerPublicNamespace` and
-///   `registerPrivateNamespace`, including the owner when using self-service functions.
-/// - The XNS contract owner is set as the creator of the "x" namespace (bare names) at contract deployment.
-/// - "eth" namespace is disallowed for both public and private namespaces to avoid confusion with ENS.
-///
-/// ### Economics
+/// ### ETH Burn and Fee Distribution
 /// - 90% of ETH sent is burnt via DETH.
-/// - 10% is credited as fees.
-///   - Public namespaces: 5% to namespace creator + 5% to XNS owner
+/// - 10% is credited as fees:
+///   - Public namespaces: 5% to namespace creator, 5% to XNS contract owner
 ///   - Private namespaces: 10% to XNS owner
 contract XNS is EIP712 {
     // -------------------------------------------------------------------------
@@ -244,7 +238,7 @@ contract XNS is EIP712 {
     ///
     /// **Fee Distribution:**
     /// - 90% of ETH is permanently burned via DETH.
-    /// - 5% is credited to the OWNER.
+    /// - 5% is credited to the `OWNER`.
     /// - 5% is credited to the namespace creator.
     ///
     /// **Note:**
@@ -297,15 +291,15 @@ contract XNS is EIP712 {
     /// - Namespace must exist.
     /// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
     /// - `msg.sender` must be the namespace creator for public namespaces during the exclusivity period
-    ///   or the OWNER for private namespaces.
+    ///   or the `OWNER` for private namespaces.
     /// - Recipient must not already have a name.
     /// - Name must not already be registered.
     /// - Signature must be valid EIP-712 signature from `recipient` (EOA) or EIP-1271 contract signature.
     ///
     /// **Fee Distribution:**
     /// - 90% of ETH is permanently burned via DETH.
-    /// - For public namspaces: 5% is credited to the namespace creator and 5% to the OWNER.
-    /// - For private namespaces: 10% is credited to the OWNER.
+    /// - For public namspaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
+    /// - For private namespaces: 10% is credited to the `OWNER`.
     ///
     /// **Note:**
     /// - If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271
@@ -369,8 +363,8 @@ contract XNS is EIP712 {
     ///
     /// **Fee Distribution:**
     /// - 90% of ETH is permanently burned via DETH.
-    /// - For public namspaces: 5% is credited to the namespace creator and 5% to the OWNER.
-    /// - For private namespaces: 10% is credited to the OWNER.
+    /// - For public namspaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
+    /// - For private namespaces: 10% is credited to the `OWNER`.
     ///
     /// **Note:** Input validation errors (invalid label, zero recipient, namespace mismatch, invalid signature)
     /// cause the entire batch to revert. Errors that could occur due to front-running the batch tx (recipient already
@@ -453,17 +447,18 @@ contract XNS is EIP712 {
     /// @notice Register a new public namespace.
     ///
     /// **Requirements:**
+    /// - `msg.value` must be >= 50 ETH (excess refunded).
     /// - Namespace must be valid (non-empty, length 1–20, only lowercase letters, digits, and hyphens,
     ///   cannot start or end with '-', cannot contain consecutive hyphens ('--')).
-    /// - `msg.value` must be >= 50 ETH (excess refunded).
-    /// - Namespace must not already exist.
     /// - Namespace must not equal "eth".
-    /// - `pricePerName` must be >= 0.001 ETH and a multiple of 0.001 ETH.
+    /// - Namespace must not already exist.
+    /// - `pricePerName` must be >= 0.001 ETH and a multiple of 0.001 ETH (0.001, 0.002, 0.003, etc.).
     ///
     /// **Note:**
-    /// - During the onboarding period (1 year following contract deployment), the contract owner can optionally
-    ///   bootstrap namespaces for participants via `registerPublicNamespaceFor` at no cost.
-    /// - All self-service registrations (including by the owner) require the full 50 ETH fee.
+    /// - During the onboarding period (1 year following contract deployment), the contract owner can
+    ///   register namespaces for free (via `registerPublicNamespaceFor`) to foster adoption.
+    /// - For the avoidance of doubt, anyone can register a new namespace during the onboarding period
+    ///   by paying the standard 50 ETH registration fee.
     ///
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace.
@@ -478,17 +473,18 @@ contract XNS is EIP712 {
     /// @notice Register a new private namespace.
     ///
     /// **Requirements:**
+    /// - `msg.value` must be >= 10 ETH (excess refunded).
     /// - Namespace must be valid (non-empty, length 1–20, only lowercase letters, digits, and hyphens,
     ///   cannot start or end with '-', cannot contain consecutive hyphens ('--')).
-    /// - `msg.value` must be >= 10 ETH (excess refunded).
-    /// - Namespace must not already exist.
     /// - Namespace must not equal "eth".
-    /// - `pricePerName` must be >= 0.005 ETH and a multiple of 0.001 ETH.
+    /// - Namespace must not already exist.
+    /// - `pricePerName` must be >= 0.005 ETH and a multiple of 0.001 ETH (0.005, 0.006, 0.007, etc.).
     ///
     /// **Note:**
-    /// - During the onboarding period (1 year following contract deployment), the contract owner can optionally
-    ///   bootstrap namespaces for participants via `registerPrivateNamespaceFor` at no cost.
-    /// - All self-service registrations (including by the owner) require the full 10 ETH fee.
+    /// - During the onboarding period (1 year following contract deployment), the contract owner can
+    ///   register namespaces for free (via `registerPrivateNamespaceFor`) to foster adoption.
+    /// - For the avoidance of doubt, anyone can register a new namespace during the onboarding period
+    ///   by paying the standard 10 ETH registration fee.
     ///
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace.
@@ -501,17 +497,17 @@ contract XNS is EIP712 {
     }
 
     /// @notice OWNER-only function to register a public namespace for another address during the onboarding period.
-    /// This function allows the contract owner to bootstrap namespaces for participants and integrators at no cost
-    /// during the first year after contract deployment. No fees are charged and no ETH is processed.
+    /// This function allows the contract owner to register namespaces for free during the first year to
+    /// foster adoption. No ETH is processed (function is non-payable) and no fees are charged.
     ///
     /// **Requirements:**
     /// - `msg.sender` must be the contract owner.
     /// - Must be called during the onboarding period (first year after contract deployment).
     /// - `creator` must not be the zero address.
     /// - No ETH should be sent (function is non-payable).
-    /// - All validation requirements from `registerPublicNamespace` apply (namespace format, price, etc.).
+    /// - All validation requirements from `registerPublicNamespace` apply.
     ///
-    /// @param creator The address that will be set as the namespace creator.
+    /// @param creator The address that will be assigned as the namespace creator (who will receive creator fees).
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace.
     function registerPublicNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external {
@@ -523,17 +519,17 @@ contract XNS is EIP712 {
     }
 
     /// @notice OWNER-only function to register a private namespace for another address during the onboarding period.
-    /// This function allows the contract owner to bootstrap namespaces for participants and integrators at no cost
-    /// during the first year after contract deployment. No fees are charged and no ETH is processed.
+    /// This function allows the contract owner to register namespaces for free during the first year to
+    /// foster adoption. No ETH is processed (function is non-payable) and no fees are charged.
     ///
     /// **Requirements:**
     /// - `msg.sender` must be the contract owner.
     /// - Must be called during the onboarding period (first year after contract deployment).
     /// - `creator` must not be the zero address.
     /// - No ETH should be sent (function is non-payable).
-    /// - All validation requirements from `registerPrivateNamespace` apply (namespace format, price, etc.).
+    /// - All validation requirements from `registerPrivateNamespace` apply.
     ///
-    /// @param creator The address that will be set as the namespace creator.
+    /// @param creator The address that will be assigned as the namespace creator.
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace.
     function registerPrivateNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external {
@@ -548,18 +544,20 @@ contract XNS is EIP712 {
     /// - Validates namespace and pricePerName
     /// - Checks namespace doesn't exist
     /// - Writes namespace data to storage
-    /// - Emits NamespaceRegistered event
+    /// - Emits `NamespaceRegistered` event
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace. Must be >= 0.001 ETH for public namespaces,
-    ///   >= 0.005 ETH for private namespaces, and a multiple of 0.001 ETH.
-    /// @param creator The address that will be set as the namespace creator.
+    /// >= 0.005 ETH for private namespaces, and a multiple of 0.001 ETH.
+    /// @param creator The address that will be assigned as the namespace creator.
     /// @param isPrivate Whether the namespace is private.
-    /// @dev No ETH logic (no payment processing, no refunds). Pure validation + storage + event.
     function _registerNamespace(string calldata namespace, uint256 pricePerName, address creator, bool isPrivate) private {
         require(_isValidLabelOrNamespace(namespace), "XNS: invalid namespace");
 
         // Forbid "eth" namespace to avoid confusion with ENS.
         require(keccak256(bytes(namespace)) != keccak256(bytes("eth")), "XNS: 'eth' namespace forbidden");
+
+        bytes32 nsHash = keccak256(bytes(namespace));
+        require(_namespaces[nsHash].creator == address(0), "XNS: namespace already exists");
 
         // Check minimum price based on namespace type (public namespaces are more common, check first)
         if (!isPrivate) {
@@ -567,10 +565,7 @@ contract XNS is EIP712 {
         } else {
             require(pricePerName >= PRIVATE_NAMESPACE_MIN_PRICE, "XNS: pricePerName too low");
         }
-        require(pricePerName % PRICE_STEP == 0, "XNS: price must be multiple of 0.001 ETH");
-
-        bytes32 nsHash = keccak256(bytes(namespace));
-        require(_namespaces[nsHash].creator == address(0), "XNS: namespace already exists");
+        require(pricePerName % PRICE_STEP == 0, "XNS: price not multiple of 0.001 ETH");
 
         _namespaces[nsHash] = NamespaceData({
             pricePerName: pricePerName,
@@ -602,6 +597,7 @@ contract XNS is EIP712 {
     }
 
     /// @dev Helper function for `claimFees` and `claimFeesToSelf`.
+    /// @param recipient The address that will receive the claimed fees.
     function _claimFees(address recipient) private {
         uint256 amount = _pendingFees[msg.sender];
         require(amount > 0, "XNS: no fees to claim");
@@ -618,8 +614,8 @@ contract XNS is EIP712 {
     // GETTER / VIEW FUNCTIONS
     // =========================================================================
 
-    /// @notice Function to resolve a name string like "nike", "nike.x", "vitalik.001", "alice.my-private" to an address.
-    /// @dev Returns `address(0)` for anything not registered or malformed. 
+    /// @notice Function to resolve a name string like "vitalik", "bob.007", "alice.gm-web3" to an address.
+    /// Returns `address(0)` for anything not registered or malformed. 
     /// If `fullName` contains no '.', it is treated as a bare name.
     ///
     /// @param fullName The name string to resolve.
@@ -639,7 +635,6 @@ contract XNS is EIP712 {
         }
 
         if (dotIndex == type(uint256).max) {
-            // Bare label => label.x
             return _getAddress(fullName, BARE_NAME_NAMESPACE);
         }
 
@@ -655,7 +650,7 @@ contract XNS is EIP712 {
     }
 
     /// @notice Function to resolve a name to an address taking separate label and namespace parameters.
-    /// @dev This version is more gas efficient than `getAddress(string calldata fullName)` as it does not
+    /// This version is more gas efficient than `getAddress(string calldata fullName)` as it does not
     /// require string splitting. Returns `address(0)` if not registered.
     /// If `namespace` is empty, it is treated as a bare name (equivalent to "x" namespace).
     /// @param label The label part of the name.
@@ -676,7 +671,7 @@ contract XNS is EIP712 {
     }
 
     /// @notice Function to lookup the XNS name for an address.
-    /// @dev Returns an empty string if the address has no name. For bare names (namespace "x"),
+    /// Returns an empty string if the address has no name. For bare names (namespace "x"),
     /// returns just the label without the ".x" suffix. For regular names, returns the full name
     /// in format "label.namespace".
     /// @param addr The address to lookup the XNS name for.
@@ -711,7 +706,7 @@ contract XNS is EIP712 {
     }
 
     /// @notice Function to retrieve only the price per name for a given namespace.
-    /// @dev More gas efficient than `getNamespaceInfo` if only the price is needed.
+    /// More gas efficient than `getNamespaceInfo` if only the price is needed.
     /// @param namespace The namespace to retrieve the price for.
     /// @return pricePerName The price per name for the namespace.
     function getNamespacePrice(string calldata namespace) external view returns (uint256 pricePerName) {
@@ -721,7 +716,7 @@ contract XNS is EIP712 {
     }
 
     /// @notice Function to check if a namespace is currently within its exclusivity period.
-    /// @dev Returns `true` if `block.timestamp <= createdAt + EXCLUSIVITY_PERIOD`, `false` otherwise.
+    /// Returns `true` if `block.timestamp <= createdAt + EXCLUSIVITY_PERIOD`, `false` otherwise.
     /// For private namespaces, this function will return `false` after the exclusivity period, but private namespaces
     /// remain creator-only forever regardless of this value.
     /// @param namespace The namespace to check.
@@ -746,8 +741,8 @@ contract XNS is EIP712 {
     }
 
 
-    /// @notice Function to check if a signature, to be used in `registerNameWithAuthorization`
-    /// or `batchRegisterNameWithAuthorization`, is valid.
+    /// @notice Function to check if a signature is valid (be used in `registerNameWithAuthorization`
+    /// or `batchRegisterNameWithAuthorization`).
     /// @param registerNameAuth The struct containing recipient, label, and namespace.
     /// @param signature The signature to check.
     /// @return isValid True if the signature is valid, false otherwise.
@@ -772,11 +767,10 @@ contract XNS is EIP712 {
     /// @dev Helper function to process ETH payment (used in `registerName`, `registerNameWithAuthorization`,
     /// `batchRegisterNameWithAuthorization`, `registerPublicNamespace`, and `registerPrivateNamespace`):
     /// - Burn 90% via DETH (credits `msg.sender` with DETH)
-    /// - Credit fees: 5% to `creatorFeeRecipient` and 5% to OWNER
+    /// - Credit fees: 5% to `creatorFeeRecipient` and 5% to `OWNER`
     /// - Refund any excess payment
     /// @param requiredAmount The required amount of ETH for the operation (excess will be refunded).
     /// @param creatorFeeRecipient The address that shall receive the 5% creator fee.
-    /// @dev Credits 5% to `creatorFeeRecipient` and 5% to OWNER. Passing OWNER as `creatorFeeRecipient` routes the full 10% to OWNER.
     function _processETHPayment(uint256 requiredAmount, address creatorFeeRecipient) private {
         uint256 burnAmount = (requiredAmount * 90) / 100;
         uint256 creatorFee = (requiredAmount * 5) / 100;
@@ -785,8 +779,9 @@ contract XNS is EIP712 {
         // Burn 90% via DETH contract and credit `msg.sender` (payer/sponsor) with DETH.
         IDETH(DETH).burn{value: burnAmount}(msg.sender);
 
-        // Credit fees: 5% to creatorFeeRecipient, 5% to OWNER.
-        // If creatorFeeRecipient == OWNER, OWNER effectively gets the full 10% (credited twice into the same mapping slot).
+        // Credit fees: 5% to `creatorFeeRecipient`, 5% to `OWNER`.
+        // If `creatorFeeRecipient` == `OWNER`, `OWNER` effectively gets the full 10%
+        // (credited twice into the same mapping slot).
         _pendingFees[creatorFeeRecipient] += creatorFee;
         _pendingFees[OWNER] += ownerFee;
 
@@ -823,7 +818,7 @@ contract XNS is EIP712 {
     }
 
 
-    /// @dev Internal function to verify EIP-712 signature for RegisterNameAuth.
+    /// @dev Internal function to verify EIP-712 signature for `RegisterNameAuth`.
     /// @param registerNameAuth The struct containing recipient, label, and namespace.
     /// @param signature The signature to verify.
     /// @return isValid True if the signature is valid, false otherwise.
@@ -835,9 +830,9 @@ contract XNS is EIP712 {
         return SignatureChecker.isValidSignatureNow(registerNameAuth.recipient, digest, signature);
     }
 
-    /// @dev Helper function to return hash of RegisterNameAuth details.
+    /// @dev Helper function to return hash of `RegisterNameAuth` details.
     /// @param registerNameAuth The struct containing recipient, label, and namespace.
-    /// @return registerNameAuthHash The keccak256 hash of the RegisterNameAuth struct.
+    /// @return registerNameAuthHash The keccak256 hash of the `RegisterNameAuth` struct.
     function _getRegisterNameAuthHash(
         RegisterNameAuth calldata registerNameAuth
     ) private pure returns (bytes32 registerNameAuthHash) {
