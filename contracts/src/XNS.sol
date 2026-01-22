@@ -44,7 +44,7 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 ///   - Open to everyone after a 30-day exclusivity period post namespace registration.
 ///   - During exclusivity, only the creator can register or sponsor names (via `registerNameWithAuthorization`
 ///     or `batchRegisterNameWithAuthorization`).
-///   - After exclusivity, anyone can register ro sponsor names (via `registerName`
+///   - After exclusivity, anyone can register or sponsor names (via `registerName`
 ///     or `batchRegisterNameWithAuthorization`).
 ///   - Creators receive 5% of all name registration fees in perpetuity.
 /// - **Private namespaces (10 ETH):**
@@ -298,7 +298,7 @@ contract XNS is EIP712 {
     ///
     /// **Fee Distribution:**
     /// - 90% of ETH is permanently burned via DETH.
-    /// - For public namspaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
+    /// - For public namespaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
     /// - For private namespaces: 10% is credited to the `OWNER`.
     ///
     /// **Note:**
@@ -363,7 +363,7 @@ contract XNS is EIP712 {
     ///
     /// **Fee Distribution:**
     /// - 90% of ETH is permanently burned via DETH.
-    /// - For public namspaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
+    /// - For public namespaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
     /// - For private namespaces: 10% is credited to the `OWNER`.
     ///
     /// **Note:** Input validation errors (invalid label, zero recipient, namespace mismatch, invalid signature)
