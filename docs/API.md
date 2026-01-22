@@ -16,6 +16,7 @@ Examples:
 - vitalik.100x
 - garry.ape
 
+### String rules
 Label and namespace string requirements:
 - Must be 1–20 characters long
 - Must consist only of [a-z0-9-] (lowercase letters, digits, and hyphens)
@@ -23,53 +24,46 @@ Label and namespace string requirements:
 - Cannot contain consecutive hyphens ('--')
 - "eth" as namespace is disallowed to avoid confusion with ENS
 
-### Name registration with public namespaces
-- Users call `registerName(label, namespace)` and send ETH.
-- This function only works for public namespaces **after** the exclusivity period (30 days).
-- `msg.value` must be >= the namespace's registered price (excess will be refunded).
-- Each address can own at most one name.
+### Namespaces
+- Anyone can register new namespaces by paying a one-time fee.
+- XNS features two types of namespaces: public and private.
+- **Public namespaces (50 ETH):**
+  - Open to everyone after a 30-day exclusivity period post namespace registration.
+  - During exclusivity, only the creator can register or sponsor names (via `registerNameWithAuthorization`
+    or `batchRegisterNameWithAuthorization`).
+  - After exclusivity, anyone can register or sponsor names (via `registerName`
+    or `batchRegisterNameWithAuthorization`).
+  - Creators receive 5% of all name registration fees in perpetuity.
+- **Private namespaces (10 ETH):**
+  - Only the creator can register names (via `registerNameWithAuthorization`
+    or `batchRegisterNameWithAuthorization`).
+  - Creators do not receive fees; all fees go to the XNS contract owner.
+- During the first year post XNS contract deployment, the contract owner can register
+  namespaces for others at no cost.
+- The "eth" namespace is disallowed to avoid confusion with ENS.
+- The "x" namespace is associated with bare names (e.g. "vitalik" = "vitalik.x").
+- The contract owner is set as the creator of the "x" namespace at deployment.
 
-### Sponsorship via authorization (EIP-712 + EIP-1271)
-- `registerNameWithAuthorization` is **required** for:
-  - All registrations during the exclusivity period (even namespace creators registering for themselves)
-  - All registrations in private namespaces (even namespace creators registering for themselves)
-  - All sponsored registrations (when someone else pays the fee)
-- `registerNameWithAuthorization` allows a sponsor to pay and register a name for a recipient
-  who explicitly authorized it via an EIP-712 signature.
-- Public namespaces: during the creator's 30-day exclusivity window, only the creator may sponsor.
-- Private namespaces: only the creator may sponsor forever. Public registrations are disabled.
+### Bare Names
+- Bare names are names without a namespace (e.g., "vitalik" instead of "vitalik.x").
+- Internally, bare names use the special "x" namespace, so "vitalik" and "vitalik.x" resolve to the same address.
+- Bare names are premium and cost 10 ETH per name.
+
+### Name Registration
+- Users can register names in public namespaces after the 30-day exclusivity period using `registerName`.
+- Each address can own at most one name.
+- Registration fees vary by namespace
+- Any excess payment is refunded.
+
+### Authorized Name Registration
+- XNS features authorized name registration via EIP-712 signatures.
+- Allows sponsors to pay registration fees on behalf of recipients who authorize it via signature.
 - Supports both EOA signatures and EIP-1271 contract wallet signatures.
 
-### Bare names
-- A bare name is a name without a namespace (e.g., "vitalik" or "bankless").
-- Bare names are equivalent to names in the special "x" namespace, i.e., "vitalik" = "vitalik.x"
-  or "bankless" = "bankless.x". That is, both "vitalik" and "vitalik.x" resolve to the same address.
-- Bare names are considered premium names and cost 10 ETH per name.
-
-### Namespace registration
-- Anyone can register new namespaces by paying a one-time fee.
-- Namespaces can be public or private. Public namespaces are open to the public for registrations,
-  while private namespaces are only open to the namespace creator and their authorized recipients.
-- **Public namespaces:**
-  - Fee: 50 ETH
-  - Namespace creators receive a 30-day exclusive window for registering paid names within the registered namespace.
-  - During this period, the creator must use `registerNameWithAuthorization` to register names (even for themselves)
-    and sponsor registrations for others.
-  - After the exclusivity period, the namespace is opened to the public for registrations using `registerName`.
-- **Private namespaces:**
-  - Fee: 10 ETH
-  - Only the namespace creator may register names within their private namespace forever.
-- During the onboarding period (first year after contract deployment), the XNS contract owner can optionally
-  bootstrap namespaces for participants and integrators at no cost using `registerPublicNamespaceFor` and
-  `registerPrivateNamespaceFor`. Regular users always pay standard fees via `registerPublicNamespace` and
-  `registerPrivateNamespace`, including the owner when using self-service functions.
-- The XNS contract owner is set as the creator of the "x" namespace (bare names) at contract deployment.
-- "eth" namespace is disallowed for both public and private namespaces to avoid confusion with ENS.
-
-### Economics
+### ETH Burn and Fee Distribution
 - 90% of ETH sent is burnt via DETH.
-- 10% is credited as fees.
-  - Public namespaces: 5% to namespace creator + 5% to XNS owner
+- 10% is credited as fees:
+  - Public namespaces: 5% to namespace creator, 5% to XNS contract owner
   - Private namespaces: 10% to XNS owner
 
 
@@ -146,7 +140,7 @@ Supports both EOA signatures and EIP-1271 contract wallet signatures.
 
 **Fee Distribution:**
 - 90% of ETH is permanently burned via DETH.
-- For public namspaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
+- For public namespaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
 - For private namespaces: 10% is credited to the `OWNER`.
 
 **Note:**
@@ -183,7 +177,7 @@ a name or the name is already registered (griefing protection). Skipped items ar
 
 **Fee Distribution:**
 - 90% of ETH is permanently burned via DETH.
-- For public namspaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
+- For public namespaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
 - For private namespaces: 10% is credited to the `OWNER`.
 
 **Note:** Input validation errors (invalid label, zero recipient, namespace mismatch, invalid signature)
@@ -597,8 +591,7 @@ function getPendingFees(address recipient) external view returns (uint256 amount
 event NameRegistered(string label, string namespace, address owner)
 ```
 
-_Emitted in `registerName`, `registerNameWithAuthorization`,
-and `batchRegisterNameWithAuthorization` functions._
+_Emitted in name registration functions._
 
 
 
@@ -626,7 +619,7 @@ _Emitted in constructor when "x" namespace is registered, and in namespace regis
 event FeesClaimed(address recipient, uint256 amount)
 ```
 
-_Emitted in `claimFees` and `claimFeesToSelf` functions._
+_Emitted in fee claiming functions._
 
 
 

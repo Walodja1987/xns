@@ -99,7 +99,7 @@ contract XNS is EIP712 {
 
     /// @dev Argument for `registerNameWithAuthorization` function (EIP-712 based).
     struct RegisterNameAuth {
-        address recipient; // Name recipient and signer of the EIP-712 message
+        address recipient;
         string label;
         string namespace;
     }
@@ -111,16 +111,16 @@ contract XNS is EIP712 {
     // Mapping from address to name (label, namespace). If label is empty, the address has no name.
     mapping(address => Name) private _addressToName;
 
-    // Mapping from keccak256(label, ".", namespace) to name owner address.
+    // Mapping from `keccak256(label, ".", namespace)` to name owner address.
     mapping(bytes32 => address) private _nameHashToAddress;
 
-    // Mapping from keccak256(namespace) to namespace metadata.
+    // Mapping from `keccak256(namespace)` to namespace metadata.
     mapping(bytes32 => NamespaceData) private _namespaces;
 
     // Mapping from address to pending fees that can be claimed.
     mapping(address => uint256) private _pendingFees;
 
-    // EIP-712 struct type hash for RegisterNameAuth.
+    // EIP-712 struct type hash for `RegisterNameAuth`.
     bytes32 private constant _REGISTER_NAME_AUTH_TYPEHASH =
         keccak256("RegisterNameAuth(address recipient,string label,string namespace)");
 
@@ -173,22 +173,21 @@ contract XNS is EIP712 {
     // Events
     // -------------------------------------------------------------------------
 
-    /// @dev Emitted in `registerName`, `registerNameWithAuthorization`,
-    /// and `batchRegisterNameWithAuthorization` functions.
+    /// @dev Emitted in name registration functions.
     event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
 
     /// @dev Emitted in constructor when "x" namespace is registered, and in namespace registration functions.
     event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator, bool isPrivate);
 
-    /// @dev Emitted in `claimFees` and `claimFeesToSelf` functions.
+    /// @dev Emitted in fee claiming functions.
     event FeesClaimed(address indexed recipient, uint256 amount);
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    /// @dev Initializes the contract by setting the immutable owner and deployment timestamp.
-    /// Also pre-registers the special public namespace "x" (bare names) with the given owner as its creator
+    /// @dev Initializes the contract by setting the `OWNER` and deployment timestamp.
+    /// Also pre-registers the special public namespace "x" (associated with bare names) with the given owner as its creator
     /// and a price of 10 ETH per name. Additionally, registers the bare name "xns" for the XNS contract itself.
     /// @param owner Address that will own the contract and receive protocol fees.
     constructor(address owner) EIP712("XNS", "1") {
