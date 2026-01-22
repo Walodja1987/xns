@@ -18,8 +18,8 @@
 1. [Overview](#-overview)
 2. [How It Works](#-how-it-works) \
    2.1 [Name Registration](#name-registration) \
-   2.2 [Name Resolution](#name-resolution) \
-   2.3 [Name Registration With Authorization](#name-registration-with-authorization) \
+   2.2 [Name Registration With Authorization](#name-registration-with-authorization) \
+   2.3 [Name Resolution](#name-resolution) \
    2.4 [Namespace Registration](#namespace-registration) \
    2.5 [Registration Fees](#registration-fees)
 3. [XNS Price list](#-xns-price-list)
@@ -102,7 +102,7 @@ Anyone can register a new namespace by paying the one-time registration fee. The
 
 ## ✨ How It Works
 
-### Name Registration in Public Namespace
+### Name Registration
 
 Registering an XNS name in a public namespace is straightforward:
 
@@ -252,7 +252,7 @@ All ETH burns are recorded via the [DETH contract](https://github.com/Walodja198
 
 Fees earned by namespace creators and the XNS contract owner accumulate within the XNS contract and must be claimed to be withdrawn. Available actions:
 - Check pending fees for any address ([`getPendingFees`][api-getPendingFees])
-- Claim fees to yourself ([`claimFeesToSelf`][api-claimFeesToSelf])
+- Claim fees to caller ([`claimFeesToSelf`][api-claimFeesToSelf])
 - Claim fees to a different recipient ([`claimFees`][api-claimFees])
 
 **Example scripts:**
@@ -262,7 +262,7 @@ Fees earned by namespace creators and the XNS contract owner accumulate within t
 
 ## 🔥 XNS Price list
 
-> **Note**: The price list may not be complete as new namespaces can be added over time. It also does not include private namespaces.
+> **Note**: The price list may not be complete as new namespaces can be added over time. We do our best to keep it updated. It also does not include private namespaces.
 
 | Namespace        | ETH Amount   |
 |------------------|-------------|
@@ -371,7 +371,7 @@ See [`MockERC20B`][contract-MockERC20B] and the [`registerNameForERC20B.ts`][scr
 
 #### Option 3: Sponsored Registration via EIP-1271
 
-For contracts that implement EIP-1271, someone else can sponsor the name registration. **This is the only way for contracts to register names in private namespaces and pubilc namespaces during the exclusivity period**.
+For contracts that implement EIP-1271, someone else can sponsor the name registration. **This is the only way for contracts to register names in private namespaces and public namespaces during the exclusivity period**.
 
 ```solidity
 // SPDX-License-Identifier: MIT
