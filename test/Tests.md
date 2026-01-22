@@ -36,31 +36,31 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
-### isValidSlug
+### isValidLabelOrNamespace
 
 #### Functionality
-
-- Should return `true` for valid slugs with lowercase letters.
-- Should return `true` for valid slugs with digits.
-- Should return `true` for valid slugs with hyphens.
-- Should return `true` for valid slugs combining letters, digits, and hyphens.
-- Should return `true` for minimum length (1 character).
-- Should return `true` for maximum length (20 characters).
-
+isValidLabelabelOrNamespaceamespace
+- Should return `true` for valid labelOrNamespaces with lowercase letters.
+- Should return `true` for valid labelOrNamespaces with digits.
+- Should return `true` for valid labelOrNamespaces with hyphens.
+- Should return `true` for valid labelOrNamespaces combining letters, digits, and hyphens.
+- Should return `true` for minimulabelOrNamespacength (1 character).
+- Should return `true` for maximulabelOrNamespacength (20 characters).
+labelOrNamespace
 #### Reverts
 
 - Should return `false` for empty string.
-- Should return `false` for slugs longer than 20 characters.
-- Should return `false` for slugs starting with hyphen.
-- Should return `false` for slugs ending with hyphen.
-- Should return `false` for slugs containing uppercase letters.
-- Should return `false` for slugs containing spaces.
-- Should return `false` for slugs containing special characters (except hyphen).
-- Should return `false` for slugs containing underscores.
-- Should return `false` for slugs containing consecutive hyphens.
-
----
-
+- Should return `false` for labelOrNamespaces longer than 20 characters.
+- Should return `false` for labelOrNamespaces starting with hyphen.
+- Should return `false` for labelOrNamespaces ending with hyphen.
+- Should return `false` for labelOrNamespaces containing uppercase letters.
+- Should return `false` for labelOrNamespaces containing spaces.
+- Should return `false` for labelOrNamespaces containing special characters (except hyphen).
+- Should return `false` for labelOrNamespaces containing underscores.
+- Should return `false` for labelOrNamespaces containing consecutive hyphens.
+labelOrNamespace
+---labelOrNamespace
+labelOrNamespace
 ### registerPublicNamespace
 
 #### Functionality
@@ -245,7 +245,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should revert with `XNS: namespace not found` error when namespace doesn't exist.
 - Should revert with `XNS: only for public namespaces` error when trying to register in private namespace.
 - Should revert with `XNS: insufficient payment` error when `msg.value` is less than namespace price.
-- Should revert with `XNS: use registerNameWithAuthorization during exclusivity period` error when trying to register during exclusive period.
+- Should revert with `XNS: in exclusivity period` error when trying to register during exclusive period.
 - Should revert with `XNS: address already has a name` error when address already owns a name.
 - Should revert with `XNS: name already registered` error when name is already registered.
 

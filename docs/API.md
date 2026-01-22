@@ -84,17 +84,21 @@ Label and namespace string requirements:
 
 Function to register a paid name for `msg.sender`. To register a bare name
 (e.g., "vitalik"), use "x" as the namespace parameter.
-This function only works for public namespaces after the exclusivity period (30 days).
-For private namespaces or during the exclusivity period, use `registerNameWithAuthorization` instead.
+This function only works for public namespaces after the exclusivity period (30 days) has ended.
 
 **Requirements:**
-- Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-',
-  cannot contain consecutive hyphens)
+- Label must be valid (non-empty, length 1–20, only lowercase letters, digits, and hyphens,
+  cannot start or end with '-', cannot contain consecutive hyphens ('--')).
 - Namespace must exist and be public.
 - Namespace must be past the exclusivity period (30 days after creation).
 - `msg.value` must be >= the namespace's registered price (excess will be refunded).
 - Caller must not already have a name.
 - Name must not already be registered.
+
+**Fee Distribution:**
+- 90% of ETH is permanently burned via DETH.
+- 5% is credited to the OWNER.
+- 5% is credited to the namespace creator.
 
 **Note:**
 - During the exclusivity period or for private namespaces, namespace creators must use
@@ -119,8 +123,7 @@ function registerName(string label, string namespace) external payable
 
 
 Function to sponsor a paid name registration for `recipient` who explicitly authorized it via
-signature. Allows a third party to pay gas and registration fees while the recipient explicitly approves
-via EIP-712 signature.
+an EIP-712 signature.
 
 This function is **required** for:
 - All registrations during the exclusivity period (even namespace creators registering for themselves)
@@ -134,7 +137,8 @@ For public namespaces after exclusivity period: anyone may sponsor registrations
 Supports both EOA signatures and EIP-1271 contract wallet signatures.
 
 **Requirements:**
-- Label must be valid (non-empty, length 1–20, consists only of [a-z0-9-], cannot start or end with '-').
+- Label must be valid (non-empty, length 1–20, only lowercase letters, digits, and hyphens,
+  cannot start or end with '-', cannot contain consecutive hyphens ('--')).
 - `recipient` must not be the zero address.
 - Namespace must exist (public or private).
 - `msg.value` must be >= the namespace's registered price (excess will be refunded).
@@ -143,6 +147,11 @@ Supports both EOA signatures and EIP-1271 contract wallet signatures.
 - Signature must be valid EIP-712 signature from `recipient` (EOA) or EIP-1271 contract signature.
 - If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271
   for signature validation.
+
+**Fee Distribution:**
+- 90% of ETH is permanently burned via DETH.
+- For public namspaces: 5% is credited to the namespace creator and 5% to the OWNER.
+- For private namespaces: 10% is credited to the OWNER.
 
 **Note:** Due to block reorganization risks, users should wait for a few blocks and verify
 the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
@@ -173,6 +182,11 @@ or the name is already registered. Skipped items are not charged; excess payment
 - `msg.value` must be >= `pricePerName * successfulCount` (excess will be refunded).
 - All individual requirements from `registerNameWithAuthorization` apply to each registration.
 
+**Fee Distribution:**
+- 90% of ETH is permanently burned via DETH.
+- For public namspaces: 5% is credited to the namespace creator and 5% to the OWNER.
+- For private namespaces: 10% is credited to the OWNER.
+
 ```solidity
 function batchRegisterNameWithAuthorization(struct XNS.RegisterNameAuth[] registerNameAuths, bytes[] signatures) external payable returns (uint256 successfulCount)
 ```
@@ -200,7 +214,8 @@ has a name, or name already registered) are skipped to provide griefing protecti
 Register a new public namespace.
 
 **Requirements:**
-- Namespace must be valid (length 1–20, consists only of [a-z0-9-], cannot start or end with '-', cannot contain consecutive hyphens).
+- Namespace must be valid (non-empty, length 1–20, only lowercase letters, digits, and hyphens,
+  cannot start or end with '-', cannot contain consecutive hyphens ('--')).
 - `msg.value` must be >= 50 ETH (excess refunded).
 - Namespace must not already exist.
 - Namespace must not equal "eth".
@@ -230,8 +245,8 @@ function registerPublicNamespace(string namespace, uint256 pricePerName) externa
 Register a new private namespace.
 
 **Requirements:**
-- Namespace must be valid (length 1–20, consists only of [a-z0-9-],
-  cannot start or end with '-', cannot contain consecutive hyphens).
+- Namespace must be valid (non-empty, length 1–20, only lowercase letters, digits, and hyphens,
+  cannot start or end with '-', cannot contain consecutive hyphens ('--')).
 - `msg.value` must be >= 10 ETH (excess refunded).
 - Namespace must not already exist.
 - Namespace must not equal "eth".
@@ -494,7 +509,7 @@ remain creator-only forever regardless of this value._
 | ---- | ---- | ----------- |
 | inExclusivityPeriod | bool | `true` if the namespace is within its exclusivity period, `false` otherwise. |
 
-### isValidSlug
+### isValidLabelOrNamespace
 
 
 Function to check if a label or namespace is valid (returns bool, does not revert).
@@ -506,7 +521,7 @@ Function to check if a label or namespace is valid (returns bool, does not rever
 - Cannot contain consecutive hyphens ('--')
 
 ```solidity
-function isValidSlug(string slug) external pure returns (bool isValid)
+function isValidLabelOrNamespace(string labelOrNamespace) external pure returns (bool isValid)
 ```
 
 
@@ -514,13 +529,13 @@ function isValidSlug(string slug) external pure returns (bool isValid)
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| slug | string | The label or namespace to check if is valid. |
+| labelOrNamespace | string | The label or namespace to check if is valid. |
 
 #### Return Values
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| isValid | bool | True if the slug is valid, false otherwise. |
+| isValid | bool | True if the labelOrNamespace is valid, false otherwise. |
 
 ### isValidSignature
 

@@ -200,7 +200,7 @@ describe("XNS", function () {
     
   });
 
-  describe("isValidSlug", function () {
+  describe("isValidLabelOrNamespace", function () {
     let s: SetupOutput;
 
     beforeEach(async () => {
@@ -211,41 +211,41 @@ describe("XNS", function () {
     // Functionality
     // -----------------------
 
-    it("Should return `true` for valid slugs with lowercase letters", async () => {
-        expect(await s.xns.isValidSlug("alice")).to.be.true;
-        expect(await s.xns.isValidSlug("bob")).to.be.true;
-        expect(await s.xns.isValidSlug("charlie")).to.be.true;
+    it("Should return `true` for valid labelOrNamespaces with lowercase letters", async () => {
+        expect(await s.xns.isValidLabelOrNamespace("alice")).to.be.true;
+        expect(await s.xns.isValidLabelOrNamespace("bob")).to.be.true;
+        expect(await s.xns.isValidLabelOrNamespace("charlie")).to.be.true;
     });
 
-    it("Should return `true` for valid slugs with digits", async () => {
-        expect(await s.xns.isValidSlug("123")).to.be.true;
-        expect(await s.xns.isValidSlug("0")).to.be.true;
-        expect(await s.xns.isValidSlug("999")).to.be.true;
+    it("Should return `true` for valid labelOrNamespaces with digits", async () => {
+        expect(await s.xns.isValidLabelOrNamespace("123")).to.be.true;
+        expect(await s.xns.isValidLabelOrNamespace("0")).to.be.true;
+        expect(await s.xns.isValidLabelOrNamespace("999")).to.be.true;
     });
 
-    it("Should return `true` for valid slugs with hyphens", async () => {
-        expect(await s.xns.isValidSlug("alice-bob")).to.be.true;
-        expect(await s.xns.isValidSlug("test-label")).to.be.true;
-        expect(await s.xns.isValidSlug("my-name")).to.be.true;
+    it("Should return `true` for valid labelOrNamespaces with hyphens", async () => {
+        expect(await s.xns.isValidLabelOrNamespace("alice-bob")).to.be.true;
+        expect(await s.xns.isValidLabelOrNamespace("test-label")).to.be.true;
+        expect(await s.xns.isValidLabelOrNamespace("my-name")).to.be.true;
     });
 
-    it("Should return `true` for valid slugs combining letters, digits, and hyphens", async () => {
-        expect(await s.xns.isValidSlug("alice123")).to.be.true;
-        expect(await s.xns.isValidSlug("test-123")).to.be.true;
-        expect(await s.xns.isValidSlug("user-42-name")).to.be.true;
-        expect(await s.xns.isValidSlug("abc-123-def")).to.be.true;
+    it("Should return `true` for valid labelOrNamespaces combining letters, digits, and hyphens", async () => {
+        expect(await s.xns.isValidLabelOrNamespace("alice123")).to.be.true;
+        expect(await s.xns.isValidLabelOrNamespace("test-123")).to.be.true;
+        expect(await s.xns.isValidLabelOrNamespace("user-42-name")).to.be.true;
+        expect(await s.xns.isValidLabelOrNamespace("abc-123-def")).to.be.true;
     });
 
     it("Should return `true` for minimum length (1 character)", async () => {
-        expect(await s.xns.isValidSlug("a")).to.be.true;
-        expect(await s.xns.isValidSlug("1")).to.be.true;
-        expect(await s.xns.isValidSlug("x")).to.be.true;
+        expect(await s.xns.isValidLabelOrNamespace("a")).to.be.true;
+        expect(await s.xns.isValidLabelOrNamespace("1")).to.be.true;
+        expect(await s.xns.isValidLabelOrNamespace("x")).to.be.true;
     });
 
     it("Should return `true` for maximum length (20 characters)", async () => {
-        expect(await s.xns.isValidSlug("a".repeat(20))).to.be.true;
-        expect(await s.xns.isValidSlug("1".repeat(20))).to.be.true;
-        expect(await s.xns.isValidSlug("abcdefghijklmnopqrst")).to.be.true;
+        expect(await s.xns.isValidLabelOrNamespace("a".repeat(20))).to.be.true;
+        expect(await s.xns.isValidLabelOrNamespace("1".repeat(20))).to.be.true;
+        expect(await s.xns.isValidLabelOrNamespace("abcdefghijklmnopqrst")).to.be.true;
     });
 
     // -----------------------
@@ -253,61 +253,61 @@ describe("XNS", function () {
     // -----------------------
 
     it("Should return `false` for empty string", async () => {
-        expect(await s.xns.isValidSlug("")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("")).to.be.false;
     });
 
-    it("Should return `false` for slugs longer than 20 characters", async () => {
-        expect(await s.xns.isValidSlug("a".repeat(21))).to.be.false;
-        expect(await s.xns.isValidSlug("abcdefghijklmnopqrstu")).to.be.false;
-        expect(await s.xns.isValidSlug("verylonglabelname12345")).to.be.false;
+    it("Should return `false` for labelOrNamespaces longer than 20 characters", async () => {
+        expect(await s.xns.isValidLabelOrNamespace("a".repeat(21))).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("abcdefghijklmnopqrstu")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("verylonglabelname12345")).to.be.false;
     });
 
-    it("Should return `false` for slugs starting with hyphen", async () => {
-        expect(await s.xns.isValidSlug("-alice")).to.be.false;
-        expect(await s.xns.isValidSlug("-test")).to.be.false;
-        expect(await s.xns.isValidSlug("-123")).to.be.false;
+    it("Should return `false` for labelOrNamespaces starting with hyphen", async () => {
+        expect(await s.xns.isValidLabelOrNamespace("-alice")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("-test")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("-123")).to.be.false;
     });
 
-    it("Should return `false` for slugs ending with hyphen", async () => {
-        expect(await s.xns.isValidSlug("alice-")).to.be.false;
-        expect(await s.xns.isValidSlug("test-")).to.be.false;
-        expect(await s.xns.isValidSlug("123-")).to.be.false;
+    it("Should return `false` for labelOrNamespaces ending with hyphen", async () => {
+        expect(await s.xns.isValidLabelOrNamespace("alice-")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("test-")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("123-")).to.be.false;
     });
 
-    it("Should return `false` for slugs containing uppercase letters", async () => {
-        expect(await s.xns.isValidSlug("Alice")).to.be.false;
-        expect(await s.xns.isValidSlug("TEST")).to.be.false;
-        expect(await s.xns.isValidSlug("aliceBob")).to.be.false;
-        expect(await s.xns.isValidSlug("test-Label")).to.be.false;
+    it("Should return `false` for labelOrNamespaces containing uppercase letters", async () => {
+        expect(await s.xns.isValidLabelOrNamespace("Alice")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("TEST")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("aliceBob")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("test-Label")).to.be.false;
     });
 
-    it("Should return `false` for slugs containing spaces", async () => {
-        expect(await s.xns.isValidSlug("alice bob")).to.be.false;
-        expect(await s.xns.isValidSlug("test label")).to.be.false;
-        expect(await s.xns.isValidSlug(" alice")).to.be.false;
-        expect(await s.xns.isValidSlug("alice ")).to.be.false;
+    it("Should return `false` for labelOrNamespaces containing spaces", async () => {
+        expect(await s.xns.isValidLabelOrNamespace("alice bob")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("test label")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace(" alice")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("alice ")).to.be.false;
     });
 
-    it("Should return `false` for slugs containing special characters (except hyphen)", async () => {
-        expect(await s.xns.isValidSlug("alice@bob")).to.be.false;
-        expect(await s.xns.isValidSlug("test#label")).to.be.false;
-        expect(await s.xns.isValidSlug("user$name")).to.be.false;
-        expect(await s.xns.isValidSlug("test.label")).to.be.false;
-        expect(await s.xns.isValidSlug("alice!bob")).to.be.false;
+    it("Should return `false` for labelOrNamespaces containing special characters (except hyphen)", async () => {
+        expect(await s.xns.isValidLabelOrNamespace("alice@bob")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("test#label")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("user$name")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("test.label")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("alice!bob")).to.be.false;
     });
 
-    it("Should return `false` for slugs containing underscores", async () => {
-        expect(await s.xns.isValidSlug("alice_bob")).to.be.false;
-        expect(await s.xns.isValidSlug("test_label")).to.be.false;
-        expect(await s.xns.isValidSlug("user_name_123")).to.be.false;
-        expect(await s.xns.isValidSlug("xns_deployer")).to.be.false;
+    it("Should return `false` for labelOrNamespaces containing underscores", async () => {
+        expect(await s.xns.isValidLabelOrNamespace("alice_bob")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("test_label")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("user_name_123")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("xns_deployer")).to.be.false;
     });
 
-    it("Should return `false` for slugs containing consecutive hyphens", async () => {
-        expect(await s.xns.isValidSlug("alice--bob")).to.be.false;
-        expect(await s.xns.isValidSlug("test--label")).to.be.false;
-        expect(await s.xns.isValidSlug("my---name")).to.be.false;
-        expect(await s.xns.isValidSlug("a--b")).to.be.false;
+    it("Should return `false` for labelOrNamespaces containing consecutive hyphens", async () => {
+        expect(await s.xns.isValidLabelOrNamespace("alice--bob")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("test--label")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("my---name")).to.be.false;
+        expect(await s.xns.isValidLabelOrNamespace("a--b")).to.be.false;
     });
 
     
@@ -3366,7 +3366,7 @@ describe("XNS", function () {
         ).to.be.revertedWith("XNS: insufficient payment");
     });
 
-    it("Should revert with `XNS: use registerNameWithAuthorization during exclusivity period` error when trying to register during exclusive period", async () => {
+    it("Should revert with `XNS: in exclusivity period` error when trying to register during exclusive period", async () => {
         // ---------
         // Arrange: Prepare parameters and verify we're within exclusivity period
         // ---------
@@ -3390,7 +3390,7 @@ describe("XNS", function () {
         // ---------
         await expect(
             s.xns.connect(s.user2).registerName(label, namespace, { value: pricePerName })
-        ).to.be.revertedWith("XNS: use registerNameWithAuthorization during exclusivity period");
+        ).to.be.revertedWith("XNS: in exclusivity period");
     });
 
     it("Should revert with `XNS: address already has a name` error when address already owns a name", async () => {
