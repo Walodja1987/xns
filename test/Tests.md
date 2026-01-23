@@ -21,6 +21,8 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
   - Should have correct `EXCLUSIVITY_PERIOD` (30 days).
   - Should have correct `ONBOARDING_PERIOD` (1 year).
   - Should have correct `PRICE_STEP` (0.001 ether / 1e15).
+  - Should have correct `PUBLIC_NAMESPACE_MIN_PRICE` (0.001 ether).
+  - Should have correct `PRIVATE_NAMESPACE_MIN_PRICE` (0.005 ether).
   - Should have correct `BARE_NAME_NAMESPACE` ("x").
   - Should have correct `BARE_NAME_PRICE` (10 ether).
   - Should have correct `DETH` address.
