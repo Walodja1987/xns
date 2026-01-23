@@ -6,7 +6,7 @@ pnpm install
 
 ## Environment Variables Setup
 
-The project uses Hardhat's `vars` system for managing environment variables. Set up the required variables using `npx hardhat vars set` (e.g., `npx hardhat vars set MNEMONIC`):
+The project uses Hardhat's `vars` system for managing environment variables. Set up the required variables as follows:
 
 **Network Independent Variables:**
 ```bash
@@ -54,28 +54,45 @@ npx hardhat run scripts/examples/registerName.ts --network sepolia
 Replace `sepolia` with `ethMain` to run the script on Ethereum Mainnet.
 
 Available example scripts:
+
+**Name Registration:**
 - [`registerName.ts`](../scripts/examples/registerName.ts) - Register a name for an EOA
-- [`registerNamespace.ts`](../scripts/examples/registerNamespace.ts) - Register a public or private namespace
+- [`registerNameForERC20A.ts`](../scripts/examples/registerNameForERC20A.ts) - Register name via constructor
+- [`registerNameForERC20B.ts`](../scripts/examples/registerNameForERC20B.ts) - Register name via separate function
+
+**Name Registration With Authorization:**
 - [`registerNameWithAuthorization.ts`](../scripts/examples/registerNameWithAuthorization.ts) - Register a name with EIP-712 authorization
+- [`registerNameWithAuthorizationForERC20.ts`](../scripts/examples/registerNameWithAuthorizationForERC20.ts) - Register name via EIP-1271
 - [`batchRegisterNameWithAuthorization.ts`](../scripts/examples/batchRegisterNameWithAuthorization.ts) - Batch register names with authorization
+
+**Namespace Registration:**
+- [`registerPublicNamespace.ts`](../scripts/examples/registerPublicNamespace.ts) - Register a public namespace
+- [`registerPrivateNamespace.ts`](../scripts/examples/registerPrivateNamespace.ts) - Register a private namespace
+- [`registerPublicNamespaceFor.ts`](../scripts/examples/registerPublicNamespaceFor.ts) - Register a public namespace for another address (OWNER-only)
+- [`registerPrivateNamespaceFor.ts`](../scripts/examples/registerPrivateNamespaceFor.ts) - Register a private namespace for another address (OWNER-only)
+
+**Query Functions:**
 - [`getAddress.ts`](../scripts/examples/getAddress.ts) - Resolve a name to an address
 - [`getName.ts`](../scripts/examples/getName.ts) - Get the name for an address
 - [`getNamespaceInfo.ts`](../scripts/examples/getNamespaceInfo.ts) - Query namespace information
+- [`getNamespacePrice.ts`](../scripts/examples/getNamespacePrice.ts) - Query namespace price per name
+- [`isInExclusivityPeriod.ts`](../scripts/examples/isInExclusivityPeriod.ts) - Check if a namespace is in exclusivity period
 - [`getPendingFees.ts`](../scripts/examples/getPendingFees.ts) - Check pending fees for an address
+
+**Fee Management:**
 - [`claimFeesToSelf.ts`](../scripts/examples/claimFeesToSelf.ts) - Claim fees to yourself
 - [`claimFees.ts`](../scripts/examples/claimFees.ts) - Claim fees to a different recipient
-- [`registerNameForERC20A.ts`](../scripts/examples/registerNameForERC20A.ts) - Register name via constructor
-- [`registerNameForERC20B.ts`](../scripts/examples/registerNameForERC20B.ts) - Register name via separate function
-- [`registerNameWithAuthorizationForERC20.ts`](../scripts/examples/registerNameWithAuthorizationForERC20.ts) - Register name via EIP-1271
-- [`deployMockERC20C.ts`](../scripts/examples/deployMockERC20C.ts) - Deploy a MockERC20C contract
+
+**Utility Scripts:**
 - [`generateSignature.ts`](../scripts/examples/generateSignature.ts) - Generate EIP-712 signature for Etherscan execution
+- [`deployMockERC20C.ts`](../scripts/examples/deployMockERC20C.ts) - Deploy a MockERC20C contract
 
 > **Note:** Each example script contains a `USER INPUTS` section at the top where you can customize parameters (e.g., label, namespace, signer index) before running the script. Modify these values directly in the script file as needed.
 
 
 # 🎨 Design Decisions
 
-This document outlines the key design decisions regarding code style, governance, and specific contract features. It is primarily intended for auditors and anyone interested in the code.
+This section outlines the key design decisions regarding code style, governance, and specific contract features. It is primarily intended for auditors and anyone interested in the code.
 
 ## Code Style
 
@@ -109,22 +126,17 @@ The contract owner has specific privileges that differ from regular users:
 
 **Always (Regardless of Time Period):**
 
-* **Fee collection**: The owner receives 5% of fees from every name registration transaction:
-  * **Public namespaces**: Owner receives 5% of registration fees (namespace creator receives the other 5%)
-  * **Private namespaces**: Owner receives 10% of registration fees (private namespace creators receive 0%)
-* **Fee claiming**: The owner can claim accumulated fees using `claimFees` or `claimFeesToSelf`, just like any other address with pending fees. The owner does not have special privileges for claiming fees—they can only claim fees that were credited to the owner address.
+* **Fee claiming**: The owner can claim accumulated fees using `claimFees` or `claimFeesToSelf`, just like any other address with pending fees.
 
-**What the Owner Cannot Do:**
-
-* **Cannot transfer ownership**: The owner address is immutable and cannot be changed after deployment.
-* **Cannot register namespaces for free after onboarding**: After the first year, the owner must pay standard fees like all other users.
-* **Cannot claim fees that aren't theirs**: The owner can only claim fees that were credited to the owner address, same as any other address.
-
-This design balances the need for ecosystem bootstrapping with long-term decentralization, as the owner's special privileges are time-limited and focused on onboarding.
 
 ## Chains
 
-The contract is intended to be deployed exclusively on Ethereum mainnet (and a testnet environment for development and testing). This design choice prevents the possibility of the same address registering different names on multiple chains, ensuring global uniqueness and consistency of name ownership.
+The contract is intended to be deployed exclusively on Ethereum mainnet (with a testnet environment for development and testing). This design choice ensures that a single name cannot be associated with different addresses on separate chains, thereby avoiding confusion and preserving the uniqueness and integrity of the registry.
+
+While it cannot be technically prevented that someone deploys a similar contract on another chain, XNS establishes its canonical status through multiple layers of protection:
+- **First deployment:** The original deployment on Ethereum mainnet establishes the canonical registry, with its immutable history serving as the source of truth for name-address mappings.
+- **Clear documentation:** This documentation and `README.md` explicitly state that XNS is Ethereum-canonical and that deployments on other chains are not recognized as XNS.
+- **BUSL license:** The Business Source License 1.1 (BUSL-1.1) legally restricts production deployments on other chains, ensuring there is a single canonical XNS registry on Ethereum. Even after the license transitions to open-source, XNS remains Ethereum-canonical—the identity, meaning, and trust of XNS names derive from the original deployment on Ethereum mainnet and its immutable history. Deployments on other chains after the Change Date are not recognized as XNS and do not share any continuity, guarantees, or identity with the canonical registry.
 
 ## Features
 
@@ -147,23 +159,16 @@ Front-running is possible but not considered a significant problem because:
 
 ### Front-Running during the First Year
 
-During the first year after contract deployment (the onboarding period), the contract owner can optionally bootstrap namespaces for participants and integrators at no cost using dedicated OWNER-only functions (`registerPublicNamespaceFor` and `registerPrivateNamespaceFor`). This mechanism is intended to promote rapid ecosystem adoption by enabling the owner to grant free namespaces to participants and integrators.
+During the first year after contract deployment (the onboarding period), the contract owner can register namespaces for free using dedicated OWNER-only functions (`registerPublicNamespaceFor` and `registerPrivateNamespaceFor`) in order to foster protocol adoption.
 
-**Design Decision: Separation of Self-Service and Onboarding Functions**
+There exists a theoretical front-running risk:
 
-The contract separates self-service namespace registration (which always charges fees) from owner-only onboarding functions (which are free during the onboarding period). This design provides several benefits:
+* **Theoretical scenario**: The owner could monitor the mempool for namespace registration transactions from other users and front-run them to register the namespace first for a different address.
 
-* **Clear separation of concerns**: Regular users always pay standard fees via `registerPublicNamespace` and `registerPrivateNamespace`, while onboarding is handled through dedicated functions.
-* **Transparency**: The distinction between self-service and onboarding functions makes the system's behavior explicit and easier to audit.
-* **Consistent fee enforcement**: Self-service functions consistently enforce fees, eliminating conditional logic that could introduce bugs or confusion.
-
-**Front-Running Considerations:**
-
-Even with this separation, there remains a theoretical front-running risk:
-
-* **Theoretical scenario**: The owner could monitor the mempool for namespace registration transactions from other users and front-run them using `registerPublicNamespaceFor` or `registerPrivateNamespaceFor` to register the namespace first for a different address.
+**Mitigation:**
 * **Economic disincentive**: Front-running namespace registrations would negatively impact the system's reputation and the owner's future revenue.
-* **User mitigation**: Users can mitigate this risk by waiting until after the 1-year onboarding period to register namespaces, at which point everyone pays the same fees (including the owner, who must use the self-service functions).
+* **Postpone namespace registration**: Users can mitigate this risk by waitng until after the 1-year onboarding period to register namespaces, at which point everyone pays the same fees (including the owner, who must use the self-service functions).
+* **Request free registration**: During the onboarding period, users may also reach out to [Walodja1987](https://x.com/Walodja1987) on X and ask for a free namespace registration by the contract owner.
 
 ## Block Reorganization Risk
 
@@ -171,13 +176,10 @@ Block reorganizations (reorgs) pose a risk to name registrations. If a registrat
 
 **Mitigation:**
 * **Wait for confirmations:** Users and integrators should wait for several block confirmations and ensure the name resolves as intended before publicly sharing or relying on it.
-* **Attacker’s cost:** Attackers who attempt to front-run must pay the ETH burn cost, which may provide them no advantage as users are encouraged to delay sharing new names until they have confirmed correct resolution.
 * **Use test transactions:** Before sharing a new name, users are encouraged to first make a small, low-risk test transaction (e.g., sending a small amount of assets to the new name) to verify correct resolution.
-* **Irreversible ETH burns remain a deterrent:** Even in the event of a reorg or front-running attack, the necessity of burning ETH creates a significant economic disincentive for malicious actors.
+* **Attacker’s cost:** Even in the event of a reorg or front-running attack, the necessity of burning ETH creates an economic disincentive for malicious actors.
 
 The contract intentionally does not implement protocol-level reorg mitigation, as such mechanisms would force additional complexity on users and interfaces, such as requiring multiple confirmation or registration steps.
-
-This is documented as a best practice recommendation rather than a protocol-level enforcement, as finality guarantees are ultimately a property of the underlying blockchain consensus mechanism.
 
 ## EIP-712 Authorization Without Nonce or Deadline
 
@@ -197,7 +199,10 @@ While adding an optional deadline field could provide users with additional cont
 **Mitigation:**
 - Recipients should only sign authorizations they are comfortable with executing at any point in the future
 - Recipients can register a name themselves to prevent any sponsored registration attempts
-- The one-name-per-address constraint naturally limits the impact of replay attacks
+
+## EIP-7702 Compatibility
+
+XNS supports EIP-7702 delegated accounts for authorized name registration. If a recipient is an EIP-7702 delegated account, their delegated implementation must implement EIP-1271 for signature validation to work correctly with `registerNameWithAuthorization` and `batchRegisterNameWithAuthorization`.
 
 ## Refund Failure
 
@@ -209,9 +214,7 @@ This DoS scenario is acknowledged but not considered a critical issue given the 
 
 A more robust alternative would be to implement a pending refunds mechanism, requiring `msg.sender` to explicitly claim any refund in a separate transaction. However, this approach introduces additional contract complexity and negatively impacts user experience. The current design is viewed as a reasonable trade-off.
 
-## Known Limitations
-
-### Gas Griefing in Signature Verification
+## Gas Griefing in Signature Verification
 
 The contract uses OpenZeppelin's `SignatureChecker` which forwards all remaining gas to EIP-1271 contract wallets during signature verification. A malicious contract wallet could consume all gas, causing the transaction to fail.
 
