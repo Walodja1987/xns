@@ -39,14 +39,14 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 ### isValidLabelOrNamespace
 
 #### Functionality
-isValidLabelabelOrNamespaceamespace
+
 - Should return `true` for valid labelOrNamespaces with lowercase letters.
 - Should return `true` for valid labelOrNamespaces with digits.
 - Should return `true` for valid labelOrNamespaces with hyphens.
 - Should return `true` for valid labelOrNamespaces combining letters, digits, and hyphens.
-- Should return `true` for minimulabelOrNamespacength (1 character).
-- Should return `true` for maximulabelOrNamespacength (20 characters).
-labelOrNamespace
+- Should return `true` for minimum length (1 character).
+- Should return `true` for maximum length (20 characters).
+
 #### Reverts
 
 - Should return `false` for empty string.
@@ -58,9 +58,9 @@ labelOrNamespace
 - Should return `false` for labelOrNamespaces containing special characters (except hyphen).
 - Should return `false` for labelOrNamespaces containing underscores.
 - Should return `false` for labelOrNamespaces containing consecutive hyphens.
-labelOrNamespace
----labelOrNamespace
-labelOrNamespace
+
+---
+
 ### registerPublicNamespace
 
 #### Functionality
@@ -75,7 +75,7 @@ labelOrNamespace
 - Should allow anyone (non-owner) to register public namespace with fee after initial period.
 - Should refund excess payment when non-owner pays more than 50 ETH.
 - Should refund excess payment when owner pays more than required fee.
-- Should process the ETH payment correctly (90% burnt, 10% to contract owner) when fee is paid.
+- Should process the ETH payment correctly (80% burnt, 20% to contract owner) when fee is paid.
 - Should credit correct amount of DETH to non-owner registrant during initial period.
 - Should credit correct amount of DETH to owner after initial period.
 - Should credit correct amount of DETH to non-owner registrant after initial period.
@@ -120,7 +120,7 @@ labelOrNamespace
 - Should allow anyone (non-owner) to register private namespace with fee after initial period.
 - Should refund excess payment when non-owner pays more than 10 ETH.
 - Should refund excess payment when owner pays more than required fee.
-- Should process the ETH payment correctly (90% burnt, 10% to contract owner, 0% to namespace creator) when fee is paid.
+- Should process the ETH payment correctly (80% burnt, 20% to contract owner, 0% to namespace creator) when fee is paid.
 - Should credit correct amount of DETH to non-owner registrant during initial period.
 - Should credit correct amount of DETH to owner after initial period.
 - Should credit correct amount of DETH to non-owner registrant after initial period.
@@ -226,7 +226,7 @@ XNS: price not multiple of 0.001 ETH
   - Should map owner address to name.
   - Should set correct label and namespace.
 - Should allow anyone to register paid names in public namespace after exclusive period (30 days).
-- Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
+- Should process the ETH payment correctly (80% burnt, 10% to namespace creator, 10% to contract owner) when fee is paid.
 - Should refund excess payment when `msg.value` exceeds namespace price.
 - Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (10 ETH) after the exclusive period ends.
 - Should credit correct amount of DETH to `msg.sender`.
@@ -261,12 +261,12 @@ XNS: price not multiple of 0.001 ETH
   - Should map recipient address to name.
   - Should set correct label and namespace.
 - Should allow namespace creator to register a paid name in public namespace during exclusive period using authorization.
-- Should allow private namespace creator to register a name for themselves using authorization and process fees correctly (90% burnt, 10% to contract owner, 0% to namespace creator).
+- Should allow private namespace creator to register a name for themselves using authorization and process fees correctly (80% burnt, 20% to contract owner, 0% to namespace creator).
 - Should allow namespace creator to sponsor registrations in public namespace during exclusive period (30 days).
 - Should allow anyone to sponsor registrations in public namespace after exclusive period (30 days).
 - Should allow namespace creator to sponsor registrations in private namespace (creator-only forever).
-- Should process the ETH payment correctly for public namespace (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid.
-- Should process the ETH payment correctly for private namespace (90% burnt, 10% to contract owner, 0% to namespace creator) when fee is paid.
+- Should process the ETH payment correctly for public namespace (80% burnt, 10% to namespace creator, 10% to contract owner) when fee is paid.
+- Should process the ETH payment correctly for private namespace (80% burnt, 20% to contract owner, 0% to namespace creator) when fee is paid.
 - Should allow sponsoring a name registration for an EIP-1271 contract wallet recipient.
 - Should refund excess payment when `msg.value` exceeds namespace price.
 - Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (10 ETH) after the exclusive period ends.
@@ -303,8 +303,8 @@ XNS: price not multiple of 0.001 ETH
 - Should skip registrations where recipient already has a name.
 - Should skip registrations where name is already registered.
 - Should return 0 if no registrations succeed and refund all payment.
-- Should process the ETH payment correctly for public namespace (90% burnt via DETH, 5% to namespace creator, 5% to contract owner) only for successful registrations.
-- Should process the ETH payment correctly for private namespace (90% burnt via DETH, 10% to contract owner, 0% to namespace creator) only for successful registrations.
+- Should process the ETH payment correctly for public namespace (80% burnt via DETH, 10% to namespace creator, 10% to contract owner) only for successful registrations.
+- Should process the ETH payment correctly for private namespace (80% burnt via DETH, 20% to contract owner, 0% to namespace creator) only for successful registrations.
 - Should credit correct amount of DETH to sponsor, not recipients.
 - Should allow namespace creator to sponsor batch registrations in public namespace during exclusive period (30 days).
 - Should allow anyone to sponsor batch registrations in public namespace after exclusive period (30 days).
@@ -343,7 +343,7 @@ XNS: price not multiple of 0.001 ETH
 - Should allow public namespace creator to claim all pending fees for `msg.sender` and transfer to recipient (non-namespace-creator)
   - Should transfer correct amount to recipient.
   - Should reset pending fees to zero after claiming.
-- Should allow owner to claim all pending fees from private namespace registrations (10% of private namespace fees go to owner).
+- Should allow owner to claim all pending fees from private namespace registrations (20% of private namespace fees go to owner).
 - Should allow owner to claim all pending fees to themselves
   - Should transfer correct amount to `msg.sender`.
   - Should reset pending fees to zero after claiming.
