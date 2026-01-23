@@ -33,7 +33,7 @@ Label and namespace string requirements:
     or `batchRegisterNameWithAuthorization`).
   - After exclusivity, anyone can register or sponsor names (via `registerName`
     or `batchRegisterNameWithAuthorization`).
-  - Creators receive 5% of all name registration fees in perpetuity.
+  - Creators receive 10% of all name registration fees in perpetuity.
 - **Private namespaces (10 ETH):**
   - Only the creator can register names (via `registerNameWithAuthorization`
     or `batchRegisterNameWithAuthorization`).
@@ -61,10 +61,10 @@ Label and namespace string requirements:
 - Supports both EOA signatures and EIP-1271 contract wallet signatures.
 
 ### ETH Burn and Fee Distribution
-- 90% of ETH sent is burnt via DETH.
-- 10% is credited as fees:
-  - Public namespaces: 5% to namespace creator, 5% to XNS contract owner
-  - Private namespaces: 10% to XNS owner
+- 80% of ETH sent is burnt via DETH.
+- 20% is credited as fees:
+  - Public namespaces: 10% to namespace creator, 10% to XNS contract owner
+  - Private namespaces: 20% to XNS owner
 
 
 
@@ -90,9 +90,9 @@ This function only works for public namespaces after the exclusivity period (30 
 - Name must not already be registered.
 
 **Fee Distribution:**
-- 90% of ETH is permanently burned via DETH.
-- 5% is credited to the `OWNER`.
-- 5% is credited to the namespace creator.
+- 80% of ETH is permanently burned via DETH.
+- 10% is credited to the `OWNER`.
+- 10% is credited to the namespace creator.
 
 **Note:**
 - During the exclusivity period or for private namespaces, namespace creators must use
@@ -139,9 +139,9 @@ Supports both EOA signatures and EIP-1271 contract wallet signatures.
 - Signature must be valid EIP-712 signature from `recipient` (EOA) or EIP-1271 contract signature.
 
 **Fee Distribution:**
-- 90% of ETH is permanently burned via DETH.
-- For public namespaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
-- For private namespaces: 10% is credited to the `OWNER`.
+- 80% of ETH is permanently burned via DETH.
+- For public namespaces: 10% is credited to the namespace creator and 10% to the `OWNER`.
+- For private namespaces: 20% is credited to the `OWNER`.
 
 **Note:**
 - If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271
@@ -176,9 +176,9 @@ a name or the name is already registered (griefing protection). Skipped items ar
 - All individual requirements from `registerNameWithAuthorization` apply to each registration.
 
 **Fee Distribution:**
-- 90% of ETH is permanently burned via DETH.
-- For public namespaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
-- For private namespaces: 10% is credited to the `OWNER`.
+- 80% of ETH is permanently burned via DETH.
+- For public namespaces: 10% is credited to the namespace creator and 10% to the `OWNER`.
+- For private namespaces: 20% is credited to the `OWNER`.
 
 **Note:** Input validation errors (invalid label, zero recipient, namespace mismatch, invalid signature)
 cause the entire batch to revert. Errors that could occur due to front-running the batch tx (recipient already

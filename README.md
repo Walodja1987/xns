@@ -38,7 +38,7 @@
 - **Globally unique:** Each name is unique across all Ethereum addresses, preventing conflicts like duplicate ERC20 token names.
 - **Permissionless namespaces:** Anyone can create their own namespace without requiring approval from any central party.
 - **Private namespaces:** Supports private namespaces where the creator maintains exclusive control over name registrations within their namespace.
-- **ETH burning:** 90% of registration fees are permanently burned, supporting Ethereum's deflationary mechanism.
+- **ETH burning:** 80% of registration fees are permanently burned, supporting Ethereum's deflationary mechanism.
 
 ### Name Format
 
@@ -82,7 +82,7 @@ XNS features two types of namespaces: **public** and **private**.
 **Public Namespaces:**
 - Anyone can register names within a public namespace after a 30-day exclusivity period post namespace creation has ended.
 - During the exclusivity period, only the creator can register or sponsor names.
-- Creators receive 5% of all name registration fees in perpetuity.
+- Creators receive 10% of all name registration fees in perpetuity.
 - Registration fee: 50 ETH.
 
 **Private Namespaces:**
@@ -94,10 +94,10 @@ Anyone can register a new namespace by paying the one-time registration fee. The
 
 ### ETH Burn and Fee Distribution
 
-- **90%** of ETH sent is **burnt** via DETH.
-- **10%** is credited as **fees**:
-  - Public namespaces: 5% to namespace creator, 5% to XNS contract owner
-  - Private namespaces: 10% to XNS owner
+- **80%** of ETH sent is **burnt** via DETH.
+- **20%** is credited as **fees**:
+  - Public namespaces: 10% to namespace creator, 10% to XNS contract owner
+  - Private namespaces: 20% to XNS owner
 
 **Notes:**
 * Namespace creators only receive fees from name registrations in their namespace (public namespaces only).

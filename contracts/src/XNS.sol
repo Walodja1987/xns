@@ -46,7 +46,7 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 ///     or `batchRegisterNameWithAuthorization`).
 ///   - After exclusivity, anyone can register or sponsor names (via `registerName`
 ///     or `batchRegisterNameWithAuthorization`).
-///   - Creators receive 5% of all name registration fees in perpetuity.
+///   - Creators receive 10% of all name registration fees in perpetuity.
 /// - **Private namespaces (10 ETH):**
 ///   - Only the creator can register names (via `registerNameWithAuthorization`
 ///     or `batchRegisterNameWithAuthorization`).
@@ -74,10 +74,10 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - Supports both EOA signatures and EIP-1271 contract wallet signatures.
 ///
 /// ### ETH Burn and Fee Distribution
-/// - 90% of ETH sent is burnt via DETH.
-/// - 10% is credited as fees:
-///   - Public namespaces: 5% to namespace creator, 5% to XNS contract owner
-///   - Private namespaces: 10% to XNS owner
+/// - 80% of ETH sent is burnt via DETH.
+/// - 20% is credited as fees:
+///   - Public namespaces: 10% to namespace creator, 10% to XNS contract owner
+///   - Private namespaces: 20% to XNS owner
 contract XNS is EIP712 {
     // -------------------------------------------------------------------------
     // Types
@@ -236,9 +236,9 @@ contract XNS is EIP712 {
     /// - Name must not already be registered.
     ///
     /// **Fee Distribution:**
-    /// - 90% of ETH is permanently burned via DETH.
-    /// - 5% is credited to the `OWNER`.
-    /// - 5% is credited to the namespace creator.
+    /// - 80% of ETH is permanently burned via DETH.
+    /// - 10% is credited to the `OWNER`.
+    /// - 10% is credited to the namespace creator.
     ///
     /// **Note:**
     /// - During the exclusivity period or for private namespaces, namespace creators must use
@@ -269,7 +269,7 @@ contract XNS is EIP712 {
 
         emit NameRegistered(label, namespace, msg.sender);
 
-        // Process payment: burn 90%, credit fees, and refund excess.
+        // Process payment: burn 80%, credit fees, and refund excess.
         _processETHPayment(ns.pricePerName, ns.creator);
     }
 
@@ -296,9 +296,9 @@ contract XNS is EIP712 {
     /// - Signature must be valid EIP-712 signature from `recipient` (EOA) or EIP-1271 contract signature.
     ///
     /// **Fee Distribution:**
-    /// - 90% of ETH is permanently burned via DETH.
-    /// - For public namespaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
-    /// - For private namespaces: 10% is credited to the `OWNER`.
+    /// - 80% of ETH is permanently burned via DETH.
+    /// - For public namespaces: 10% is credited to the namespace creator and 10% to the `OWNER`.
+    /// - For private namespaces: 20% is credited to the `OWNER`.
     ///
     /// **Note:**
     /// - If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271
@@ -345,7 +345,7 @@ contract XNS is EIP712 {
 
         emit NameRegistered(registerNameAuth.label, registerNameAuth.namespace, registerNameAuth.recipient);
 
-        // Process payment: burn 90%, credit fees, and refund excess.
+        // Process payment: burn 80%, credit fees, and refund excess.
         address creatorFeeRecipient = ns.isPrivate ? OWNER : ns.creator;
         _processETHPayment(ns.pricePerName, creatorFeeRecipient);
     }
@@ -361,9 +361,9 @@ contract XNS is EIP712 {
     /// - All individual requirements from `registerNameWithAuthorization` apply to each registration.
     ///
     /// **Fee Distribution:**
-    /// - 90% of ETH is permanently burned via DETH.
-    /// - For public namespaces: 5% is credited to the namespace creator and 5% to the `OWNER`.
-    /// - For private namespaces: 10% is credited to the `OWNER`.
+    /// - 80% of ETH is permanently burned via DETH.
+    /// - For public namespaces: 10% is credited to the namespace creator and 10% to the `OWNER`.
+    /// - For private namespaces: 20% is credited to the `OWNER`.
     ///
     /// **Note:** Input validation errors (invalid label, zero recipient, namespace mismatch, invalid signature)
     /// cause the entire batch to revert. Errors that could occur due to front-running the batch tx (recipient already
@@ -430,7 +430,7 @@ contract XNS is EIP712 {
             require(msg.value >= actualTotal, "XNS: insufficient payment");
             address creatorFeeRecipient = ns.isPrivate ? OWNER : ns.creator;
 
-            // Process payment: burn 90%, credit fees, and refund excess.
+            // Process payment: burn 80%, credit fees, and refund excess.
             _processETHPayment(actualTotal, creatorFeeRecipient);
             return successful;
         }
@@ -765,21 +765,21 @@ contract XNS is EIP712 {
 
     /// @dev Helper function to process ETH payment (used in `registerName`, `registerNameWithAuthorization`,
     /// `batchRegisterNameWithAuthorization`, `registerPublicNamespace`, and `registerPrivateNamespace`):
-    /// - Burn 90% via DETH (credits `msg.sender` with DETH)
-    /// - Credit fees: 5% to `creatorFeeRecipient` and 5% to `OWNER`
+    /// - Burn 80% via DETH (credits `msg.sender` with DETH)
+    /// - Credit fees: 10% to `creatorFeeRecipient` and 10% to `OWNER`
     /// - Refund any excess payment
     /// @param requiredAmount The required amount of ETH for the operation (excess will be refunded).
-    /// @param creatorFeeRecipient The address that shall receive the 5% creator fee.
+    /// @param creatorFeeRecipient The address that shall receive the 10% creator fee.
     function _processETHPayment(uint256 requiredAmount, address creatorFeeRecipient) private {
-        uint256 burnAmount = (requiredAmount * 90) / 100;
-        uint256 creatorFee = (requiredAmount * 5) / 100;
+        uint256 burnAmount = (requiredAmount * 80) / 100;
+        uint256 creatorFee = (requiredAmount * 10) / 100;
         uint256 ownerFee = requiredAmount - burnAmount - creatorFee;
 
-        // Burn 90% via DETH contract and credit `msg.sender` (payer/sponsor) with DETH.
+        // Burn 80% via DETH contract and credit `msg.sender` (payer/sponsor) with DETH.
         IDETH(DETH).burn{value: burnAmount}(msg.sender);
 
-        // Credit fees: 5% to `creatorFeeRecipient`, 5% to `OWNER`.
-        // If `creatorFeeRecipient` == `OWNER`, `OWNER` effectively gets the full 10%
+        // Credit fees: 10% to `creatorFeeRecipient`, 10% to `OWNER`.
+        // If `creatorFeeRecipient` == `OWNER`, `OWNER` effectively gets the full 20%
         // (credited twice into the same mapping slot).
         _pendingFees[creatorFeeRecipient] += creatorFee;
         _pendingFees[OWNER] += ownerFee;
