@@ -21,7 +21,6 @@
    2.2 [Name Registration With Authorization](#name-registration-with-authorization) \
    2.3 [Name Resolution](#name-resolution) \
    2.4 [Namespace Registration](#namespace-registration) \
-   2.5 [Registration Fees](#registration-fees)
 3. [XNS Price list](#-xns-price-list)
 4. [Contract Address](#-contract-address)
 5. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
@@ -99,6 +98,10 @@ Anyone can register a new namespace by paying the one-time registration fee. The
 - **10%** is credited as **fees**:
   - Public namespaces: 5% to namespace creator, 5% to XNS contract owner
   - Private namespaces: 10% to XNS owner
+
+**Notes:**
+* Namespace creators only receive fees from name registrations in their namespace (public namespaces only).
+* All ETH burns are recorded via the [DETH contract](https://github.com/Walodja1987/deth), a global ETH sink and burn attestation registry. Burns are tracked and verifiable as non-transferrable DETH credits minted at a 1:1 ratio, providing proof of contribution to Ethereum's deflationary mechanism.
 
 ## ✨ How It Works
 
@@ -232,21 +235,6 @@ The exclusivity period can be checked using [`isInExclusivityPeriod`][api-isInEx
 * [Query namespace info][script-getNamespaceInfo]
 * [Check exclusivity period][script-isInExclusivityPeriod]
 
-### Registration Fees
-
-**Name Registration Fees:**
-- **90%** of ETH is permanently burned, supporting Ethereum's deflationary mechanism
-- **10%** is distributed as fees:
-  - **Public namespaces**: 5% to namespace creator + 5% to XNS contract owner
-  - **Private namespaces**: 10% to contract owner
-
-**Namespace Registration Fees:**
-- **90%** of ETH is permanently burned
-- **10%** goes to the contract owner
-
->**Note:** Namespace creators only receive fees from name registrations in their namespace (public namespaces only).
-
-All ETH burns are recorded via the [DETH contract](https://github.com/Walodja1987/deth), a global ETH sink and burn attestation registry. Burns are tracked and verifiable as non-transferrable DETH credits minted at a 1:1 ratio, providing proof of contribution to Ethereum's deflationary mechanism.
 
 #### Claiming Fees
 
