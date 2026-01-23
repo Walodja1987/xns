@@ -655,7 +655,7 @@ describe("XNS", function () {
         expect(balanceAfter).to.equal(expectedBalanceAfter);
     });
 
-    it("Should process the ETH payment correctly (90% burnt, 10% to contract owner) when fee is paid", async () => {
+    it("Should process the ETH payment correctly (80% burnt, 20% to contract owner) when fee is paid", async () => {
         // ---------
         // Arrange: Prepare parameters and get initial state
         // ---------
@@ -669,10 +669,10 @@ describe("XNS", function () {
         const initialOwnerFees = await s.xns.getPendingFees(s.owner.address);
         
         // Calculate expected amounts
-        const expectedBurnAmount = (fee * 90n) / 100n; // 90% = 180 ETH
-        const expectedCreatorFee = (fee * 5n) / 100n; // 5% = 10 ETH
-        const expectedOwnerFee = fee - expectedBurnAmount - expectedCreatorFee; // 5% = 10 ETH
-        const expectedTotalOwnerFee = expectedCreatorFee + expectedOwnerFee; // 10% total (since OWNER is passed as creatorFeeRecipient)
+        const expectedBurnAmount = (fee * 80n) / 100n; // 80% = 160 ETH
+        const expectedCreatorFee = (fee * 10n) / 100n; // 10% = 20 ETH
+        const expectedOwnerFee = fee - expectedBurnAmount - expectedCreatorFee; // 10% = 20 ETH
+        const expectedTotalOwnerFee = expectedCreatorFee + expectedOwnerFee; // 20% total (since OWNER is passed as creatorFeeRecipient)
 
         // ---------
         // Act: Non-owner (user1) registers namespace with fee
@@ -688,7 +688,7 @@ describe("XNS", function () {
         expect(returnedPrice).to.equal(pricePerName);
         expect(creator).to.equal(s.user1.address);
 
-        // Verify 90% was burnt via DETH (credited to payer/sponsor)
+        // Verify 80% was burnt via DETH (credited to payer/sponsor)
         const finalDETHBurned = await s.deth.burned(s.user1.address);
         expect(finalDETHBurned - initialDETHBurned).to.equal(expectedBurnAmount);
 
@@ -696,7 +696,7 @@ describe("XNS", function () {
         const finalCreatorFees = await s.xns.getPendingFees(s.user1.address);
         expect(finalCreatorFees - initialCreatorFees).to.equal(0n);
 
-        // Verify 10% was credited to contract owner (5% creator fee + 5% owner fee)
+        // Verify 20% was credited to contract owner (10% creator fee + 10% owner fee)
         const finalOwnerFees = await s.xns.getPendingFees(s.owner.address);
         expect(finalOwnerFees - initialOwnerFees).to.equal(expectedTotalOwnerFee);
     });
@@ -719,8 +719,8 @@ describe("XNS", function () {
         // Get initial DETH burned amount for non-owner (user1)
         const initialDETHBurned = await s.deth.burned(s.user1.address);
 
-        // Calculate expected DETH amount (90% of fee)
-        const expectedDETHAmount = (fee * 90n) / 100n; // 90% = 180 ETH
+        // Calculate expected DETH amount (80% of fee)
+        const expectedDETHAmount = (fee * 80n) / 100n; // 80% = 160 ETH
 
         // ---------
         // Act: Non-owner (user1) registers namespace with fee during initial period
@@ -764,8 +764,8 @@ describe("XNS", function () {
         // Get initial DETH burned amount for owner
         const initialDETHBurned = await s.deth.burned(s.owner.address);
 
-        // Calculate expected DETH amount (90% of fee)
-        const expectedDETHAmount = (fee * 90n) / 100n; // 90% = 180 ETH
+        // Calculate expected DETH amount (80% of fee)
+        const expectedDETHAmount = (fee * 80n) / 100n; // 80% = 160 ETH
 
         // ---------
         // Act: Owner registers namespace with fee after initial period
@@ -809,8 +809,8 @@ describe("XNS", function () {
         // Get initial DETH burned amount for non-owner (user2, to avoid conflicts with previous tests)
         const initialDETHBurned = await s.deth.burned(s.user2.address);
 
-        // Calculate expected DETH amount (90% of fee)
-        const expectedDETHAmount = (fee * 90n) / 100n; // 90% = 180 ETH
+        // Calculate expected DETH amount (80% of fee)
+        const expectedDETHAmount = (fee * 80n) / 100n; // 80% = 160 ETH
 
         // ---------
         // Act: Non-owner (user2) registers namespace with fee after initial period
@@ -2177,7 +2177,7 @@ describe("XNS", function () {
         expect(balanceAfter).to.equal(expectedBalanceAfter);
     });
 
-    it("Should process the ETH payment correctly (90% burnt, 10% to contract owner, 0% to namespace creator) when fee is paid", async () => {
+    it("Should process the ETH payment correctly (80% burnt, 20% to contract owner, 0% to namespace creator) when fee is paid", async () => {
         // ---------
         // Arrange: Prepare parameters and get initial state
         // ---------
@@ -2191,8 +2191,8 @@ describe("XNS", function () {
         const initialOwnerFees = await s.xns.getPendingFees(s.owner.address);
         
         // Calculate expected amounts
-        const expectedBurnAmount = (fee * 90n) / 100n; // 90% = 9 ETH
-        const expectedOwnerFee = (fee * 10n) / 100n; // 10% = 1 ETH
+        const expectedBurnAmount = (fee * 80n) / 100n; // 80% = 8 ETH
+        const expectedOwnerFee = (fee * 20n) / 100n; // 20% = 2 ETH
         const expectedCreatorFee = 0n; // 0% for private namespaces
 
         // ---------
@@ -2210,7 +2210,7 @@ describe("XNS", function () {
         expect(creator).to.equal(s.user1.address);
         expect(isPrivate).to.equal(true);
 
-        // Verify 90% was burnt via DETH (credited to payer/sponsor)
+        // Verify 80% was burnt via DETH (credited to payer/sponsor)
         const finalDETHBurned = await s.deth.burned(s.user1.address);
         expect(finalDETHBurned - initialDETHBurned).to.equal(expectedBurnAmount);
 
@@ -2218,7 +2218,7 @@ describe("XNS", function () {
         const finalCreatorFees = await s.xns.getPendingFees(s.user1.address);
         expect(finalCreatorFees - initialCreatorFees).to.equal(expectedCreatorFee);
 
-        // Verify 10% was credited to contract owner
+        // Verify 20% was credited to contract owner
         const finalOwnerFees = await s.xns.getPendingFees(s.owner.address);
         expect(finalOwnerFees - initialOwnerFees).to.equal(expectedOwnerFee);
     });
@@ -2241,8 +2241,8 @@ describe("XNS", function () {
         // Get initial DETH burned amount for non-owner (user1)
         const initialDETHBurned = await s.deth.burned(s.user1.address);
 
-        // Calculate expected DETH amount (90% of fee)
-        const expectedDETHAmount = (fee * 90n) / 100n; // 90% = 9 ETH
+        // Calculate expected DETH amount (80% of fee)
+        const expectedDETHAmount = (fee * 80n) / 100n; // 80% = 8 ETH
 
         // ---------
         // Act: Non-owner (user1) registers private namespace with fee during initial period
@@ -2286,8 +2286,8 @@ describe("XNS", function () {
         // Get initial DETH burned amount for owner
         const initialDETHBurned = await s.deth.burned(s.owner.address);
 
-        // Calculate expected DETH amount (90% of fee)
-        const expectedDETHAmount = (fee * 90n) / 100n; // 90% = 9 ETH
+        // Calculate expected DETH amount (80% of fee)
+        const expectedDETHAmount = (fee * 80n) / 100n; // 80% = 8 ETH
 
         // ---------
         // Act: Owner registers private namespace with fee after initial period
@@ -2331,8 +2331,8 @@ describe("XNS", function () {
         // Get initial DETH burned amount for non-owner (user2, to avoid conflicts with previous tests)
         const initialDETHBurned = await s.deth.burned(s.user2.address);
 
-        // Calculate expected DETH amount (90% of fee)
-        const expectedDETHAmount = (fee * 90n) / 100n; // 90% = 9 ETH
+        // Calculate expected DETH amount (80% of fee)
+        const expectedDETHAmount = (fee * 80n) / 100n; // 80% = 8 ETH
 
         // ---------
         // Act: Non-owner (user2) registers private namespace with fee after initial period
@@ -2843,7 +2843,7 @@ describe("XNS", function () {
         expect(balanceAfter).to.equal(expectedBalanceAfter);
     });
 
-    it("Should process the ETH payment correctly (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid", async () => {
+    it("Should process the ETH payment correctly (80% burnt, 10% to namespace creator, 10% to contract owner) when fee is paid", async () => {
         // ---------
         // Arrange: Prepare parameters and get initial state
         // ---------
@@ -2862,9 +2862,9 @@ describe("XNS", function () {
         const initialOwnerFees = await s.xns.getPendingFees(s.owner.address);
         
         // Calculate expected amounts
-        const expectedBurnAmount = (pricePerName * 90n) / 100n; // 90% of 0.001 ETH
-        const expectedCreatorFee = (pricePerName * 5n) / 100n; // 5% of 0.001 ETH
-        const expectedOwnerFee = pricePerName - expectedBurnAmount - expectedCreatorFee; // 5% of 0.001 ETH
+        const expectedBurnAmount = (pricePerName * 80n) / 100n; // 80% of 0.001 ETH
+        const expectedCreatorFee = (pricePerName * 10n) / 100n; // 10% of 0.001 ETH
+        const expectedOwnerFee = pricePerName - expectedBurnAmount - expectedCreatorFee; // 10% of 0.001 ETH
 
         // ---------
         // Act: Non-creator (user2) registers name with fee
@@ -2879,15 +2879,15 @@ describe("XNS", function () {
         const ownerAddress = await getAddressByLabelAndNamespace(label, namespace);
         expect(ownerAddress).to.equal(s.user2.address);
 
-        // Verify 90% was burnt via DETH (credited to payer/sponsor)
+        // Verify 80% was burnt via DETH (credited to payer/sponsor)
         const finalDETHBurned = await s.deth.burned(s.user2.address);
         expect(finalDETHBurned - initialDETHBurned).to.equal(expectedBurnAmount);
 
-        // Verify 5% was credited to namespace creator (user1)
+        // Verify 10% was credited to namespace creator (user1)
         const finalCreatorFees = await s.xns.getPendingFees(s.user1.address);
         expect(finalCreatorFees - initialCreatorFees).to.equal(expectedCreatorFee);
 
-        // Verify 5% was credited to contract owner
+        // Verify 10% was credited to contract owner
         const finalOwnerFees = await s.xns.getPendingFees(s.owner.address);
         expect(finalOwnerFees - initialOwnerFees).to.equal(expectedOwnerFee);
     });
@@ -3011,8 +3011,8 @@ describe("XNS", function () {
         // Get initial DETH burned amount for msg.sender (user2)
         const initialDETHBurned = await s.deth.burned(s.user2.address);
 
-        // Calculate expected DETH amount (90% of pricePerName)
-        const expectedDETHAmount = (pricePerName * 90n) / 100n; // 90% = 0.0009 ETH
+        // Calculate expected DETH amount (80% of pricePerName)
+        const expectedDETHAmount = (pricePerName * 80n) / 100n; // 80% = 0.0008 ETH
 
         // ---------
         // Act: Register name (user2 is msg.sender)
@@ -3543,9 +3543,9 @@ describe("XNS", function () {
         const initialOwnerFees = await s.xns.getPendingFees(s.owner.address);
 
         // Calculate expected amounts
-        const expectedBurnAmount = (pricePerName * 90n) / 100n; // 90% of 0.001 ETH
-        const expectedCreatorFee = (pricePerName * 5n) / 100n; // 5% of 0.001 ETH
-        const expectedOwnerFee = pricePerName - expectedBurnAmount - expectedCreatorFee; // 5% of 0.001 ETH
+        const expectedBurnAmount = (pricePerName * 80n) / 100n; // 80% of 0.001 ETH
+        const expectedCreatorFee = (pricePerName * 10n) / 100n; // 10% of 0.001 ETH
+        const expectedOwnerFee = pricePerName - expectedBurnAmount - expectedCreatorFee; // 10% of 0.001 ETH
 
         // Create signature from recipient (user1 signs for themselves)
         const signature = await s.signRegisterNameAuth(s.user1, recipient, label, namespace);
@@ -3598,7 +3598,7 @@ describe("XNS", function () {
         const expectedBalanceAfter = balanceBefore - pricePerName - gasCost;
         expect(balanceAfter).to.equal(expectedBalanceAfter);
 
-        // Verify fee distribution: 90% burned, 5% to creator, 5% to owner
+        // Verify fee distribution: 80% burned, 10% to creator, 10% to owner
         const finalDETHBurned = await s.deth.burned(s.user1.address);
         expect(finalDETHBurned - initialDETHBurned).to.equal(expectedBurnAmount);
 
@@ -3609,7 +3609,7 @@ describe("XNS", function () {
         expect(finalOwnerFees - initialOwnerFees).to.equal(expectedOwnerFee);
     });
 
-    it("Should allow private namespace creator to register a name for themselves using authorization and process fees correctly (90% burnt, 10% to contract owner, 0% to namespace creator)", async () => {
+    it("Should allow private namespace creator to register a name for themselves using authorization and process fees correctly (80% burnt, 20% to contract owner, 0% to namespace creator)", async () => {
         // ---------
         // Arrange: Register a private namespace first
         // ---------
@@ -3628,10 +3628,10 @@ describe("XNS", function () {
         const initialOwnerFees = await s.xns.getPendingFees(s.owner.address);
 
         // Calculate expected amounts
-        const expectedBurnAmount = (pricePerName * 90n) / 100n; // 90% of 0.001 ETH
-        const expectedCreatorFee = (pricePerName * 5n) / 100n; // 5% of 0.001 ETH
-        const expectedOwnerFee = pricePerName - expectedBurnAmount - expectedCreatorFee; // 5% of 0.001 ETH
-        const expectedTotalOwnerFee = expectedCreatorFee + expectedOwnerFee; // 10% total (since OWNER is passed as creatorFeeRecipient for private namespaces)
+        const expectedBurnAmount = (pricePerName * 80n) / 100n; // 80% of 0.001 ETH
+        const expectedCreatorFee = (pricePerName * 10n) / 100n; // 10% of 0.001 ETH
+        const expectedOwnerFee = pricePerName - expectedBurnAmount - expectedCreatorFee; // 10% of 0.001 ETH
+        const expectedTotalOwnerFee = expectedCreatorFee + expectedOwnerFee; // 20% total (since OWNER is passed as creatorFeeRecipient for private namespaces)
 
         // Create signature from recipient (user1 signs for themselves)
         const signature = await s.signRegisterNameAuth(s.user1, recipient, label, namespace);
@@ -3661,7 +3661,7 @@ describe("XNS", function () {
         const registeredName = await getNameByAddress(s.user1.address);
         expect(registeredName).to.equal(`${label}.${namespace}`);
 
-        // Verify 90% was burnt via DETH (credited to payer/creator)
+        // Verify 80% was burnt via DETH (credited to payer/creator)
         const finalDETHBurned = await s.deth.burned(s.user1.address);
         expect(finalDETHBurned - initialDETHBurned).to.equal(expectedBurnAmount);
 
@@ -3669,7 +3669,7 @@ describe("XNS", function () {
         const finalCreatorFees = await s.xns.getPendingFees(s.user1.address);
         expect(finalCreatorFees - initialCreatorFees).to.equal(0n);
 
-        // Verify 10% was credited to contract owner (5% creator fee + 5% owner fee)
+        // Verify 20% was credited to contract owner (10% creator fee + 10% owner fee)
         const finalOwnerFees = await s.xns.getPendingFees(s.owner.address);
         expect(finalOwnerFees - initialOwnerFees).to.equal(expectedTotalOwnerFee);
     });
@@ -3865,7 +3865,7 @@ describe("XNS", function () {
         expect(returnedNamespace).to.equal(namespace);
     });
 
-    it("Should process the ETH payment correctly for public namespace (90% burnt, 5% to namespace creator, 5% to contract owner) when fee is paid", async () => {
+    it("Should process the ETH payment correctly for public namespace (80% burnt, 10% to namespace creator, 10% to contract owner) when fee is paid", async () => {
         // ---------
         // Arrange: Prepare parameters and get initial state
         // ---------
@@ -3884,9 +3884,9 @@ describe("XNS", function () {
         const initialOwnerFees = await s.xns.getPendingFees(s.owner.address); // owner is contract owner
 
         // Calculate expected amounts
-        const expectedBurnAmount = (pricePerName * 90n) / 100n; // 90% = 0.0009 ETH
-        const expectedCreatorFee = (pricePerName * 5n) / 100n; // 5% = 0.00005 ETH
-        const expectedOwnerFee = pricePerName - expectedBurnAmount - expectedCreatorFee; // 5% = 0.00005 ETH
+        const expectedBurnAmount = (pricePerName * 80n) / 100n; // 80% = 0.0008 ETH
+        const expectedCreatorFee = (pricePerName * 10n) / 100n; // 10% = 0.0001 ETH
+        const expectedOwnerFee = pricePerName - expectedBurnAmount - expectedCreatorFee; // 10% = 0.0001 ETH
 
         // Create signature from recipient (user2)
         const signature = await s.signRegisterNameAuth(s.user2, recipient, label, namespace);
@@ -3907,20 +3907,20 @@ describe("XNS", function () {
         // ---------
         // Assert: Verify payment was processed correctly
         // ---------
-        // Verify 90% was burnt via DETH (credited to payer/sponsor - owner)
+        // Verify 80% was burnt via DETH (credited to payer/sponsor - owner)
         const finalDETHBurned = await s.deth.burned(s.owner.address);
         expect(finalDETHBurned - initialDETHBurned).to.equal(expectedBurnAmount);
 
-        // Verify 5% was credited to namespace creator (user1)
+        // Verify 10% was credited to namespace creator (user1)
         const finalCreatorFees = await s.xns.getPendingFees(s.user1.address);
         expect(finalCreatorFees - initialCreatorFees).to.equal(expectedCreatorFee);
 
-        // Verify 5% was credited to contract owner (owner)
+        // Verify 10% was credited to contract owner (owner)
         const finalOwnerFees = await s.xns.getPendingFees(s.owner.address);
         expect(finalOwnerFees - initialOwnerFees).to.equal(expectedOwnerFee);
     });
 
-    it("Should process the ETH payment correctly for private namespace (90% burnt, 10% to contract owner, 0% to namespace creator) when fee is paid", async () => {
+    it("Should process the ETH payment correctly for private namespace (80% burnt, 20% to contract owner, 0% to namespace creator) when fee is paid", async () => {
         // ---------
         // Arrange: Register a private namespace and prepare parameters
         // ---------
@@ -3942,10 +3942,10 @@ describe("XNS", function () {
         const initialCreatorFees = await s.xns.getPendingFees(s.user1.address); // user1 is namespace creator
         const initialOwnerFees = await s.xns.getPendingFees(s.owner.address); // owner is contract owner
 
-        // Calculate expected amounts for private namespace (90% burnt, 10% to owner, 0% to creator)
-        const expectedBurnAmount = (pricePerName * 90n) / 100n; // 90% = 0.0009 ETH
+        // Calculate expected amounts for private namespace (80% burnt, 20% to owner, 0% to creator)
+        const expectedBurnAmount = (pricePerName * 80n) / 100n; // 80% = 0.0008 ETH
         const expectedCreatorFee = 0n; // 0% for private namespaces
-        const expectedOwnerFee = pricePerName - expectedBurnAmount; // 10% = 0.0001 ETH
+        const expectedOwnerFee = pricePerName - expectedBurnAmount; // 20% = 0.0002 ETH
 
         // Create signature from recipient (user2)
         const signature = await s.signRegisterNameAuth(s.user2, recipient, label, namespace);
@@ -3966,7 +3966,7 @@ describe("XNS", function () {
         // ---------
         // Assert: Verify payment was processed correctly
         // ---------
-        // Verify 90% was burnt via DETH
+        // Verify 80% was burnt via DETH
         const finalDETHBurned = await s.deth.burned(s.user1.address);
         expect(finalDETHBurned - initialDETHBurned).to.equal(expectedBurnAmount);
 
@@ -3974,7 +3974,7 @@ describe("XNS", function () {
         const finalCreatorFees = await s.xns.getPendingFees(s.user1.address);
         expect(finalCreatorFees - initialCreatorFees).to.equal(expectedCreatorFee);
 
-        // Verify 10% was credited to contract owner (owner)
+        // Verify 20% was credited to contract owner (owner)
         const finalOwnerFees = await s.xns.getPendingFees(s.owner.address);
         expect(finalOwnerFees - initialOwnerFees).to.equal(expectedOwnerFee);
     });
@@ -5030,7 +5030,7 @@ describe("XNS", function () {
         expect(balanceAfter).to.equal(expectedBalanceAfter);
     });
 
-    it("Should process the ETH payment correctly for public namespace (90% burnt via DETH, 5% to namespace creator, 5% to contract owner) only for successful registrations", async () => {
+    it("Should process the ETH payment correctly for public namespace (80% burnt via DETH, 10% to namespace creator, 10% to contract owner) only for successful registrations", async () => {
         // ---------
         // Arrange: Prepare parameters with some registrations that will be skipped
         // ---------
@@ -5092,9 +5092,9 @@ describe("XNS", function () {
 
         // Calculate expected amounts (only for 2 successful registrations)
         const actualTotal = pricePerName * expectedSuccessfulCount;
-        const expectedBurnAmount = (actualTotal * 90n) / 100n; // 90% of 2 * 0.001 ETH
-        const expectedCreatorFee = (actualTotal * 5n) / 100n; // 5% of 2 * 0.001 ETH
-        const expectedOwnerFee = actualTotal - expectedBurnAmount - expectedCreatorFee; // 5% of 2 * 0.001 ETH
+        const expectedBurnAmount = (actualTotal * 80n) / 100n; // 80% of 2 * 0.001 ETH
+        const expectedCreatorFee = (actualTotal * 10n) / 100n; // 10% of 2 * 0.001 ETH
+        const expectedOwnerFee = actualTotal - expectedBurnAmount - expectedCreatorFee; // 10% of 2 * 0.001 ETH
 
         // ---------
         // Act: Sponsor batch registration (user1 should be skipped)
@@ -5108,26 +5108,26 @@ describe("XNS", function () {
         // ---------
         // Assert: Verify payment processing only for successful registrations
         // ---------
-        // Verify 90% was burnt via DETH (credited to payer/sponsor - owner) for 2 successful registrations only
+        // Verify 80% was burnt via DETH (credited to payer/sponsor - owner) for 2 successful registrations only
         const finalDETHBurned = await s.deth.burned(s.owner.address);
         expect(finalDETHBurned - initialDETHBurned).to.equal(expectedBurnAmount);
 
-        // Verify 5% was credited to namespace creator (user1) for 2 successful registrations only
+        // Verify 10% was credited to namespace creator (user1) for 2 successful registrations only
         const finalCreatorFees = await s.xns.getPendingFees(s.user1.address);
         expect(finalCreatorFees - initialCreatorFees).to.equal(expectedCreatorFee);
 
-        // Verify 5% was credited to contract owner (owner) for 2 successful registrations only
+        // Verify 10% was credited to contract owner (owner) for 2 successful registrations only
         const finalOwnerFees = await s.xns.getPendingFees(s.owner.address);
         expect(finalOwnerFees - initialOwnerFees).to.equal(expectedOwnerFee);
 
         // Verify that payment was only processed for 2 registrations, not 3
         // If it processed for 3, the amounts would be 50% higher
-        const expectedIfAllProcessed = (pricePerName * 3n * 90n) / 100n;
+        const expectedIfAllProcessed = (pricePerName * 3n * 80n) / 100n;
         expect(finalDETHBurned - initialDETHBurned).to.not.equal(expectedIfAllProcessed);
         expect(finalDETHBurned - initialDETHBurned).to.equal(expectedBurnAmount); // Only 2 processed
     });
 
-    it("Should process the ETH payment correctly for private namespace (90% burnt via DETH, 10% to contract owner, 0% to namespace creator) only for successful registrations", async () => {
+    it("Should process the ETH payment correctly for private namespace (80% burnt via DETH, 20% to contract owner, 0% to namespace creator) only for successful registrations", async () => {
         // ---------
         // Arrange: Register a private namespace and prepare parameters with some registrations that will be skipped
         // ---------
@@ -5199,11 +5199,11 @@ describe("XNS", function () {
         const initialCreatorFees = await s.xns.getPendingFees(s.user1.address); // user1 is namespace creator
         const initialOwnerFees = await s.xns.getPendingFees(s.owner.address); // owner is contract owner
 
-        // Calculate expected amounts for private namespace (90% burnt, 10% to owner, 0% to creator) - only for 2 successful registrations
+        // Calculate expected amounts for private namespace (80% burnt, 20% to owner, 0% to creator) - only for 2 successful registrations
         const actualTotal = pricePerName * expectedSuccessfulCount;
-        const expectedBurnAmount = (actualTotal * 90n) / 100n; // 90% of 2 * 0.001 ETH
+        const expectedBurnAmount = (actualTotal * 80n) / 100n; // 80% of 2 * 0.005 ETH
         const expectedCreatorFee = 0n; // 0% for private namespaces
-        const expectedOwnerFee = actualTotal - expectedBurnAmount; // 10% of 2 * 0.001 ETH
+        const expectedOwnerFee = actualTotal - expectedBurnAmount; // 20% of 2 * 0.005 ETH
 
         // ---------
         // Act: Namespace creator (user1) sponsors batch registration in private namespace (user2 should be skipped)
@@ -5217,7 +5217,7 @@ describe("XNS", function () {
         // ---------
         // Assert: Verify payment processing only for successful registrations
         // ---------
-        // Verify 90% was burnt via DETH (credited to payer/sponsor - user1) for 2 successful registrations only
+        // Verify 80% was burnt via DETH (credited to payer/sponsor - user1) for 2 successful registrations only
         const finalDETHBurned = await s.deth.burned(s.user1.address);
         expect(finalDETHBurned - initialDETHBurned).to.equal(expectedBurnAmount);
 
@@ -5225,12 +5225,12 @@ describe("XNS", function () {
         const finalCreatorFees = await s.xns.getPendingFees(s.user1.address);
         expect(finalCreatorFees - initialCreatorFees).to.equal(expectedCreatorFee);
 
-        // Verify 10% was credited to contract owner (owner) for 2 successful registrations only
+        // Verify 20% was credited to contract owner (owner) for 2 successful registrations only
         const finalOwnerFees = await s.xns.getPendingFees(s.owner.address);
         expect(finalOwnerFees - initialOwnerFees).to.equal(expectedOwnerFee);
 
         // Verify that payment was only processed for 2 registrations, not 3
-        const expectedIfAllProcessed = (pricePerName * 3n * 90n) / 100n;
+        const expectedIfAllProcessed = (pricePerName * 3n * 80n) / 100n;
         expect(finalDETHBurned - initialDETHBurned).to.not.equal(expectedIfAllProcessed);
         expect(finalDETHBurned - initialDETHBurned).to.equal(expectedBurnAmount); // Only 2 processed
     });
@@ -5289,9 +5289,9 @@ describe("XNS", function () {
         const initialDETHBurnedUser1 = await s.deth.burned(s.user1.address); // user1 is a recipient
         const initialDETHBurnedUser2 = await s.deth.burned(s.user2.address); // user2 is a recipient
     
-        // Calculate expected DETH amount (90% of total payment for 2 registrations)
+        // Calculate expected DETH amount (80% of total payment for 2 registrations)
         const actualTotal = pricePerName * expectedSuccessfulCount;
-        const expectedDETHAmount = (actualTotal * 90n) / 100n; // 90% of 2 * 0.001 ETH
+        const expectedDETHAmount = (actualTotal * 80n) / 100n; // 80% of 2 * 0.001 ETH
     
         // ---------
         // Act: Sponsor (owner) registers names for recipients via batch
@@ -6514,8 +6514,8 @@ describe("XNS", function () {
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
-        // Register a name to accumulate fees for the owner (5% of pricePerName)
-        // Owner gets 5% of each registration fee
+        // Register a name to accumulate fees for the owner (10% of pricePerName)
+        // Owner gets 10% of each registration fee
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
 
         // Get the pending fees for owner
@@ -6561,8 +6561,8 @@ describe("XNS", function () {
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
-        // Register a name to accumulate fees for the namespace creator (5% of pricePerName)
-        // Namespace creator gets 5% of each registration fee in their namespace
+        // Register a name to accumulate fees for the namespace creator (10% of pricePerName)
+        // Namespace creator gets 10% of each registration fee in their namespace
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
 
         // Get the pending fees for namespace creator (user1)
@@ -6591,7 +6591,7 @@ describe("XNS", function () {
         expect(pendingFeesAfter).to.equal(0);
     });
 
-    it("Should allow owner to claim all pending fees from private namespace registrations (10% of private namespace fees go to owner)", async () => {
+    it("Should allow owner to claim all pending fees from private namespace registrations (20% of private namespace fees go to owner)", async () => {
         // ---------
         // Arrange: Register a private namespace and accumulate fees
         // ---------
@@ -6643,9 +6643,9 @@ describe("XNS", function () {
             );
         }
 
-        // Calculate expected fees: 10% of 3 registrations goes to owner, 0% to creator
+        // Calculate expected fees: 20% of 3 registrations goes to owner, 0% to creator
         const totalFees = pricePerName * 3n;
-        const expectedNewOwnerFees = (totalFees * 10n) / 100n; // 10% = 0.0003 ETH
+        const expectedNewOwnerFees = (totalFees * 20n) / 100n; // 20% = 0.0006 ETH
         const expectedNewCreatorFees = 0n; // 0% for private namespaces
         const expectedTotalOwnerFees = initialOwnerFees + expectedNewOwnerFees;
 
@@ -6733,9 +6733,9 @@ describe("XNS", function () {
             );
         }
 
-        // Calculate expected fees: 10% of 2 registrations goes to owner, 0% to creator
+        // Calculate expected fees: 20% of 2 registrations goes to owner, 0% to creator
         const totalFees = pricePerName * 2n;
-        const expectedNewOwnerFees = (totalFees * 10n) / 100n; // 10% = 0.0002 ETH
+        const expectedNewOwnerFees = (totalFees * 20n) / 100n; // 20% = 0.0004 ETH
         const expectedNewCreatorFees = 0n; // 0% for private namespaces
         const expectedTotalOwnerFees = initialOwnerFees + expectedNewOwnerFees;
 
@@ -6762,8 +6762,8 @@ describe("XNS", function () {
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
-        // Register a name to accumulate fees for the owner (5% of pricePerName)
-        // Owner gets 5% of each registration fee
+        // Register a name to accumulate fees for the owner (10% of pricePerName)
+        // Owner gets 10% of each registration fee
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
 
         // Get the pending fees for owner
@@ -6809,8 +6809,8 @@ describe("XNS", function () {
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
-        // Register a name to accumulate fees for the namespace creator (5% of pricePerName)
-        // Namespace creator gets 5% of each registration fee in their namespace
+        // Register a name to accumulate fees for the namespace creator (10% of pricePerName)
+        // Namespace creator gets 10% of each registration fee in their namespace
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
 
         // Get the pending fees for namespace creator (user1)
@@ -6866,7 +6866,7 @@ describe("XNS", function () {
         const user4 = signers[4];
         const user5 = signers[5];
 
-        // Register first name to accumulate fees for owner (5% of pricePerName)
+        // Register first name to accumulate fees for owner (10% of pricePerName)
         await s.xns.connect(user3).registerName("alice", namespace, { value: pricePerName });
 
         // Get initial pending fees for owner (should only be from this registration)
@@ -6949,7 +6949,7 @@ describe("XNS", function () {
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
-        // Register a name to accumulate fees for the owner (5% of pricePerName)
+        // Register a name to accumulate fees for the owner (10% of pricePerName)
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
 
         // Get the pending fees for owner
@@ -7073,7 +7073,7 @@ describe("XNS", function () {
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
-        // Register a name to accumulate fees for the owner (5% of pricePerName)
+        // Register a name to accumulate fees for the owner (10% of pricePerName)
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
 
         // Get the pending fees for owner
@@ -7119,7 +7119,7 @@ describe("XNS", function () {
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
-        // Register a name to accumulate fees for the namespace creator (5% of pricePerName)
+        // Register a name to accumulate fees for the namespace creator (10% of pricePerName)
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
 
         // Get the pending fees for namespace creator (user1)
@@ -7246,7 +7246,7 @@ describe("XNS", function () {
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
-        // Register a name to accumulate fees for the owner (5% of pricePerName)
+        // Register a name to accumulate fees for the owner (10% of pricePerName)
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
 
         // Get the pending fees for owner
@@ -8811,12 +8811,12 @@ describe("XNS", function () {
       const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
       await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
 
-      // Register a name to accumulate fees for the namespace creator (5% of pricePerName)
-      // Namespace creator (user1) gets 5% of each registration fee in their namespace
+      // Register a name to accumulate fees for the namespace creator (10% of pricePerName)
+      // Namespace creator (user1) gets 10% of each registration fee in their namespace
       await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
 
-      // Calculate expected fees: 5% of pricePerName
-      const expectedFees = pricePerName * 5n / 100n;
+      // Calculate expected fees: 10% of pricePerName
+      const expectedFees = pricePerName * 10n / 100n;
 
       // ---------
       // Act: Get pending fees for namespace creator
