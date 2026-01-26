@@ -11,6 +11,8 @@ describe("XNS", function () {
     owner: SignerWithAddress;
     user1: SignerWithAddress;
     user2: SignerWithAddress;
+    user3: SignerWithAddress;
+    user4: SignerWithAddress;
     deth: DETH; // DETH contract instance at the hardcoded address
     eip1271Wallet: any; // EIP-1271 contract wallet instance
     deploymentBlockTimestamp: number;
@@ -53,7 +55,7 @@ describe("XNS", function () {
 
   // Test setup function
   async function setup(): Promise<SetupOutput> {
-    const [owner, user1, user2] = await ethers.getSigners();
+    const [owner, user1, user2, user3, user4] = await ethers.getSigners();
 
     // Deploy DETH contract at the required address
     const DETH_ADDRESS = "0xE46861C9f28c46F27949fb471986d59B256500a7";
@@ -89,6 +91,8 @@ describe("XNS", function () {
       owner,
       user1,
       user2,
+      user3,
+      user4,
       deth,
       eip1271Wallet,
       deploymentBlockTimestamp: deploymentBlock!.timestamp,
@@ -198,6 +202,334 @@ describe("XNS", function () {
         await expect(
             XNSFactory.deploy(ethers.ZeroAddress)
         ).to.be.revertedWithCustomError(XNSFactory, "OwnableInvalidOwner");
+    });
+
+    
+  });
+
+  describe("Ownership Transfer", function () {
+    let s: SetupOutput;
+
+    beforeEach(async () => {
+      s = await loadFixture(setup);
+    });
+
+    // -----------------------
+    // Functionality
+    // -----------------------
+
+    it("Should allow owner to transfer ownership", async () => {
+        // ---------
+        // Arrange: Get a new owner address
+        // ---------
+        // Use user1 as the new owner (owner, user1, user2 are already in setup)
+        const newOwnerAddress = s.user1.address;
+
+        // ---------
+        // Act: Owner starts ownership transfer
+        // ---------
+        const transferTx = await s.xns.connect(s.owner).transferOwnership(newOwnerAddress);
+        await transferTx.wait();
+
+        // ---------
+        // Assert: Verify pending owner is set correctly
+        // ---------
+        expect(await s.xns.pendingOwner()).to.equal(newOwnerAddress);
+        
+        // Verify current owner hasn't changed yet
+        expect(await s.xns.owner()).to.equal(s.owner.address);
+
+        // Verify OwnershipTransferStarted event was emitted
+        await expect(transferTx)
+            .to.emit(s.xns, "OwnershipTransferStarted")
+            .withArgs(s.owner.address, newOwnerAddress);
+
+        // ---------
+        // Act: Pending owner accepts ownership transfer
+        // ---------
+        const acceptTx = await s.xns.connect(s.user1).acceptOwnership();
+        await acceptTx.wait();
+
+        // ---------
+        // Assert: Verify ownership has been transferred
+        // ---------
+        expect(await s.xns.owner()).to.equal(newOwnerAddress);
+        expect(await s.xns.pendingOwner()).to.equal(ethers.ZeroAddress);
+
+        // Verify OwnershipTransferred event was emitted
+        await expect(acceptTx)
+            .to.emit(s.xns, "OwnershipTransferred")
+            .withArgs(s.owner.address, newOwnerAddress);
+    });
+
+    it("Should allow new owner to use owner-only functions", async () => {
+        // ---------
+        // Arrange: Transfer ownership to user1
+        // ---------
+        const newOwnerAddress = s.user1.address;
+        
+        // Start ownership transfer
+        await s.xns.connect(s.owner).transferOwnership(newOwnerAddress);
+        
+        // Accept ownership transfer
+        await s.xns.connect(s.user1).acceptOwnership();
+        
+        // Verify ownership has been transferred
+        expect(await s.xns.owner()).to.equal(newOwnerAddress);
+
+        // ---------
+        // Act & Assert: New owner can call registerPublicNamespaceFor
+        // ---------
+        const publicNamespace = "new-public-ns";
+        const publicPricePerName = ethers.parseEther("0.002");
+        const publicCreator = s.user2.address;
+
+        await expect(
+            s.xns.connect(s.user1).registerPublicNamespaceFor(publicCreator, publicNamespace, publicPricePerName)
+        ).to.not.be.reverted;
+
+        // Verify namespace was registered
+        const publicNsInfo = await s.xns.getNamespaceInfo(publicNamespace);
+        expect(publicNsInfo[0]).to.equal(publicPricePerName);
+        expect(publicNsInfo[1]).to.equal(publicCreator);
+        expect(publicNsInfo[3]).to.equal(false); // isPrivate
+
+        // ---------
+        // Act & Assert: New owner can call registerPrivateNamespaceFor
+        // ---------
+        const privateNamespace = "new-private-ns";
+        const privatePricePerName = ethers.parseEther("0.005");
+        const privateCreator = s.user2.address;
+
+        await expect(
+            s.xns.connect(s.user1).registerPrivateNamespaceFor(privateCreator, privateNamespace, privatePricePerName)
+        ).to.not.be.reverted;
+
+        // Verify namespace was registered
+        const privateNsInfo = await s.xns.getNamespaceInfo(privateNamespace);
+        expect(privateNsInfo[0]).to.equal(privatePricePerName);
+        expect(privateNsInfo[1]).to.equal(privateCreator);
+        expect(privateNsInfo[3]).to.equal(true); // isPrivate
+
+        // ---------
+        // Assert: Old owner can no longer call owner-only functions
+        // ---------
+        const anotherNamespace = "old-owner-try";
+        const anotherPrice = ethers.parseEther("0.002");
+        const anotherCreator = s.user2.address;
+
+        await expect(
+            s.xns.connect(s.owner).registerPublicNamespaceFor(anotherCreator, anotherNamespace, anotherPrice)
+        ).to.be.revertedWith("XNS: not owner");
+
+        await expect(
+            s.xns.connect(s.owner).registerPrivateNamespaceFor(anotherCreator, anotherNamespace, anotherPrice)
+        ).to.be.revertedWith("XNS: not owner");
+    });
+
+    it("Should not migrate pending fees (old owner can still claim)", async () => {
+        // ---------
+        // Arrange: Accumulate fees for current owner before transfer
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const pricePerName = ethers.parseEther("0.001");
+        const oldOwnerAddress = s.owner.address;
+        const newOwnerAddress = s.user4.address; // Use fresh account that is not a namespace creator
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Register names to accumulate fees for the owner (10% of each registration fee)
+        await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
+        await s.xns.connect(s.user3).registerName("bob", namespace, { value: pricePerName });
+
+        // Get the pending fees for old owner before transfer
+        const oldOwnerFeesBeforeTransfer = await s.xns.getPendingFees(oldOwnerAddress);
+        expect(oldOwnerFeesBeforeTransfer).to.be.gt(0); // Verify fees were accumulated
+
+        // Get initial balance of old owner (before ownership transfer)
+        const oldOwnerInitialBalance = await ethers.provider.getBalance(oldOwnerAddress);
+
+        // ---------
+        // Act: Transfer ownership to new owner
+        // ---------
+        const transferTx = await s.xns.connect(s.owner).transferOwnership(newOwnerAddress);
+        const transferReceipt = await transferTx.wait();
+        const transferGasUsed = transferReceipt!.gasUsed * transferReceipt!.gasPrice;
+
+        const acceptTx = await s.xns.connect(s.user4).acceptOwnership();
+        const acceptReceipt = await acceptTx.wait();
+        // Note: acceptOwnership is called by new owner, so no gas cost for old owner
+
+        // Verify ownership has been transferred
+        expect(await s.xns.owner()).to.equal(newOwnerAddress);
+
+        // ---------
+        // Assert: Old owner can still claim their pending fees
+        // ---------
+        const oldOwnerFeesAfterTransfer = await s.xns.getPendingFees(oldOwnerAddress);
+        expect(oldOwnerFeesAfterTransfer).to.equal(oldOwnerFeesBeforeTransfer); // Fees should remain
+
+        // Old owner claims their fees
+        const claimTx = await s.xns.connect(s.owner).claimFeesToSelf();
+        const claimReceipt = await claimTx.wait();
+        
+        // Calculate total gas cost (only transferOwnership, since acceptOwnership is by new owner)
+        const totalGasUsed = transferGasUsed + (claimReceipt!.gasUsed * claimReceipt!.gasPrice);
+        
+        // Verify old owner received the fees
+        const oldOwnerFinalBalance = await ethers.provider.getBalance(oldOwnerAddress);
+        const receivedAmount = oldOwnerFinalBalance - oldOwnerInitialBalance + totalGasUsed;
+        expect(receivedAmount).to.equal(oldOwnerFeesBeforeTransfer);
+
+        // Verify pending fees are reset to zero after claiming
+        const oldOwnerFeesAfterClaim = await s.xns.getPendingFees(oldOwnerAddress);
+        expect(oldOwnerFeesAfterClaim).to.equal(0);
+
+        // ---------
+        // Assert: New owner cannot claim old owner's fees (already claimed, but verify they were never theirs)
+        // ---------
+        const newOwnerFees = await s.xns.getPendingFees(newOwnerAddress);
+        expect(newOwnerFees).to.equal(0); // New owner should have no fees (not a namespace creator, and owner fees were not migrated)
+    });
+
+    it("Should credit new fees to new owner after transfer", async () => {
+        // ---------
+        // Arrange: Transfer ownership to new owner
+        // ---------
+        const namespace = "xns"; // Already registered in setup
+        const pricePerName = ethers.parseEther("0.001");
+        const oldOwnerAddress = s.owner.address;
+        const newOwnerAddress = s.user4.address; // Use fresh account that is not a namespace creator
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Transfer ownership to new owner
+        await s.xns.connect(s.owner).transferOwnership(newOwnerAddress);
+        await s.xns.connect(s.user4).acceptOwnership();
+
+        // Verify ownership has been transferred
+        expect(await s.xns.owner()).to.equal(newOwnerAddress);
+
+        // Verify new owner has no fees initially
+        const newOwnerFeesBefore = await s.xns.getPendingFees(newOwnerAddress);
+        expect(newOwnerFeesBefore).to.equal(0);
+
+        // Verify old owner has no fees (or claim any existing fees first)
+        const oldOwnerFeesBefore = await s.xns.getPendingFees(oldOwnerAddress);
+        if (oldOwnerFeesBefore > 0) {
+            await s.xns.connect(s.owner).claimFeesToSelf();
+        }
+
+        // ---------
+        // Act: Register names after ownership transfer (this will generate new fees)
+        // ---------
+        await s.xns.connect(s.user2).registerName("charlie", namespace, { value: pricePerName });
+        await s.xns.connect(s.user3).registerName("david", namespace, { value: pricePerName });
+
+        // ---------
+        // Assert: New fees are credited to new owner, not old owner
+        // ---------
+        const newOwnerFeesAfter = await s.xns.getPendingFees(newOwnerAddress);
+        expect(newOwnerFeesAfter).to.be.gt(0); // New owner should have received fees
+
+        const oldOwnerFeesAfter = await s.xns.getPendingFees(oldOwnerAddress);
+        expect(oldOwnerFeesAfter).to.equal(0); // Old owner should not receive new fees
+
+        // Verify new owner can claim their fees
+        const newOwnerInitialBalance = await ethers.provider.getBalance(newOwnerAddress);
+        const claimTx = await s.xns.connect(s.user4).claimFeesToSelf();
+        const claimReceipt = await claimTx.wait();
+        const claimGasUsed = claimReceipt!.gasUsed * claimReceipt!.gasPrice;
+
+        const newOwnerFinalBalance = await ethers.provider.getBalance(newOwnerAddress);
+        const receivedAmount = newOwnerFinalBalance - newOwnerInitialBalance + claimGasUsed;
+        expect(receivedAmount).to.equal(newOwnerFeesAfter);
+
+        // Verify fees are reset after claiming
+        const newOwnerFeesAfterClaim = await s.xns.getPendingFees(newOwnerAddress);
+        expect(newOwnerFeesAfterClaim).to.equal(0);
+    });
+
+    it("Should allow owner to cancel transfer by calling `transferOwnership(address(0))`", async () => {
+        // ---------
+        // Arrange: Start ownership transfer
+        // ---------
+        const newOwnerAddress = s.user1.address;
+        
+        // Start ownership transfer
+        await s.xns.connect(s.owner).transferOwnership(newOwnerAddress);
+        
+        // Verify pending owner is set
+        expect(await s.xns.pendingOwner()).to.equal(newOwnerAddress);
+        expect(await s.xns.owner()).to.equal(s.owner.address); // Current owner hasn't changed
+
+        // ---------
+        // Act: Cancel the transfer by calling transferOwnership(address(0))
+        // ---------
+        const cancelTx = await s.xns.connect(s.owner).transferOwnership(ethers.ZeroAddress);
+        await cancelTx.wait();
+
+        // ---------
+        // Assert: Pending owner should be cleared
+        // ---------
+        expect(await s.xns.pendingOwner()).to.equal(ethers.ZeroAddress);
+        expect(await s.xns.owner()).to.equal(s.owner.address); // Current owner still unchanged
+
+        // Verify OwnershipTransferStarted event was emitted with zero address
+        await expect(cancelTx)
+            .to.emit(s.xns, "OwnershipTransferStarted")
+            .withArgs(s.owner.address, ethers.ZeroAddress);
+
+        // Verify that the original pending owner cannot accept ownership anymore
+        await expect(
+            s.xns.connect(s.user1).acceptOwnership()
+        ).to.be.revertedWithCustomError(s.xns, "OwnableUnauthorizedAccount");
+    });
+
+    it("Should allow owner to overwrite pending transfer by calling `transferOwnership(newAddress)` again", async () => {
+        // ---------
+        // Arrange: Start ownership transfer to first address
+        // ---------
+        const firstNewOwnerAddress = s.user1.address;
+        const secondNewOwnerAddress = s.user2.address;
+        
+        // Start ownership transfer to first address
+        await s.xns.connect(s.owner).transferOwnership(firstNewOwnerAddress);
+        
+        // Verify pending owner is set to first address
+        expect(await s.xns.pendingOwner()).to.equal(firstNewOwnerAddress);
+        expect(await s.xns.owner()).to.equal(s.owner.address); // Current owner hasn't changed
+
+        // ---------
+        // Act: Overwrite the pending transfer with a different address
+        // ---------
+        const overwriteTx = await s.xns.connect(s.owner).transferOwnership(secondNewOwnerAddress);
+        await overwriteTx.wait();
+
+        // ---------
+        // Assert: Pending owner should be updated to second address
+        // ---------
+        expect(await s.xns.pendingOwner()).to.equal(secondNewOwnerAddress);
+        expect(await s.xns.owner()).to.equal(s.owner.address); // Current owner still unchanged
+
+        // Verify OwnershipTransferStarted event was emitted with second address
+        await expect(overwriteTx)
+            .to.emit(s.xns, "OwnershipTransferStarted")
+            .withArgs(s.owner.address, secondNewOwnerAddress);
+
+        // Verify that the first pending owner cannot accept ownership anymore
+        await expect(
+            s.xns.connect(s.user1).acceptOwnership()
+        ).to.be.revertedWithCustomError(s.xns, "OwnableUnauthorizedAccount");
+
+        // Verify that the second pending owner can accept ownership
+        await s.xns.connect(s.user2).acceptOwnership();
+        expect(await s.xns.owner()).to.equal(secondNewOwnerAddress);
+        expect(await s.xns.pendingOwner()).to.equal(ethers.ZeroAddress);
     });
 
     

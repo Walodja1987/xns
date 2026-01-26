@@ -80,6 +80,15 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// - 20% is credited as fees:
 ///   - Public namespaces: 10% to namespace creator, 10% to XNS contract owner
 ///   - Private namespaces: 20% to XNS owner
+///
+/// ### Contract Ownership Transfer
+/// - The contract owner can be transferred using OpenZeppelin's 2-step ownership transfer
+///   (`transferOwnership` → `acceptOwnership`).
+/// - Pending transfers can be canceled by calling `transferOwnership(address(0))`.
+/// - Alternatively, a pending transfer can be overwritten by calling `transferOwnership(newAddress)` again.
+/// - **Fee accounting note:** Ownership transfers do **not** migrate already-accrued `_pendingFees`.
+///   Any fees accumulated before `acceptOwnership()` remain claimable by the previous owner address.
+///   Only fees accrued **after** acceptance are credited to the new owner address.
 contract XNS is EIP712, Ownable2Step {
     // -------------------------------------------------------------------------
     // Types
