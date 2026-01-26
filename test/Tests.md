@@ -38,6 +38,35 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
+### Ownership Transfer
+
+#### Functionality
+
+- Should allow owner to transfer ownership
+  - Should allow owner to start ownership transfer via `transferOwnership(newOwner)`.
+  - Should set pending owner correctly.
+  - Should not change current owner until acceptance.
+  - Should emit `OwnershipTransferStarted` event.
+  - Should allow pending owner to accept ownership via `acceptOwnership()`.
+  - Should update owner after acceptance.
+  - Should clear pending owner after acceptance.
+  - Should emit `OwnershipTransferred` event.
+- Should allow new owner to use owner-only functions.
+  - New owner can call `registerPublicNamespaceFor`.
+  - New owner can call `registerPrivateNamespaceFor`.
+  - Old owner can no longer call owner-only functions.
+- Should not migrate pending fees (old owner can still claim).
+- Should credit new fees to new owner after transfer.
+- Should allow owner to cancel transfer by calling `transferOwnership(address(0))`.
+- Should allow owner to overwrite pending transfer by calling `transferOwnership(newAddress)` again.
+
+#### Reverts
+
+- Should revert when non-owner tries to transfer.
+- Should revert when non-pending-owner tries to accept.
+
+---
+
 ### isValidLabelOrNamespace
 
 #### Functionality

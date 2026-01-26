@@ -66,6 +66,15 @@ Label and namespace string requirements:
   - Public namespaces: 10% to namespace creator, 10% to XNS contract owner
   - Private namespaces: 20% to XNS owner
 
+### Contract Ownership Transfer
+- The contract owner can be transferred using OpenZeppelin's 2-step ownership transfer
+  (`transferOwnership` → `acceptOwnership`).
+- Pending transfers can be canceled by calling `transferOwnership(address(0))`.
+- Alternatively, a pending transfer can be overwritten by calling `transferOwnership(newAddress)` again.
+- **Fee accounting note:** Ownership transfers do **not** migrate already-accrued `_pendingFees`.
+  Any fees accumulated before `acceptOwnership()` remain claimable by the previous owner address.
+  Only fees accrued **after** acceptance are credited to the new owner address.
+
 
 
 
@@ -91,7 +100,7 @@ This function only works for public namespaces after the exclusivity period (30 
 
 **Fee Distribution:**
 - 80% of ETH is permanently burned via DETH.
-- 10% is credited to the `OWNER`.
+- 10% is credited to the contract owner.
 - 10% is credited to the namespace creator.
 
 **Note:**
@@ -133,15 +142,15 @@ Supports both EOA signatures and EIP-1271 contract wallet signatures.
 - Namespace must exist.
 - `msg.value` must be >= the namespace's registered price (excess will be refunded).
 - `msg.sender` must be the namespace creator for public namespaces during the exclusivity period
-  or the `OWNER` for private namespaces.
+  or the contract owner for private namespaces.
 - Recipient must not already have a name.
 - Name must not already be registered.
 - Signature must be valid EIP-712 signature from `recipient` (EOA) or EIP-1271 contract signature.
 
 **Fee Distribution:**
 - 80% of ETH is permanently burned via DETH.
-- For public namespaces: 10% is credited to the namespace creator and 10% to the `OWNER`.
-- For private namespaces: 20% is credited to the `OWNER`.
+- For public namespaces: 10% is credited to the namespace creator and 10% to the contract owner.
+- For private namespaces: 20% is credited to the contract owner.
 
 **Note:**
 - If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271
@@ -177,8 +186,8 @@ a name or the name is already registered (griefing protection). Skipped items ar
 
 **Fee Distribution:**
 - 80% of ETH is permanently burned via DETH.
-- For public namespaces: 10% is credited to the namespace creator and 10% to the `OWNER`.
-- For private namespaces: 20% is credited to the `OWNER`.
+- For public namespaces: 10% is credited to the namespace creator and 10% to the contract owner.
+- For private namespaces: 20% is credited to the contract owner.
 
 **Note:** Input validation errors (invalid label, zero recipient, namespace mismatch, invalid signature)
 cause the entire batch to revert. Errors that could occur due to front-running the batch tx (recipient already
@@ -269,7 +278,7 @@ function registerPrivateNamespace(string namespace, uint256 pricePerName) extern
 ### registerPublicNamespaceFor
 
 
-OWNER-only function to register a public namespace for another address during the onboarding period.
+Contract owner-only function to register a public namespace for another address during the onboarding period.
 This function allows the contract owner to register namespaces for free during the first year to
 foster adoption. No ETH is processed (function is non-payable) and no fees are charged.
 
@@ -297,7 +306,7 @@ function registerPublicNamespaceFor(address creator, string namespace, uint256 p
 ### registerPrivateNamespaceFor
 
 
-OWNER-only function to register a private namespace for another address during the onboarding period.
+Contract owner-only function to register a private namespace for another address during the onboarding period.
 This function allows the contract owner to register namespaces for free during the first year to
 foster adoption. No ETH is processed (function is non-payable) and no fees are charged.
 
@@ -628,19 +637,6 @@ _Emitted in fee claiming functions._
 
 
 ## State Variables
-
-### OWNER
-
-
-XNS contract owner address (immutable, set at deployment).
-
-```solidity
-address OWNER
-```
-
-
-
-
 
 ### DEPLOYED_AT
 

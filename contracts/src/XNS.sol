@@ -4,6 +4,8 @@ pragma solidity 0.8.28;
 import {IDETH} from "./interfaces/IDETH.sol";
 import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 //////////////////////////////
 //                          //
@@ -78,7 +80,16 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 /// - 20% is credited as fees:
 ///   - Public namespaces: 10% to namespace creator, 10% to XNS contract owner
 ///   - Private namespaces: 20% to XNS owner
-contract XNS is EIP712 {
+///
+/// ### Contract Ownership Transfer
+/// - The contract owner can be transferred using OpenZeppelin's 2-step ownership transfer
+///   (`transferOwnership` → `acceptOwnership`).
+/// - Pending transfers can be canceled by calling `transferOwnership(address(0))`.
+/// - Alternatively, a pending transfer can be overwritten by calling `transferOwnership(newAddress)` again.
+/// - **Fee accounting note:** Ownership transfers do **not** migrate already-accrued `_pendingFees`.
+///   Any fees accumulated before `acceptOwnership()` remain claimable by the previous owner address.
+///   Only fees accrued **after** acceptance are credited to the new owner address.
+contract XNS is EIP712, Ownable2Step {
     // -------------------------------------------------------------------------
     // Types
     // -------------------------------------------------------------------------
@@ -131,9 +142,6 @@ contract XNS is EIP712 {
     // -------------------------------------------------------------------------
     // Constants
     // -------------------------------------------------------------------------
-
-    /// @notice XNS contract owner address (immutable, set at deployment).
-    address public immutable OWNER;
 
     /// @notice XNS contract deployment timestamp.
     uint64 public immutable DEPLOYED_AT;
@@ -189,25 +197,25 @@ contract XNS is EIP712 {
     // Constructor
     // -------------------------------------------------------------------------
 
-    /// @dev Initializes the contract by setting the `OWNER` and deployment timestamp.
-    /// Also pre-registers the special public namespace "x" (associated with bare names) with the given owner as its creator
-    /// and a price of 10 ETH per name. Additionally, registers the bare name "xns" for the XNS contract itself.
-    /// @param owner Address that will own the contract and receive protocol fees.
-    constructor(address owner) EIP712("XNS", "1") {
-        require(owner != address(0), "XNS: 0x owner");
+    /// @dev Initializes the contract by setting the XNS contract owner (via OpenZeppelin's `Ownable` contract)
+    /// and deployment timestamp. Also pre-registers the special public namespace "x" (associated with bare names) with the
+    /// given owner as its creator and a price of 10 ETH per name. Additionally, registers the bare name "xns" for the
+    /// XNS contract itself.
+    /// @param initialOwner Address that will own the contract and receive protocol fees (should not be `address(0)`).
+    constructor(address initialOwner) EIP712("XNS", "1") Ownable(initialOwner) {
+        // Zero address check on `initialOwner` is performed in the OpenZeppelin's `Ownable` contract.
 
-        OWNER = owner;
         DEPLOYED_AT = uint64(block.timestamp);
 
         // Register special public namespace "x" associated with bare names as the very first namespace.
         _namespaces[keccak256(bytes(BARE_NAME_NAMESPACE))] = NamespaceData({
             pricePerName: BARE_NAME_PRICE,
-            creator: owner,
+            creator: initialOwner,
             createdAt: uint64(block.timestamp),
             isPrivate: false
         });
 
-        emit NamespaceRegistered(BARE_NAME_NAMESPACE, BARE_NAME_PRICE, owner, false);
+        emit NamespaceRegistered(BARE_NAME_NAMESPACE, BARE_NAME_PRICE, initialOwner, false);
 
         // Register bare name "xns" for the XNS contract itself.
         string memory contractLabel = "xns";
@@ -240,7 +248,7 @@ contract XNS is EIP712 {
     ///
     /// **Fee Distribution:**
     /// - 80% of ETH is permanently burned via DETH.
-    /// - 10% is credited to the `OWNER`.
+    /// - 10% is credited to the contract owner.
     /// - 10% is credited to the namespace creator.
     ///
     /// **Note:**
@@ -293,15 +301,15 @@ contract XNS is EIP712 {
     /// - Namespace must exist.
     /// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
     /// - `msg.sender` must be the namespace creator for public namespaces during the exclusivity period
-    ///   or the `OWNER` for private namespaces.
+    ///   or the contract owner for private namespaces.
     /// - Recipient must not already have a name.
     /// - Name must not already be registered.
     /// - Signature must be valid EIP-712 signature from `recipient` (EOA) or EIP-1271 contract signature.
     ///
     /// **Fee Distribution:**
     /// - 80% of ETH is permanently burned via DETH.
-    /// - For public namespaces: 10% is credited to the namespace creator and 10% to the `OWNER`.
-    /// - For private namespaces: 20% is credited to the `OWNER`.
+    /// - For public namespaces: 10% is credited to the namespace creator and 10% to the contract owner.
+    /// - For private namespaces: 20% is credited to the contract owner.
     ///
     /// **Note:**
     /// - If the recipient is an EIP-7702 delegated account, their delegated implementation must implement ERC-1271
@@ -349,7 +357,7 @@ contract XNS is EIP712 {
         emit NameRegistered(registerNameAuth.label, registerNameAuth.namespace, registerNameAuth.recipient);
 
         // Process payment: burn 80%, credit fees, and refund excess.
-        address creatorFeeRecipient = ns.isPrivate ? OWNER : ns.creator;
+        address creatorFeeRecipient = ns.isPrivate ? owner() : ns.creator;
         _processETHPayment(ns.pricePerName, creatorFeeRecipient);
     }
 
@@ -365,8 +373,8 @@ contract XNS is EIP712 {
     ///
     /// **Fee Distribution:**
     /// - 80% of ETH is permanently burned via DETH.
-    /// - For public namespaces: 10% is credited to the namespace creator and 10% to the `OWNER`.
-    /// - For private namespaces: 20% is credited to the `OWNER`.
+    /// - For public namespaces: 10% is credited to the namespace creator and 10% to the contract owner.
+    /// - For private namespaces: 20% is credited to the contract owner.
     ///
     /// **Note:** Input validation errors (invalid label, zero recipient, namespace mismatch, invalid signature)
     /// cause the entire batch to revert. Errors that could occur due to front-running the batch tx (recipient already
@@ -431,7 +439,7 @@ contract XNS is EIP712 {
         if (successful > 0) {
             uint256 actualTotal = ns.pricePerName * successful;
             require(msg.value >= actualTotal, "XNS: insufficient payment");
-            address creatorFeeRecipient = ns.isPrivate ? OWNER : ns.creator;
+            address creatorFeeRecipient = ns.isPrivate ? owner() : ns.creator;
 
             // Process payment: burn 80%, credit fees, and refund excess.
             _processETHPayment(actualTotal, creatorFeeRecipient);
@@ -469,7 +477,7 @@ contract XNS is EIP712 {
 
         _registerNamespace(namespace, pricePerName, msg.sender, false);
 
-        _processETHPayment(PUBLIC_NAMESPACE_REGISTRATION_FEE, OWNER);
+        _processETHPayment(PUBLIC_NAMESPACE_REGISTRATION_FEE, owner());
     }
 
     /// @notice Register a new private namespace.
@@ -495,10 +503,10 @@ contract XNS is EIP712 {
 
         _registerNamespace(namespace, pricePerName, msg.sender, true);
 
-        _processETHPayment(PRIVATE_NAMESPACE_REGISTRATION_FEE, OWNER);
+        _processETHPayment(PRIVATE_NAMESPACE_REGISTRATION_FEE, owner());
     }
 
-    /// @notice OWNER-only function to register a public namespace for another address during the onboarding period.
+    /// @notice Contract owner-only function to register a public namespace for another address during the onboarding period.
     /// This function allows the contract owner to register namespaces for free during the first year to
     /// foster adoption. No ETH is processed (function is non-payable) and no fees are charged.
     ///
@@ -513,14 +521,14 @@ contract XNS is EIP712 {
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace.
     function registerPublicNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external {
-        require(msg.sender == OWNER, "XNS: not owner");
+        require(msg.sender == owner(), "XNS: not owner");
         require(block.timestamp <= DEPLOYED_AT + ONBOARDING_PERIOD, "XNS: onboarding over");
         require(creator != address(0), "XNS: 0x creator");
 
         _registerNamespace(namespace, pricePerName, creator, false);
     }
 
-    /// @notice OWNER-only function to register a private namespace for another address during the onboarding period.
+    /// @notice Contract owner-only function to register a private namespace for another address during the onboarding period.
     /// This function allows the contract owner to register namespaces for free during the first year to
     /// foster adoption. No ETH is processed (function is non-payable) and no fees are charged.
     ///
@@ -535,7 +543,7 @@ contract XNS is EIP712 {
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace.
     function registerPrivateNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external {
-        require(msg.sender == OWNER, "XNS: not owner");
+        require(msg.sender == owner(), "XNS: not owner");
         require(block.timestamp <= DEPLOYED_AT + ONBOARDING_PERIOD, "XNS: onboarding over");
         require(creator != address(0), "XNS: 0x creator");
 
@@ -770,7 +778,7 @@ contract XNS is EIP712 {
     /// @dev Helper function to process ETH payment (used in `registerName`, `registerNameWithAuthorization`,
     /// `batchRegisterNameWithAuthorization`, `registerPublicNamespace`, and `registerPrivateNamespace`):
     /// - Burn 80% via DETH (credits `msg.sender` with DETH)
-    /// - Credit fees: 10% to `creatorFeeRecipient` and 10% to `OWNER`
+    /// - Credit fees: 10% to `creatorFeeRecipient` and 10% to contract owner
     /// - Refund any excess payment
     /// @param requiredAmount The required amount of ETH for the operation (excess will be refunded).
     /// @param creatorFeeRecipient The address that shall receive the 10% creator fee.
@@ -782,11 +790,11 @@ contract XNS is EIP712 {
         // Burn 80% via DETH contract and credit `msg.sender` (payer/sponsor) with DETH.
         IDETH(DETH).burn{value: burnAmount}(msg.sender);
 
-        // Credit fees: 10% to `creatorFeeRecipient`, 10% to `OWNER`.
-        // If `creatorFeeRecipient` == `OWNER`, `OWNER` effectively gets the full 20%
+        // Credit fees: 10% to `creatorFeeRecipient`, 10% to contract owner.
+        // If `creatorFeeRecipient` == contract owner, contract owner effectively gets the full 20%
         // (credited twice into the same mapping slot).
         _pendingFees[creatorFeeRecipient] += creatorFee;
-        _pendingFees[OWNER] += ownerFee;
+        _pendingFees[owner()] += ownerFee;
 
         // Refund excess payment.
         uint256 excess = msg.value - requiredAmount;

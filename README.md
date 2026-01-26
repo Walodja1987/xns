@@ -20,13 +20,14 @@
    2.1 [Name Registration](#name-registration) \
    2.2 [Name Registration With Authorization](#name-registration-with-authorization) \
    2.3 [Name Resolution](#name-resolution) \
-   2.4 [Namespace Registration](#namespace-registration) \
+   2.4 [Namespace Registration](#namespace-registration)
 3. [XNS Price list](#-xns-price-list)
 4. [Contract Address](#-contract-address)
 5. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
-6. [License and Deployment Policy](#-license-and-deployment-policy)
-7. [API Reference](#-api-reference)
-8. [Developer Notes](#-developer-notes)
+6. [Contract Governance](#️-contract-governance)
+7. [License and Deployment Policy](#-license-and-deployment-policy)
+8. [API Reference](#-api-reference)
+9. [Developer Notes](#-developer-notes)
 
 ## 🚀 Overview
 
@@ -456,6 +457,10 @@ Example:
 | Avalanche                           | `0x1234…5678`      |
 
 
+## 🏛️ Contract Governance
+
+The XNS contract uses a 2-step ownership transfer mechanism for enhanced security. The contract owner can transfer ownership to a new address, which must then accept the transfer to complete the process. For detailed information about ownership transfer, fee accounting, and owner privileges, see the [Contract Governance][dev-notes-governance] section in the Developer Notes.
+
 ## 📄 License and Deployment Policy
 
 XNS is licensed under the [Business Source License 1.1 (BUSL-1.1)][license].
@@ -556,5 +561,6 @@ See the [Developer Notes][dev-notes] for design decisions, code style guidelines
 
 [api-reference]: docs/API.md
 [dev-notes]: docs/DEV_NOTES.md
+[dev-notes-governance]: docs/DEV_NOTES.md#contract-governance
 
 [script-registerNameWithAuthorizationForERC20C]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerNameWithAuthorizationForERC20C.ts
