@@ -124,6 +124,9 @@ contract XNS is EIP712 {
     bytes32 private constant _REGISTER_NAME_AUTH_TYPEHASH =
         keccak256("RegisterNameAuth(address recipient,string label,string namespace)");
 
+    // Hash of the forbidden "eth" namespace to avoid confusion with ENS.
+    bytes32 private constant _ETH_NAMESPACE_HASH = keccak256(bytes("eth"));
+
 
     // -------------------------------------------------------------------------
     // Constants
@@ -553,7 +556,7 @@ contract XNS is EIP712 {
         require(_isValidLabelOrNamespace(namespace), "XNS: invalid namespace");
 
         // Forbid "eth" namespace to avoid confusion with ENS.
-        require(keccak256(bytes(namespace)) != keccak256(bytes("eth")), "XNS: 'eth' namespace forbidden");
+        require(keccak256(bytes(namespace)) != _ETH_NAMESPACE_HASH, "XNS: 'eth' namespace forbidden");
 
         bytes32 nsHash = keccak256(bytes(namespace));
         require(_namespaces[nsHash].creator == address(0), "XNS: namespace already exists");
