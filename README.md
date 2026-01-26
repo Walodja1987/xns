@@ -20,7 +20,7 @@
    2.1 [Name Registration](#name-registration) \
    2.2 [Name Registration With Authorization](#name-registration-with-authorization) \
    2.3 [Name Resolution](#name-resolution) \
-   2.4 [Namespace Registration](#namespace-registration) \
+   2.4 [Namespace Registration](#namespace-registration)
 3. [XNS Price list](#-xns-price-list)
 4. [Contract Address](#-contract-address)
 5. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)

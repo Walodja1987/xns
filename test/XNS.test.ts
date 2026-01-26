@@ -111,7 +111,7 @@ describe("XNS", function () {
 
     it("Should initialize the contract correctly", async () => {
         // Should initialize owner correctly
-        expect(await s.xns.OWNER()).to.equal(s.owner.address);
+        expect(await s.xns.owner()).to.equal(s.owner.address);
 
         // Should set `deployedAt` to current block timestamp
         expect(await s.xns.DEPLOYED_AT()).to.equal(s.deploymentBlockTimestamp);
@@ -191,10 +191,13 @@ describe("XNS", function () {
     it("Should revert with `XNS: 0x owner` error when owner is `address(0)`", async () => {
         // ---------
         // Act & Assert: Attempt to deploy contract with zero address as owner
+        // Note: Ownable constructor checks first and reverts with OwnableInvalidOwner custom error
+        // before our require statement is reached
         // ---------
+        const XNSFactory = await ethers.getContractFactory("XNS");
         await expect(
-            ethers.deployContract("XNS", [ethers.ZeroAddress])
-        ).to.be.revertedWith("XNS: 0x owner");
+            XNSFactory.deploy(ethers.ZeroAddress)
+        ).to.be.revertedWithCustomError(XNSFactory, "OwnableInvalidOwner");
     });
 
     
