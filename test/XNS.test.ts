@@ -532,6 +532,56 @@ describe("XNS", function () {
         expect(await s.xns.pendingOwner()).to.equal(ethers.ZeroAddress);
     });
 
+    // -----------------------
+    // Reverts
+    // -----------------------
+
+    it("Should revert when non-owner tries to transfer", async () => {
+        // ---------
+        // Arrange: Prepare a new owner address
+        // ---------
+        const newOwnerAddress = s.user1.address;
+
+        // ---------
+        // Act & Assert: Non-owner attempts to transfer ownership
+        // ---------
+        await expect(
+            s.xns.connect(s.user1).transferOwnership(newOwnerAddress)
+        ).to.be.revertedWithCustomError(s.xns, "OwnableUnauthorizedAccount");
+
+        // Verify ownership and pending owner remain unchanged
+        expect(await s.xns.owner()).to.equal(s.owner.address);
+        expect(await s.xns.pendingOwner()).to.equal(ethers.ZeroAddress);
+    });
+
+    it("Should revert when non-pending-owner tries to accept", async () => {
+        // ---------
+        // Arrange: Start ownership transfer to user1
+        // ---------
+        const newOwnerAddress = s.user1.address;
+        
+        // Owner starts transfer to user1
+        await s.xns.connect(s.owner).transferOwnership(newOwnerAddress);
+        
+        // Verify pending owner is set
+        expect(await s.xns.pendingOwner()).to.equal(newOwnerAddress);
+
+        // ---------
+        // Act & Assert: Non-pending-owner (user2) attempts to accept ownership
+        // ---------
+        await expect(
+            s.xns.connect(s.user2).acceptOwnership()
+        ).to.be.revertedWithCustomError(s.xns, "OwnableUnauthorizedAccount");
+
+        // Verify ownership and pending owner remain unchanged
+        expect(await s.xns.owner()).to.equal(s.owner.address);
+        expect(await s.xns.pendingOwner()).to.equal(newOwnerAddress);
+
+        // Verify that the correct pending owner (user1) can still accept
+        await s.xns.connect(s.user1).acceptOwnership();
+        expect(await s.xns.owner()).to.equal(newOwnerAddress);
+    });
+
     
   });
 
