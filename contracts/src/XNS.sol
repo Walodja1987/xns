@@ -555,10 +555,11 @@ contract XNS is EIP712 {
     function _registerNamespace(string calldata namespace, uint256 pricePerName, address creator, bool isPrivate) private {
         require(_isValidLabelOrNamespace(namespace), "XNS: invalid namespace");
 
-        // Forbid "eth" namespace to avoid confusion with ENS.
-        require(keccak256(bytes(namespace)) != _ETH_NAMESPACE_HASH, "XNS: 'eth' namespace forbidden");
-
         bytes32 nsHash = keccak256(bytes(namespace));
+        
+        // Forbid "eth" namespace to avoid confusion with ENS.
+        require(nsHash != _ETH_NAMESPACE_HASH, "XNS: 'eth' namespace forbidden");
+
         require(_namespaces[nsHash].creator == address(0), "XNS: namespace already exists");
 
         // Check minimum price based on namespace type (public namespaces are more common, check first)
