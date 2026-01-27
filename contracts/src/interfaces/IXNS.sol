@@ -11,6 +11,8 @@ interface IXNS {
     event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
     event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator, bool isPrivate);
     event FeesClaimed(address indexed recipient, uint256 amount);
+    event NamespaceCreatorTransferStarted(string indexed namespace, address indexed oldCreator, address indexed newCreator);
+    event NamespaceCreatorTransferAccepted(string indexed namespace, address indexed newCreator);
 
     function registerName(string calldata label, string calldata namespace) external payable;
     function registerNameWithAuthorization(
@@ -25,6 +27,8 @@ interface IXNS {
     function registerPrivateNamespace(string calldata namespace, uint256 pricePerName) external payable;
     function registerPublicNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external;
     function registerPrivateNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external;
+    function transferNamespaceCreator(string calldata namespace, address newCreator) external;
+    function acceptNamespaceCreator(string calldata namespace) external;
     function claimFees(address recipient) external;
     function claimFeesToSelf() external;
 
@@ -40,4 +44,5 @@ interface IXNS {
         bytes calldata signature
     ) external view returns (bool isValid);
     function getPendingFees(address recipient) external view returns (uint256 amount);
+    function getPendingNamespaceCreator(string calldata namespace) external view returns (address pendingCreator);
 }

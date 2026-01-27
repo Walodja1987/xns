@@ -89,6 +89,15 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// - **Fee accounting note:** Ownership transfers do **not** migrate already-accrued `_pendingFees`.
 ///   Any fees accumulated before `acceptOwnership()` remain claimable by the previous owner address.
 ///   Only fees accrued **after** acceptance are credited to the new owner address.
+///
+/// ### Namespace Creator Transfer
+/// - Namespace creators can transfer their namespace (and future fee streams) using a 2-step process
+///   (`transferNamespaceCreator` → `acceptNamespaceCreator`), following the same pattern as contract ownership transfer.
+/// - Pending transfers can be canceled by calling `transferNamespaceCreator(namespace, address(0))`.
+/// - Alternatively, a pending transfer can be overwritten by calling `transferNamespaceCreator(namespace, newAddress)` again.
+/// - **Fee accounting note:** Creator transfers do **not** migrate already-accrued `_pendingFees`.
+///   Any fees accumulated before `acceptNamespaceCreator()` remain claimable by the previous creator address.
+///   Only fees accrued **after** acceptance are credited to the new creator address.
 contract XNS is EIP712, Ownable2Step {
     // -------------------------------------------------------------------------
     // Types
@@ -130,6 +139,9 @@ contract XNS is EIP712, Ownable2Step {
 
     // Mapping from address to pending fees that can be claimed.
     mapping(address => uint256) private _pendingFees;
+
+    // Mapping from namespace hash to pending namespace creator address.
+    mapping(bytes32 => address) private _pendingNamespaceCreator;
 
     // EIP-712 struct type hash for `RegisterNameAuth`.
     bytes32 private constant _REGISTER_NAME_AUTH_TYPEHASH =
@@ -192,6 +204,13 @@ contract XNS is EIP712, Ownable2Step {
 
     /// @dev Emitted in fee claiming functions.
     event FeesClaimed(address indexed recipient, uint256 amount);
+
+    /// @dev Emitted when a namespace creator starts a transfer to a new creator (address that shall receive the creator fees).
+    /// When `newCreator` is `address(0)`, this indicates cancellation of a pending transfer.
+    event NamespaceCreatorTransferStarted(string indexed namespace, address indexed oldCreator, address indexed newCreator);
+
+    /// @dev Emitted when a pending namespace creator accepts the transfer.
+    event NamespaceCreatorTransferAccepted(string indexed namespace, address indexed newCreator);
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -550,6 +569,56 @@ contract XNS is EIP712, Ownable2Step {
         _registerNamespace(namespace, pricePerName, creator, true);
     }
 
+    /// @notice Start a 2-step transfer of namespace creator to a new address.
+    /// The new creator must call `acceptNamespaceCreator` to complete the transfer.
+    ///
+    /// Setting `newCreator` to the zero address is allowed; this can be used to cancel an initiated transfer.
+    /// Alternatively, a pending transfer can be overwritten by calling this function again with a different address.
+    ///
+    /// **Requirements:**
+    /// - `msg.sender` must be the current namespace creator.
+    /// - Namespace must exist.
+    ///
+    /// **Fee Accounting Note:** Ownership transfers do **not** migrate already-accrued `_pendingFees`.
+    /// Any fees accumulated before `acceptNamespaceCreator()` remain claimable by the previous creator address.
+    /// Only fees accrued **after** acceptance are credited to the new creator address.
+    ///
+    /// @param namespace The namespace to transfer creator rights for.
+    /// @param newCreator The address that will become the new namespace creator, or `address(0)` to cancel a pending transfer.
+    function transferNamespaceCreator(string calldata namespace, address newCreator) external {
+        bytes32 nsHash = keccak256(bytes(namespace));
+        NamespaceData storage ns = _namespaces[nsHash];
+        require(ns.creator != address(0), "XNS: namespace not found");
+        require(msg.sender == ns.creator, "XNS: not namespace creator");
+
+        _pendingNamespaceCreator[nsHash] = newCreator;
+        emit NamespaceCreatorTransferStarted(namespace, ns.creator, newCreator);
+    }
+
+    /// @notice Accept a pending namespace creator transfer.
+    /// Completes the 2-step transfer process started by `transferNamespaceCreator`.
+    ///
+    /// **Requirements:**
+    /// - Namespace must exist.
+    /// - There must be a pending creator transfer.
+    /// - `msg.sender` must be the pending creator.
+    ///
+    /// @param namespace The namespace to accept creator rights for.
+    function acceptNamespaceCreator(string calldata namespace) external {
+        bytes32 nsHash = keccak256(bytes(namespace));
+        NamespaceData storage ns = _namespaces[nsHash];
+        require(ns.creator != address(0), "XNS: namespace not found");
+
+        address pending = _pendingNamespaceCreator[nsHash];
+        require(pending != address(0), "XNS: no pending creator");
+        require(msg.sender == pending, "XNS: not pending creator");
+
+        ns.creator = pending;
+        delete _pendingNamespaceCreator[nsHash];
+
+        emit NamespaceCreatorTransferAccepted(namespace, pending);
+    }
+
     /// @dev Helper function to register a namespace (used in namespace registration functions):
     /// - Validates namespace and pricePerName
     /// - Checks namespace doesn't exist
@@ -769,6 +838,14 @@ contract XNS is EIP712, Ownable2Step {
     /// @return amount The amount of pending fees that can be claimed by the address.
     function getPendingFees(address recipient) external view returns (uint256 amount) {
         return _pendingFees[recipient];
+    }
+
+    /// @notice Get the pending namespace creator for a given namespace.
+    /// Returns `address(0)` if there is no pending transfer.
+    /// @param namespace The namespace to check for pending creator.
+    /// @return pendingCreator The address of the pending namespace creator, or `address(0)` if none.
+    function getPendingNamespaceCreator(string calldata namespace) external view returns (address pendingCreator) {
+        return _pendingNamespaceCreator[keccak256(bytes(namespace))];
     }
 
     // =========================================================================

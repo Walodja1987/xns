@@ -585,6 +585,521 @@ describe("XNS", function () {
     
   });
 
+  describe("Namespace Creator Transfer", function () {
+    let s: SetupOutput;
+
+    beforeEach(async () => {
+      s = await loadFixture(setup);
+    });
+
+    // -----------------------
+    // Functionality
+    // -----------------------
+
+    it("Should allow namespace creator to transfer ownership", async () => {
+        // ---------
+        // Arrange: Get namespace and new creator address
+        // ---------
+        // Use "xns" namespace which is registered by user1 in setup
+        const namespace = "xns";
+        const newCreatorAddress = s.user2.address;
+
+        // Verify user1 is the current creator
+        const namespaceInfo = await s.xns.getNamespaceInfo(namespace);
+        expect(namespaceInfo.creator).to.equal(s.user1.address);
+
+        // ---------
+        // Act: Namespace creator starts transfer
+        // ---------
+        const transferTx = await s.xns.connect(s.user1).transferNamespaceCreator(namespace, newCreatorAddress);
+        await transferTx.wait();
+
+        // ---------
+        // Assert: Verify pending creator is set correctly
+        // ---------
+        expect(await s.xns.getPendingNamespaceCreator(namespace)).to.equal(newCreatorAddress);
+        
+        // Verify current creator hasn't changed yet
+        const namespaceInfoAfterTransfer = await s.xns.getNamespaceInfo(namespace);
+        expect(namespaceInfoAfterTransfer.creator).to.equal(s.user1.address);
+
+        // Verify NamespaceCreatorTransferStarted event was emitted
+        await expect(transferTx)
+            .to.emit(s.xns, "NamespaceCreatorTransferStarted")
+            .withArgs(namespace, s.user1.address, newCreatorAddress);
+
+        // ---------
+        // Act: Pending creator accepts transfer
+        // ---------
+        const acceptTx = await s.xns.connect(s.user2).acceptNamespaceCreator(namespace);
+        await acceptTx.wait();
+
+        // ---------
+        // Assert: Verify creator has been transferred
+        // ---------
+        const namespaceInfoAfterAccept = await s.xns.getNamespaceInfo(namespace);
+        expect(namespaceInfoAfterAccept.creator).to.equal(newCreatorAddress);
+        expect(await s.xns.getPendingNamespaceCreator(namespace)).to.equal(ethers.ZeroAddress);
+
+        // Verify NamespaceCreatorTransferAccepted event was emitted
+        await expect(acceptTx)
+            .to.emit(s.xns, "NamespaceCreatorTransferAccepted")
+            .withArgs(namespace, newCreatorAddress);
+    });
+
+    it("Should allow new creator to use creator-only functions", async () => {
+        // ---------
+        // Arrange: Create public and private namespaces, then transfer creators
+        // ---------
+        // Create a new public namespace for testing
+        const publicNamespace = "public-test";
+        const publicPricePerName = ethers.parseEther("0.001");
+        const publicFee = await s.xns.PUBLIC_NAMESPACE_REGISTRATION_FEE();
+        await s.xns.connect(s.user1).registerPublicNamespace(publicNamespace, publicPricePerName, { value: publicFee });
+
+        // Create a new private namespace for testing
+        const privateNamespace = "private-test";
+        const privatePricePerName = ethers.parseEther("0.005");
+        const privateFee = await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE();
+        await s.xns.connect(s.user1).registerPrivateNamespace(privateNamespace, privatePricePerName, { value: privateFee });
+
+        // Transfer public namespace creator to user2
+        await s.xns.connect(s.user1).transferNamespaceCreator(publicNamespace, s.user2.address);
+        await s.xns.connect(s.user2).acceptNamespaceCreator(publicNamespace);
+
+        // Transfer private namespace creator to user3
+        await s.xns.connect(s.user1).transferNamespaceCreator(privateNamespace, s.user3.address);
+        await s.xns.connect(s.user3).acceptNamespaceCreator(privateNamespace);
+
+        // Verify creators have been transferred
+        const publicNsInfo = await s.xns.getNamespaceInfo(publicNamespace);
+        expect(publicNsInfo.creator).to.equal(s.user2.address);
+
+        const privateNsInfo = await s.xns.getNamespaceInfo(privateNamespace);
+        expect(privateNsInfo.creator).to.equal(s.user3.address);
+
+        // ---------
+        // Act & Assert: New creator can sponsor registrations (public exclusivity period)
+        // ---------
+        const publicLabel = "public-name";
+        const publicRecipient = s.user4.address;
+        const publicSignature = await s.signRegisterNameAuth(s.user4, publicRecipient, publicLabel, publicNamespace);
+
+        // Verify we're within exclusivity period for public namespace
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
+        const latestBlock = await ethers.provider.getBlock("latest");
+        const now = latestBlock.timestamp;
+        expect(now).to.be.lt(Number(publicNsInfo.createdAt) + Number(exclusivityPeriod));
+
+        // New creator (user2) can sponsor registration in public namespace during exclusivity period
+        await expect(
+            s.xns.connect(s.user2).registerNameWithAuthorization(
+                {
+                    recipient: publicRecipient,
+                    label: publicLabel,
+                    namespace: publicNamespace,
+                },
+                publicSignature,
+                { value: publicPricePerName }
+            )
+        ).to.not.be.reverted;
+
+        // Verify name was registered
+        const getAddressByLabelAndNamespace = s.xns.getFunction("getAddress(string,string)");
+        const publicOwnerAddress = await getAddressByLabelAndNamespace(publicLabel, publicNamespace);
+        expect(publicOwnerAddress).to.equal(publicRecipient);
+
+        // ---------
+        // Act & Assert: New creator can sponsor registrations (private namespace)
+        // ---------
+        const privateLabel = "private-name";
+        // Use owner as recipient for private namespace (owner should not have a name from setup)
+        const privateRecipient = s.owner.address;
+        const privateSignature = await s.signRegisterNameAuth(s.owner, privateRecipient, privateLabel, privateNamespace);
+
+        // New creator (user3) can sponsor registration in private namespace
+        await expect(
+            s.xns.connect(s.user3).registerNameWithAuthorization(
+                {
+                    recipient: privateRecipient,
+                    label: privateLabel,
+                    namespace: privateNamespace,
+                },
+                privateSignature,
+                { value: privatePricePerName }
+            )
+        ).to.not.be.reverted;
+
+        // Verify name was registered
+        const privateOwnerAddress = await getAddressByLabelAndNamespace(privateLabel, privateNamespace);
+        expect(privateOwnerAddress).to.equal(privateRecipient);
+
+        // ---------
+        // Assert: Old creator can no longer sponsor registrations
+        // ---------
+        const oldCreatorPublicLabel = "old-creator-public";
+        const oldCreatorPublicRecipient = s.user4.address;
+        const oldCreatorPublicSignature = await s.signRegisterNameAuth(s.user4, oldCreatorPublicRecipient, oldCreatorPublicLabel, publicNamespace);
+
+        // Old creator (user1) cannot sponsor in public namespace during exclusivity period
+        await expect(
+            s.xns.connect(s.user1).registerNameWithAuthorization(
+                {
+                    recipient: oldCreatorPublicRecipient,
+                    label: oldCreatorPublicLabel,
+                    namespace: publicNamespace,
+                },
+                oldCreatorPublicSignature,
+                { value: publicPricePerName }
+            )
+        ).to.be.revertedWith("XNS: not namespace creator (exclusivity period)");
+
+        const oldCreatorPrivateLabel = "old-creator-private";
+        const oldCreatorPrivateRecipient = s.user4.address;
+        const oldCreatorPrivateSignature = await s.signRegisterNameAuth(s.user4, oldCreatorPrivateRecipient, oldCreatorPrivateLabel, privateNamespace);
+
+        // Old creator (user1) cannot sponsor in private namespace
+        await expect(
+            s.xns.connect(s.user1).registerNameWithAuthorization(
+                {
+                    recipient: oldCreatorPrivateRecipient,
+                    label: oldCreatorPrivateLabel,
+                    namespace: privateNamespace,
+                },
+                oldCreatorPrivateSignature,
+                { value: privatePricePerName }
+            )
+        ).to.be.revertedWith("XNS: not namespace creator (private)");
+    });
+
+    it("Should not migrate pending fees (old creator can still claim)", async () => {
+        // ---------
+        // Arrange: Accumulate fees for namespace creator before transfer
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const pricePerName = ethers.parseEther("0.001");
+        const oldCreatorAddress = s.user1.address;
+        const newCreatorAddress = s.user2.address;
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Register names to accumulate fees for the creator (10% of each registration fee for public namespaces)
+        await s.xns.connect(s.user3).registerName("alice", namespace, { value: pricePerName });
+        await s.xns.connect(s.user4).registerName("bob", namespace, { value: pricePerName });
+
+        // Get the pending fees for old creator before transfer
+        const oldCreatorFeesBeforeTransfer = await s.xns.getPendingFees(oldCreatorAddress);
+        expect(oldCreatorFeesBeforeTransfer).to.be.gt(0); // Verify fees were accumulated
+
+        // Get initial balance of old creator (before creator transfer)
+        const oldCreatorInitialBalance = await ethers.provider.getBalance(oldCreatorAddress);
+
+        // ---------
+        // Act: Transfer namespace creator to new creator
+        // ---------
+        const transferTx = await s.xns.connect(s.user1).transferNamespaceCreator(namespace, newCreatorAddress);
+        const transferReceipt = await transferTx.wait();
+        const transferGasUsed = transferReceipt!.gasUsed * transferReceipt!.gasPrice;
+
+        const acceptTx = await s.xns.connect(s.user2).acceptNamespaceCreator(namespace);
+        const acceptReceipt = await acceptTx.wait();
+        // Note: acceptNamespaceCreator is called by new creator, so no gas cost for old creator
+
+        // Verify creator has been transferred
+        const namespaceInfo = await s.xns.getNamespaceInfo(namespace);
+        expect(namespaceInfo.creator).to.equal(newCreatorAddress);
+
+        // ---------
+        // Assert: Old creator can still claim their pending fees
+        // ---------
+        const oldCreatorFeesAfterTransfer = await s.xns.getPendingFees(oldCreatorAddress);
+        expect(oldCreatorFeesAfterTransfer).to.equal(oldCreatorFeesBeforeTransfer); // Fees should remain
+
+        // Old creator claims their fees
+        const claimTx = await s.xns.connect(s.user1).claimFeesToSelf();
+        const claimReceipt = await claimTx.wait();
+        
+        // Calculate total gas cost (only transferNamespaceCreator, since acceptNamespaceCreator is by new creator)
+        const totalGasUsed = transferGasUsed + (claimReceipt!.gasUsed * claimReceipt!.gasPrice);
+        
+        // Verify old creator received the fees
+        const oldCreatorFinalBalance = await ethers.provider.getBalance(oldCreatorAddress);
+        const receivedAmount = oldCreatorFinalBalance - oldCreatorInitialBalance + totalGasUsed;
+        expect(receivedAmount).to.equal(oldCreatorFeesBeforeTransfer);
+
+        // Verify pending fees are reset to zero after claiming
+        const oldCreatorFeesAfterClaim = await s.xns.getPendingFees(oldCreatorAddress);
+        expect(oldCreatorFeesAfterClaim).to.equal(0);
+
+        // ---------
+        // Assert: New creator cannot claim old creator's fees (already claimed, but verify they were never theirs)
+        // ---------
+        const newCreatorFees = await s.xns.getPendingFees(newCreatorAddress);
+        expect(newCreatorFees).to.equal(0); // New creator should have no fees (fees were not migrated)
+    });
+
+    it("Should credit new fees to new creator after transfer (10% for public namespaces)", async () => {
+        // ---------
+        // Arrange: Transfer namespace creator to new creator
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const pricePerName = ethers.parseEther("0.001");
+        const oldCreatorAddress = s.user1.address;
+        const newCreatorAddress = s.user2.address;
+
+        // Fast-forward time past the exclusivity period so anyone can register
+        const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
+        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+
+        // Transfer namespace creator to new creator
+        await s.xns.connect(s.user1).transferNamespaceCreator(namespace, newCreatorAddress);
+        await s.xns.connect(s.user2).acceptNamespaceCreator(namespace);
+
+        // Verify creator has been transferred
+        const namespaceInfo = await s.xns.getNamespaceInfo(namespace);
+        expect(namespaceInfo.creator).to.equal(newCreatorAddress);
+
+        // Get new creator's fees before registrations (in case they already had fees)
+        const newCreatorFeesBefore = await s.xns.getPendingFees(newCreatorAddress);
+
+        // Verify old creator has no fees (or claim any existing fees first)
+        const oldCreatorFeesBefore = await s.xns.getPendingFees(oldCreatorAddress);
+        if (oldCreatorFeesBefore > 0) {
+            await s.xns.connect(s.user1).claimFeesToSelf();
+        }
+
+        // ---------
+        // Act: Register names after creator transfer (this will generate new fees)
+        // ---------
+        await s.xns.connect(s.user3).registerName("charlie", namespace, { value: pricePerName });
+        await s.xns.connect(s.user4).registerName("david", namespace, { value: pricePerName });
+
+        // ---------
+        // Assert: New fees are credited to new creator (10% for public namespaces), not old creator
+        // ---------
+        const newCreatorFeesAfter = await s.xns.getPendingFees(newCreatorAddress);
+        const newCreatorFeesDelta = newCreatorFeesAfter - newCreatorFeesBefore;
+        
+        // Calculate expected fees: 10% of each registration fee (2 registrations)
+        const expectedFees = (pricePerName * 10n) / 100n * 2n; // 10% of 2 registrations
+        expect(newCreatorFeesDelta).to.equal(expectedFees); // New creator should have received 10% of registration fees
+
+        const oldCreatorFeesAfter = await s.xns.getPendingFees(oldCreatorAddress);
+        expect(oldCreatorFeesAfter).to.equal(0); // Old creator should not receive new fees
+
+        // Verify new creator can claim their fees
+        const newCreatorInitialBalance = await ethers.provider.getBalance(newCreatorAddress);
+        const claimTx = await s.xns.connect(s.user2).claimFeesToSelf();
+        const claimReceipt = await claimTx.wait();
+        const claimGasUsed = claimReceipt!.gasUsed * claimReceipt!.gasPrice;
+
+        const newCreatorFinalBalance = await ethers.provider.getBalance(newCreatorAddress);
+        const receivedAmount = newCreatorFinalBalance - newCreatorInitialBalance + claimGasUsed;
+        expect(receivedAmount).to.equal(newCreatorFeesAfter);
+
+        // Verify pending fees are reset to zero after claiming
+        const newCreatorFeesAfterClaim = await s.xns.getPendingFees(newCreatorAddress);
+        expect(newCreatorFeesAfterClaim).to.equal(0);
+    });
+
+    it("Should allow creator to cancel transfer by calling `transferNamespaceCreator(namespace, address(0))`", async () => {
+        // ---------
+        // Arrange: Start namespace creator transfer
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const newCreatorAddress = s.user2.address;
+        
+        // Start namespace creator transfer
+        await s.xns.connect(s.user1).transferNamespaceCreator(namespace, newCreatorAddress);
+        
+        // Verify pending creator is set
+        expect(await s.xns.getPendingNamespaceCreator(namespace)).to.equal(newCreatorAddress);
+        const namespaceInfoBefore = await s.xns.getNamespaceInfo(namespace);
+        expect(namespaceInfoBefore.creator).to.equal(s.user1.address); // Current creator hasn't changed
+
+        // ---------
+        // Act: Cancel the transfer by calling transferNamespaceCreator(namespace, address(0))
+        // ---------
+        const cancelTx = await s.xns.connect(s.user1).transferNamespaceCreator(namespace, ethers.ZeroAddress);
+        await cancelTx.wait();
+
+        // ---------
+        // Assert: Pending creator should be cleared
+        // ---------
+        expect(await s.xns.getPendingNamespaceCreator(namespace)).to.equal(ethers.ZeroAddress);
+        const namespaceInfoAfter = await s.xns.getNamespaceInfo(namespace);
+        expect(namespaceInfoAfter.creator).to.equal(s.user1.address); // Current creator still unchanged
+
+        // Verify NamespaceCreatorTransferStarted event was emitted with zero address
+        await expect(cancelTx)
+            .to.emit(s.xns, "NamespaceCreatorTransferStarted")
+            .withArgs(namespace, s.user1.address, ethers.ZeroAddress);
+
+        // Verify new creator cannot accept (transfer was cancelled)
+        await expect(
+            s.xns.connect(s.user2).acceptNamespaceCreator(namespace)
+        ).to.be.revertedWith("XNS: no pending creator");
+    });
+
+    it("Should allow creator to overwrite pending transfer by calling `transferNamespaceCreator(namespace, newAddress)` again", async () => {
+        // ---------
+        // Arrange: Start namespace creator transfer to first address
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const firstNewCreatorAddress = s.user2.address;
+        const secondNewCreatorAddress = s.user3.address;
+        
+        // Start namespace creator transfer to first address
+        await s.xns.connect(s.user1).transferNamespaceCreator(namespace, firstNewCreatorAddress);
+        
+        // Verify pending creator is set to first address
+        expect(await s.xns.getPendingNamespaceCreator(namespace)).to.equal(firstNewCreatorAddress);
+        const namespaceInfoBefore = await s.xns.getNamespaceInfo(namespace);
+        expect(namespaceInfoBefore.creator).to.equal(s.user1.address); // Current creator hasn't changed
+
+        // ---------
+        // Act: Overwrite the pending transfer with a different address
+        // ---------
+        const overwriteTx = await s.xns.connect(s.user1).transferNamespaceCreator(namespace, secondNewCreatorAddress);
+        await overwriteTx.wait();
+
+        // ---------
+        // Assert: Pending creator should be updated to second address
+        // ---------
+        expect(await s.xns.getPendingNamespaceCreator(namespace)).to.equal(secondNewCreatorAddress);
+        const namespaceInfoAfter = await s.xns.getNamespaceInfo(namespace);
+        expect(namespaceInfoAfter.creator).to.equal(s.user1.address); // Current creator still unchanged
+
+        // Verify NamespaceCreatorTransferStarted event was emitted with second address
+        await expect(overwriteTx)
+            .to.emit(s.xns, "NamespaceCreatorTransferStarted")
+            .withArgs(namespace, s.user1.address, secondNewCreatorAddress);
+
+        // Verify that the original pending creator (user2) cannot accept anymore
+        await expect(
+            s.xns.connect(s.user2).acceptNamespaceCreator(namespace)
+        ).to.be.revertedWith("XNS: not pending creator");
+
+        // Verify that the new pending creator (user3) can accept
+        const acceptTx = await s.xns.connect(s.user3).acceptNamespaceCreator(namespace);
+        await acceptTx.wait();
+
+        // Verify creator has been transferred to second address
+        const namespaceInfoAfterAccept = await s.xns.getNamespaceInfo(namespace);
+        expect(namespaceInfoAfterAccept.creator).to.equal(secondNewCreatorAddress);
+        expect(await s.xns.getPendingNamespaceCreator(namespace)).to.equal(ethers.ZeroAddress);
+    });
+
+    // -----------------------
+    // Reverts
+    // -----------------------
+
+    it("Should revert with `XNS: not namespace creator` error when non-creator tries to transfer", async () => {
+        // ---------
+        // Arrange: Prepare namespace and new creator address
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const newCreatorAddress = s.user2.address;
+
+        // ---------
+        // Act & Assert: Non-creator (user2) attempts to transfer namespace creator
+        // ---------
+        await expect(
+            s.xns.connect(s.user2).transferNamespaceCreator(namespace, newCreatorAddress)
+        ).to.be.revertedWith("XNS: not namespace creator");
+
+        // Verify creator and pending creator remain unchanged
+        const namespaceInfo = await s.xns.getNamespaceInfo(namespace);
+        expect(namespaceInfo.creator).to.equal(s.user1.address);
+        expect(await s.xns.getPendingNamespaceCreator(namespace)).to.equal(ethers.ZeroAddress);
+    });
+
+    it("Should revert with `XNS: namespace not found` error when namespace doesn't exist (transfer)", async () => {
+        // ---------
+        // Arrange: Use a non-existent namespace
+        // ---------
+        const nonExistentNamespace = "nonexistent";
+        const newCreatorAddress = s.user2.address;
+
+        // ---------
+        // Act & Assert: Attempt to transfer namespace creator for non-existent namespace
+        // ---------
+        await expect(
+            s.xns.connect(s.user1).transferNamespaceCreator(nonExistentNamespace, newCreatorAddress)
+        ).to.be.revertedWith("XNS: namespace not found");
+    });
+
+    it("Should revert with `XNS: no pending creator` error when no pending transfer exists (accept)", async () => {
+        // ---------
+        // Arrange: Use a namespace with no pending transfer
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+
+        // Verify no pending creator exists
+        expect(await s.xns.getPendingNamespaceCreator(namespace)).to.equal(ethers.ZeroAddress);
+
+        // ---------
+        // Act & Assert: Attempt to accept namespace creator when no pending transfer exists
+        // ---------
+        await expect(
+            s.xns.connect(s.user2).acceptNamespaceCreator(namespace)
+        ).to.be.revertedWith("XNS: no pending creator");
+
+        // Verify creator remains unchanged
+        const namespaceInfo = await s.xns.getNamespaceInfo(namespace);
+        expect(namespaceInfo.creator).to.equal(s.user1.address);
+    });
+
+    it("Should revert with `XNS: not pending creator` error when non-pending-creator tries to accept", async () => {
+        // ---------
+        // Arrange: Start namespace creator transfer to user2
+        // ---------
+        const namespace = "xns"; // Already registered in setup by user1
+        const newCreatorAddress = s.user2.address;
+        
+        // Creator starts transfer to user2
+        await s.xns.connect(s.user1).transferNamespaceCreator(namespace, newCreatorAddress);
+        
+        // Verify pending creator is set
+        expect(await s.xns.getPendingNamespaceCreator(namespace)).to.equal(newCreatorAddress);
+
+        // ---------
+        // Act & Assert: Non-pending-creator (user3) attempts to accept namespace creator
+        // ---------
+        await expect(
+            s.xns.connect(s.user3).acceptNamespaceCreator(namespace)
+        ).to.be.revertedWith("XNS: not pending creator");
+
+        // Verify creator and pending creator remain unchanged
+        const namespaceInfo = await s.xns.getNamespaceInfo(namespace);
+        expect(namespaceInfo.creator).to.equal(s.user1.address);
+        expect(await s.xns.getPendingNamespaceCreator(namespace)).to.equal(newCreatorAddress);
+
+        // Verify that the correct pending creator (user2) can still accept
+        await s.xns.connect(s.user2).acceptNamespaceCreator(namespace);
+        const namespaceInfoAfterAccept = await s.xns.getNamespaceInfo(namespace);
+        expect(namespaceInfoAfterAccept.creator).to.equal(newCreatorAddress);
+    });
+
+    it("Should revert with `XNS: namespace not found` error when namespace doesn't exist (accept)", async () => {
+        // ---------
+        // Arrange: Use a non-existent namespace
+        // ---------
+        const nonExistentNamespace = "nonexistent";
+
+        // ---------
+        // Act & Assert: Attempt to accept namespace creator for non-existent namespace
+        // ---------
+        await expect(
+            s.xns.connect(s.user2).acceptNamespaceCreator(nonExistentNamespace)
+        ).to.be.revertedWith("XNS: namespace not found");
+    });
+
+    
+  });
+
   describe("isValidLabelOrNamespace", function () {
     let s: SetupOutput;
 
