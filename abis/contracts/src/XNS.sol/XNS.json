@@ -3,6 +3,7 @@
   "error InvalidShortString()",
   "error OwnableInvalidOwner(address)",
   "error OwnableUnauthorizedAccount(address)",
+  "error ReentrancyGuardReentrantCall()",
   "error StringTooLong(string)",
   "event EIP712DomainChanged()",
   "event FeesClaimed(address indexed,uint256)",

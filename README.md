@@ -82,7 +82,7 @@ XNS supports **bare names**, i.e. names without a namespace suffix (e.g., `bob`,
 XNS features two types of namespaces: **public** and **private**.
 
 **Public Namespaces:**
-- Anyone can register names within a public namespace after a 30-day exclusivity period post namespace creation has ended.
+- Anyone can register names within a public namespace after a 7-day exclusivity period post namespace creation has ended.
 - During the exclusivity period, only the creator can register or sponsor names.
 - Creators receive 10% of all name registration fees in perpetuity.
 - Registration fee: 50 ETH.
@@ -116,7 +116,7 @@ Registering an XNS name in a public namespace is straightforward:
 3. **Register Name**: Send a transaction with the required ETH amount to register a name (see [`registerName`][api-registerName] in API docs). Any excess will be refunded.
 4. **Verify Resolution**: Wait a few blocks, then verify the name is registered (see [`getAddress`][api-getAddress] and [`getName`][api-getName] in API docs).
 
-**Note:** [`registerName`][api-registerName] only works for public namespaces after the exclusivity period (30 days) has ended. During the exclusivity period or for private namespaces, namespace creators must use [`registerNameWithAuthorization`][api-registerNameWithAuthorization] even for their own registrations.
+**Note:** [`registerName`][api-registerName] only works for public namespaces after the exclusivity period (7 days) has ended. During the exclusivity period or for private namespaces, namespace creators must use [`registerNameWithAuthorization`][api-registerNameWithAuthorization] even for their own registrations.
 
 **Example scripts:**
 * [Name registration for EOA][script-registerName]
@@ -156,7 +156,7 @@ XNS supports **authorized name registration** via [`registerNameWithAuthorizatio
 - Any scenario where someone else pays registration fees on behalf of recipients.
 
 **Important restrictions:**
-- For public namespaces: During the 30-day exclusivity period, only the namespace creator can sponsor registrations.
+- For public namespaces: During the 7-day exclusivity period, only the namespace creator can sponsor registrations.
 - For private namespaces: Only the namespace creator can sponsor registrations forever.
 
 **Batch registration:** 
@@ -192,7 +192,7 @@ XNS provides simple on-chain resolution for names and addresses.
 1. **Choose a Namespace:** Select an available namespace and set the desired price per name (must be >= 0.001 ETH and a multiple of 0.001 ETH).
 2. **Register Namespace:** Submit a transaction with the required ETH to register the namespace (see [`registerPublicNamespace`][api-registerPublicNamespace] in the API docs). Any excess will be refunded.
 
-Public namespace creators have an exclusive 30-day window to register or sponsor any name within their namespace. After this period, anyone can freely register names via [`registerName`][api-registerName]. **During the exclusivity period, use [`registerNameWithAuthorization`][api-registerNameWithAuthorization] even for their own registrations.**
+Public namespace creators have an exclusive 7-day window to register or sponsor any name within their namespace. After this period, anyone can freely register names via [`registerName`][api-registerName]. **During the exclusivity period, use [`registerNameWithAuthorization`][api-registerNameWithAuthorization] even for their own registrations.**
 
 **How to register a private namespace:**
 1. **Choose a Namespace:** Select an available namespace and set the desired price per name (must be >= 0.005 ETH and a multiple of 0.001 ETH).
@@ -231,7 +231,7 @@ Namespace details can be retrieved using [`getNamespaceInfo`][api-getNamespaceIn
 - Creation timestamp
 - Whether it's private or public
 
-The exclusivity period can be checked using [`isInExclusivityPeriod`][api-isInExclusivityPeriod], which returns `true` if the namespace is still within the 30-day exclusivity window.
+The exclusivity period can be checked using [`isInExclusivityPeriod`][api-isInExclusivityPeriod], which returns `true` if the namespace is still within the 7-day exclusivity window.
 
 **Example scripts:**
 * [Query namespace info][script-getNamespaceInfo]
@@ -275,7 +275,7 @@ For testing purposes, the deployed contract on Sepolia can be used at: [0x04c9Aa
 The testnet contract has been parametrized as follows:
 - Public namespace registration fee: 0.05 ether (instead of 50 ether)
 - Private namespace registration fee: 0.01 ether (instead of 10 ether)
-- Namespace creator exclusive period: 60 seconds (instead of 30 days)
+- Namespace creator exclusive period: 60 seconds (instead of 7 days)
 - Onboarding period: 60 seconds (instead of 365 days)
 - Bare name price: 0.01 ether (instead of 10 ether)
 
@@ -284,7 +284,7 @@ The testnet contract has been parametrized as follows:
 
 XNS can be integrated into smart contracts, allowing users to identify contracts by a human-readable name (e.g., `myprotocol.xns`) instead of a long address.
 
-> **Note:** The naming of smart contracts via XNS applies to **new smart contracts** only, not existing ones. Existing contracts cannot be retroactively named.
+> **Note:** The naming of smart contracts via XNS applies to **new smart contracts** only, not existing ones. Existing contracts cannot be retroactively named, unless they implement EIP-1271 (see [Option 3](#option-3-sponsored-registration-via-eip-1271)).
 
 This section includes examples of how to name smart contracts on Ethereum, the canonical XNS chain, as well as a guide on using XNS with multi-chain deployments.
 
@@ -319,7 +319,7 @@ See [`MockERC20A`][contract-MockERC20A] and the [`registerNameForERC20A.ts`][scr
 
 **Notes:** 
 - Any excess payment is refunded by XNS to `msg.sender`, which will be the contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when deploying the contract.
-- The `registerName` function only works for **public namespaces** after the exclusivity period (30 days) has ended. For **private namespaces**, contracts must use [Option 3 (EIP-1271)](#option-3-sponsored-registration-via-eip-1271).
+- The `registerName` function only works for **public namespaces** after the exclusivity period (7 days) has ended. For **private namespaces**, contracts must use [Option 3 (EIP-1271)](#option-3-sponsored-registration-via-eip-1271).
 
 #### Option 2: Register via Separate Function
 
@@ -357,7 +357,7 @@ See [`MockERC20B`][contract-MockERC20B] and the [`registerNameForERC20B.ts`][scr
 
 **Notes:**
 - Any excess payment is refunded by XNS to `msg.sender`, which will be the contract. Be sure to implement a `receive()` function to accept ETH payments, and provide a way to withdraw any refunded ETH if needed. To avoid receiving refunds altogether, send exactly the required payment when calling [`registerName`][api-registerName].
-- The `registerName` function only works for **public namespaces** after the exclusivity period (30 days) has ended. For **private namespaces**, contracts must use [Option 3 (EIP-1271)](#option-3-sponsored-registration-via-eip-1271).
+- The `registerName` function only works for **public namespaces** after the exclusivity period (7 days) has ended. For **private namespaces**, contracts must use [Option 3 (EIP-1271)](#option-3-sponsored-registration-via-eip-1271).
 
 #### Option 3: Sponsored Registration via EIP-1271
 

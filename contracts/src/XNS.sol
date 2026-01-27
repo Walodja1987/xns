@@ -6,6 +6,7 @@ import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/Signa
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 //////////////////////////////
 //                          //
@@ -43,7 +44,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// - Anyone can register new namespaces by paying a one-time fee.
 /// - XNS features two types of namespaces: public and private.
 /// - **Public namespaces (50 ETH):**
-///   - Open to everyone after a 30-day exclusivity period post namespace registration.
+///   - Open to everyone after a 7-day exclusivity period post namespace registration.
 ///   - During exclusivity, only the creator can register or sponsor names (via `registerNameWithAuthorization`
 ///     or `batchRegisterNameWithAuthorization`).
 ///   - After exclusivity, anyone can register or sponsor names (via `registerName`
@@ -65,7 +66,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// - Bare names are premium and cost 10 ETH per name.
 ///
 /// ### Name Registration
-/// - Users can register names in public namespaces after the 30-day exclusivity period using `registerName`.
+/// - Users can register names in public namespaces after the 7-day exclusivity period using `registerName`.
 /// - Each address can own at most one name.
 /// - Registration fees vary by namespace
 /// - Any excess payment is refunded.
@@ -80,7 +81,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// - 20% is credited as fees:
 ///   - Public namespaces: 10% to namespace creator, 10% to XNS contract owner
 ///   - Private namespaces: 20% to XNS owner
-contract XNS is EIP712, Ownable2Step {
+contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     // -------------------------------------------------------------------------
     // Types
     // -------------------------------------------------------------------------
@@ -148,7 +149,7 @@ contract XNS is EIP712, Ownable2Step {
 
     /// @notice Duration of the exclusive namespace-creator window for paid registrations
     /// (relevant for public namespace registrations only).
-    uint256 public constant EXCLUSIVITY_PERIOD = 30 days;
+    uint256 public constant EXCLUSIVITY_PERIOD = 7 days;
 
     /// @notice Period after contract deployment during which the owner can use `registerPublicNamespaceFor` and
     /// `registerPrivateNamespaceFor` to bootstrap namespaces for participants at no cost. After this period, all
@@ -236,14 +237,14 @@ contract XNS is EIP712, Ownable2Step {
 
     /// @notice Function to register a paid name for `msg.sender`. To register a bare name
     /// (e.g., "vitalik"), use "x" as the namespace parameter.
-    /// This function only works for public namespaces after the exclusivity period (30 days) has ended.
+    /// This function only works for public namespaces after the exclusivity period (7 days) has ended.
     ///
     /// **Requirements:**
     /// - Label must be valid (non-empty, length 1–20, only lowercase letters, digits, and hyphens,
     ///   cannot start or end with '-', cannot contain consecutive hyphens ('--')).
     /// - Namespace must exist and be public.
     /// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
-    /// - Namespace must be past the exclusivity period (30 days after creation).
+    /// - Namespace must be past the exclusivity period (7 days after creation).
     /// - Caller must not already have a name.
     /// - Name must not already be registered.
     ///
@@ -260,7 +261,7 @@ contract XNS is EIP712, Ownable2Step {
     ///
     /// @param label The label part of the name to register.
     /// @param namespace The namespace part of the name to register.
-    function registerName(string calldata label, string calldata namespace) external payable {
+    function registerName(string calldata label, string calldata namespace) external payable nonReentrant {
         require(_isValidLabelOrNamespace(label), "XNS: invalid label");
 
         NamespaceData memory ns = _namespaces[keccak256(bytes(namespace))];
@@ -323,7 +324,7 @@ contract XNS is EIP712, Ownable2Step {
     function registerNameWithAuthorization(
         RegisterNameAuth calldata registerNameAuth,
         bytes calldata signature
-    ) external payable {
+    ) external payable nonReentrant {
         require(_isValidLabelOrNamespace(registerNameAuth.label), "XNS: invalid label");
         require(registerNameAuth.recipient != address(0), "XNS: 0x recipient");
 
@@ -387,7 +388,7 @@ contract XNS is EIP712, Ownable2Step {
     function batchRegisterNameWithAuthorization(
         RegisterNameAuth[] calldata registerNameAuths,
         bytes[] calldata signatures
-    ) external payable returns (uint256 successfulCount) {
+    ) external payable nonReentrant returns (uint256 successfulCount) {
         require(registerNameAuths.length == signatures.length, "XNS: length mismatch");
         require(registerNameAuths.length > 0, "XNS: empty array");
 
@@ -473,7 +474,7 @@ contract XNS is EIP712, Ownable2Step {
     ///
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace.
-    function registerPublicNamespace(string calldata namespace, uint256 pricePerName) external payable {
+    function registerPublicNamespace(string calldata namespace, uint256 pricePerName) external payable nonReentrant {
         require(msg.value >= PUBLIC_NAMESPACE_REGISTRATION_FEE, "XNS: insufficient namespace fee");
 
         _registerNamespace(namespace, pricePerName, msg.sender, false);
@@ -499,7 +500,7 @@ contract XNS is EIP712, Ownable2Step {
     ///
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace.
-    function registerPrivateNamespace(string calldata namespace, uint256 pricePerName) external payable {
+    function registerPrivateNamespace(string calldata namespace, uint256 pricePerName) external payable nonReentrant {
         require(msg.value >= PRIVATE_NAMESPACE_REGISTRATION_FEE, "XNS: insufficient namespace fee");
 
         _registerNamespace(namespace, pricePerName, msg.sender, true);
@@ -647,14 +648,14 @@ contract XNS is EIP712, Ownable2Step {
     /// - `msg.sender` must have pending fees to claim.
     ///
     /// @param recipient The address that will receive the claimed fees.
-    function claimFees(address recipient) external {
+    function claimFees(address recipient) external nonReentrant {
         require(recipient != address(0), "XNS: zero recipient");
         _claimFees(recipient);
     }
 
     /// @notice Function to claim accumulated fees for `msg.sender` and send to `msg.sender`.
     /// Withdraws all pending fees. Partial claims are not possible.
-    function claimFeesToSelf() external {
+    function claimFeesToSelf() external nonReentrant {
         _claimFees(msg.sender);
     }
 

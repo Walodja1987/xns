@@ -3,7 +3,7 @@
  *
  * NOTE:
  * - This script uses `registerName` in the constructor, which only works for public namespaces
- *   after the exclusivity period (30 days after namespace creation on Ethereum Mainnet).
+ *   after the exclusivity period (7 days after namespace creation on Ethereum Mainnet).
  * - For private namespaces or during exclusivity period, use
  *   `registerNameWithAuthorization` instead (see registerNameForERC20C.ts).
  * - The script will validate these conditions and throw an error if they're not met.
@@ -102,7 +102,7 @@ async function main() {
     );
   }
 
-  const EXCLUSIVITY_PERIOD = 30n * 24n * 60n * 60n; // 30 days in seconds
+  const EXCLUSIVITY_PERIOD = 7n * 24n * 60n * 60n; // 7 days in seconds
   const exclusivityEnd = createdAt + EXCLUSIVITY_PERIOD;
   const currentTimestamp = BigInt(Math.floor(Date.now() / 1000));
 

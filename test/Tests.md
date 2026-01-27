@@ -18,7 +18,7 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 - Should have correct constants
   - Should have correct `PUBLIC_NAMESPACE_REGISTRATION_FEE` (50 ether).
   - Should have correct `PRIVATE_NAMESPACE_REGISTRATION_FEE` (10 ether).
-  - Should have correct `EXCLUSIVITY_PERIOD` (30 days).
+  - Should have correct `EXCLUSIVITY_PERIOD` (7 days).
   - Should have correct `ONBOARDING_PERIOD` (1 year).
   - Should have correct `PRICE_STEP` (0.001 ether / 1e15).
   - Should have correct `PUBLIC_NAMESPACE_MIN_PRICE` (0.001 ether).
@@ -288,7 +288,7 @@ XNS: price not multiple of 0.001 ETH
   - Should map name hash to owner address.
   - Should map owner address to name.
   - Should set correct label and namespace.
-- Should allow anyone to register paid names in public namespace after exclusive period (30 days).
+- Should allow anyone to register paid names in public namespace after exclusive period (7 days).
 - Should process the ETH payment correctly (80% burnt, 10% to namespace creator, 10% to contract owner) when fee is paid.
 - Should refund excess payment when `msg.value` exceeds namespace price.
 - Should permit anyone (non-namespace-creator) to register a name in the special "x" namespace (10 ETH) after the exclusive period ends.
@@ -325,8 +325,8 @@ XNS: price not multiple of 0.001 ETH
   - Should set correct label and namespace.
 - Should allow namespace creator to register a paid name in public namespace during exclusive period using authorization.
 - Should allow private namespace creator to register a name for themselves using authorization and process fees correctly (80% burnt, 20% to contract owner, 0% to namespace creator).
-- Should allow namespace creator to sponsor registrations in public namespace during exclusive period (30 days).
-- Should allow anyone to sponsor registrations in public namespace after exclusive period (30 days).
+- Should allow namespace creator to sponsor registrations in public namespace during exclusive period (7 days).
+- Should allow anyone to sponsor registrations in public namespace after exclusive period (7 days).
 - Should allow namespace creator to sponsor registrations in private namespace (creator-only forever).
 - Should process the ETH payment correctly for public namespace (80% burnt, 10% to namespace creator, 10% to contract owner) when fee is paid.
 - Should process the ETH payment correctly for private namespace (80% burnt, 20% to contract owner, 0% to namespace creator) when fee is paid.
@@ -369,8 +369,8 @@ XNS: price not multiple of 0.001 ETH
 - Should process the ETH payment correctly for public namespace (80% burnt via DETH, 10% to namespace creator, 10% to contract owner) only for successful registrations.
 - Should process the ETH payment correctly for private namespace (80% burnt via DETH, 20% to contract owner, 0% to namespace creator) only for successful registrations.
 - Should credit correct amount of DETH to sponsor, not recipients.
-- Should allow namespace creator to sponsor batch registrations in public namespace during exclusive period (30 days).
-- Should allow anyone to sponsor batch registrations in public namespace after exclusive period (30 days).
+- Should allow namespace creator to sponsor batch registrations in public namespace during exclusive period (7 days).
+- Should allow anyone to sponsor batch registrations in public namespace after exclusive period (7 days).
 - Should allow namespace creator to sponsor batch registrations in private namespace (creator-only forever).
 - Should allow sponsoring name registrations including an EIP-1271 contract wallet recipient.
 - Should permit anyone (non-namespace-creator) to register multiple names in the special "x" namespace (10 ETH) after the exclusive period ends.
@@ -554,7 +554,7 @@ XNS: price not multiple of 0.001 ETH
 
 #### Functionality
 
-- Should return `true` for namespace within exclusivity period (30 days after creation).
+- Should return `true` for namespace within exclusivity period (7 days after creation).
 - Should return `false` for namespace after exclusivity period has ended.
 
 #### Reverts
