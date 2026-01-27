@@ -186,24 +186,29 @@ Block reorganizations (reorgs) pose a risk to name registrations. If a registrat
 
 The contract intentionally does not implement protocol-level reorg mitigation, as such mechanisms would force additional complexity on users and interfaces, such as requiring multiple confirmation or registration steps.
 
-## EIP-712 Authorization Without Nonce or Deadline
+## EIP-712 Signature Revocation
 
-The `RegisterNameAuth` struct does not include a `nonce` or `deadline` field, meaning signatures can theoretically be used indefinitely after being issued. 
+The `RegisterNameAuth` struct does not include a `nonce` or `deadline` field, and there is no on-chain mechanism to revoke authorization signatures. As a result, signatures can, in theory, be used indefinitely after they are issued. The following explains the reasoning behind this design decision.
 
 **Why `nonce` is not needed:**
 
 Replay attacks are not considered a problem because:
 
-- **No financial loss for recipients**: If someone sponsors a registration for a recipient's name using an old signature, the recipient incurs no cost—the sponsor pays the registration fee. The worst that can happen is that the recipient address might get a name assigned, that they no longer want.
+- **No financial loss for recipients**: If someone sponsors a registration for a recipient's name using an old signature, the recipient incurs no cost—the sponsor pays the registration fee. The worst that can happen is that the recipient address might get a name assigned that they no longer want.
 - **One-name-per-address limit**: Each address can have exactly one name. Once a name is registered to an address, any subsequent authorization attempts for different names will fail due to the existing name check. Incrementing a nonce on successful use would not provide meaningful protection beyond what already exists.
 
 **Why `deadline` is not needed:**
 
-While adding an optional deadline field could provide users with additional control over signature validity, this would be primarily about user optionality rather than security. Even with an optional deadline, users could choose an "infinite" deadline, resulting in the same scenario.
+A `deadline` parameter does not any value. A user who is confident about receiving a specific name via the authorization flow may choose a `deadline` far in the future. If they later change their mind, the `deadline` provides no practical way to cancel the authorization. As a result, adding a `deadline` parameter does not materially reduce risk and adds protocol complexity without clear benefit.
+
+**Why explicit on-chain revocation is not implemented:**
+
+An explicit on-chain invalidation function that accepts the `RegisterNameAuth` struct and signature, and invalidates the authorization if the recovered signer matches the recipient, was considered but rejected. This approach does not work for contract recipients (e.g., ERC20 token contracts) that rely on the EIP-1271 authorization flow (e.g., name registrations within private namespaces) but do not expose an execution mechanism to call the invalidation function. In such cases, revocation would be impossible, leading to inconsistent behavior across recipient types.
 
 **Mitigation:**
-- Recipients should only sign authorizations they are comfortable with executing at any point in the future
-- Recipients can register a name themselves to prevent any sponsored registration attempts
+
+- Recipients should only sign authorizations they are comfortable with executing at any point in the future.
+- Recipients can register a name themselves to prevent any sponsored registration attempts.
 
 ## EIP-7702 Compatibility
 
