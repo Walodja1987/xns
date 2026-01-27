@@ -45,4 +45,10 @@ interface IXNS {
     ) external view returns (bool isValid);
     function getPendingFees(address recipient) external view returns (uint256 amount);
     function getPendingNamespaceCreator(string calldata namespace) external view returns (address pendingCreator);
+
+    // OpenZeppelin Ownable2Step functions (inherited, not declared in interface):
+    // function transferOwnership(address newOwner) external;
+    // function acceptOwnership() external;
+    // function owner() external view returns (address);
+    // function pendingOwner() external view returns (address);
 }

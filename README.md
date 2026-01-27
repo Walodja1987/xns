@@ -474,6 +474,12 @@ The XNS contract uses OpenZeppelin's `Ownable2Step` for 2-step contract ownershi
 **Fee Accounting:**
 Ownership transfers do **not** migrate already-accrued `_pendingFees`. Any fees accumulated before `acceptOwnership()` remain claimable by the previous owner address. Only fees accrued **after** acceptance are credited to the new owner address.
 
+**Example scripts:**
+* [Query current owner][script-owner]
+* [Query pending owner][script-pendingOwner]
+* [Initiate ownership transfer][script-transferOwnership]
+* [Accept ownership transfer][script-acceptOwnership]
+
 ## 🏛️ Namespace Creator Transfer
 
 Namespace creators can transfer their namespace (and future fee streams) using a 2-step process (`transferNamespaceCreator` → `acceptNamespaceCreator`), following the same pattern as contract ownership transfer.
@@ -489,6 +495,11 @@ Namespace creators can transfer their namespace (and future fee streams) using a
 
 **Fee Accounting:**
 Creator transfers do **not** migrate already-accrued `_pendingFees`. Any fees accumulated before `acceptNamespaceCreator()` remain claimable by the previous creator address. Only fees accrued **after** acceptance are credited to the new creator address.
+
+**Example scripts:**
+* [Query pending namespace creator][script-getPendingNamespaceCreator]
+* [Initiate namespace creator transfer][script-transferNamespaceCreator]
+* [Accept namespace creator transfer][script-acceptNamespaceCreator]
 
 ## 📄 License and Deployment Policy
 
@@ -577,6 +588,13 @@ See the [Developer Notes][dev-notes] for design decisions, code style guidelines
 [script-getPendingFees]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getPendingFees.ts
 [script-claimFeesToSelf]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/claimFeesToSelf.ts
 [script-claimFees]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/claimFees.ts
+[script-owner]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/owner.ts
+[script-pendingOwner]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/pendingOwner.ts
+[script-transferOwnership]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/transferOwnership.ts
+[script-acceptOwnership]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/acceptOwnership.ts
+[script-getPendingNamespaceCreator]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getPendingNamespaceCreator.ts
+[script-transferNamespaceCreator]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/transferNamespaceCreator.ts
+[script-acceptNamespaceCreator]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/acceptNamespaceCreator.ts
 
 [contract-MockERC20A]: https://github.com/Walodja1987/xns/blob/main/contracts/src/mocks/MockERC20A.sol
 [contract-MockERC20B]: https://github.com/Walodja1987/xns/blob/main/contracts/src/mocks/MockERC20B.sol

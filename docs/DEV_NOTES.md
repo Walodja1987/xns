@@ -83,6 +83,15 @@ Available example scripts:
 - [`claimFeesToSelf.ts`](../scripts/examples/claimFeesToSelf.ts) - Claim fees to yourself
 - [`claimFees.ts`](../scripts/examples/claimFees.ts) - Claim fees to a different recipient
 
+**Governance:**
+- [`owner.ts`](../scripts/examples/owner.ts) - Query the current contract owner
+- [`pendingOwner.ts`](../scripts/examples/pendingOwner.ts) - Query the pending contract owner
+- [`transferOwnership.ts`](../scripts/examples/transferOwnership.ts) - Initiate contract ownership transfer
+- [`acceptOwnership.ts`](../scripts/examples/acceptOwnership.ts) - Accept contract ownership transfer
+- [`getPendingNamespaceCreator.ts`](../scripts/examples/getPendingNamespaceCreator.ts) - Query the pending namespace creator
+- [`transferNamespaceCreator.ts`](../scripts/examples/transferNamespaceCreator.ts) - Initiate namespace creator transfer
+- [`acceptNamespaceCreator.ts`](../scripts/examples/acceptNamespaceCreator.ts) - Accept namespace creator transfer
+
 **Utility Scripts:**
 - [`generateSignature.ts`](../scripts/examples/generateSignature.ts) - Generate EIP-712 signature for Etherscan execution
 - [`deployMockERC20C.ts`](../scripts/examples/deployMockERC20C.ts) - Deploy a MockERC20C contract
