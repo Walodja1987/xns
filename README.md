@@ -284,7 +284,7 @@ The testnet contract has been parametrized as follows:
 
 XNS can be integrated into smart contracts, allowing users to identify contracts by a human-readable name (e.g., `myprotocol.xns`) instead of a long address.
 
-> **Note:** The naming of smart contracts via XNS applies to **new smart contracts** only, not existing ones. Existing contracts cannot be retroactively named.
+> **Note:** The naming of smart contracts via XNS applies to **new smart contracts** only, not existing ones. Existing contracts cannot be retroactively named, unless they implement EIP-1271 (see [Option 3](#option-3-sponsored-registration-via-eip-1271)).
 
 This section includes examples of how to name smart contracts on Ethereum, the canonical XNS chain, as well as a guide on using XNS with multi-chain deployments.
 
