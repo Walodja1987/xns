@@ -275,8 +275,8 @@ For testing purposes, the deployed contract on Sepolia can be used at: [0x04c9Aa
 The testnet contract has been parametrized as follows:
 - Public namespace registration fee: 0.05 ether (instead of 50 ether)
 - Private namespace registration fee: 0.01 ether (instead of 10 ether)
-- Namespace creator exclusive period: 60 seconds (instead of 7 days)
-- Onboarding period: 60 seconds (instead of 365 days)
+- Namespace creator exclusive period: 300 seconds (instead of 7 days)
+- Onboarding period: 100 days (instead of 365 days)
 - Bare name price: 0.01 ether (instead of 10 ether)
 
 

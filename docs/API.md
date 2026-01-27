@@ -53,7 +53,6 @@ Label and namespace string requirements:
 - Users can register names in public namespaces after the 7-day exclusivity period using `registerName`.
 - Each address can own at most one name.
 - Registration fees vary by namespace
-- Any excess payment is refunded.
 
 ### Authorized Name Registration
 - XNS features authorized name registration via EIP-712 signatures.
