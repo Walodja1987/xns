@@ -15,10 +15,7 @@ interface IXNS {
     event NamespaceCreatorTransferAccepted(string indexed namespace, address indexed newCreator);
 
     function registerName(string calldata label, string calldata namespace) external payable;
-    function registerNameWithAuthorization(
-        RegisterNameAuth calldata registerNameAuth,
-        bytes calldata signature
-    ) external payable;
+    function registerNameWithAuthorization(RegisterNameAuth calldata registerNameAuth, bytes calldata signature) external payable;
     function batchRegisterNameWithAuthorization(
         RegisterNameAuth[] calldata registerNameAuths,
         bytes[] calldata signatures
@@ -27,10 +24,10 @@ interface IXNS {
     function registerPrivateNamespace(string calldata namespace, uint256 pricePerName) external payable;
     function registerPublicNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external;
     function registerPrivateNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external;
-    function transferNamespaceCreator(string calldata namespace, address newCreator) external;
-    function acceptNamespaceCreator(string calldata namespace) external;
     function claimFees(address recipient) external;
     function claimFeesToSelf() external;
+    function transferNamespaceCreator(string calldata namespace, address newCreator) external;
+    function acceptNamespaceCreator(string calldata namespace) external;
 
     function getAddress(string calldata label, string calldata namespace) external view returns (address addr);
     function getAddress(string calldata fullName) external view returns (address addr);
@@ -39,10 +36,7 @@ interface IXNS {
     function getNamespacePrice(string calldata namespace) external view returns (uint256 pricePerName);
     function isInExclusivityPeriod(string calldata namespace) external view returns (bool inExclusivityPeriod);
     function isValidLabelOrNamespace(string calldata labelOrNamespace) external pure returns (bool isValid);
-    function isValidSignature(
-        RegisterNameAuth calldata registerNameAuth,
-        bytes calldata signature
-    ) external view returns (bool isValid);
+    function isValidSignature(RegisterNameAuth calldata registerNameAuth,bytes calldata signature) external view returns (bool isValid);
     function getPendingFees(address recipient) external view returns (uint256 amount);
     function getPendingNamespaceCreator(string calldata namespace) external view returns (address pendingCreator);
 

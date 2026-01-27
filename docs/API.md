@@ -322,6 +322,41 @@ function registerPrivateNamespaceFor(address creator, string namespace, uint256 
 | pricePerName | uint256 | The price per name for the namespace. |
 
 
+### claimFees
+
+
+Function to claim accumulated fees for `msg.sender` and send to `recipient`.
+Withdraws all pending fees. Partial claims are not possible.
+
+**Requirements:**
+- `recipient` must not be the zero address.
+- `msg.sender` must have pending fees to claim.
+
+```solidity
+function claimFees(address recipient) external
+```
+
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| recipient | address | The address that will receive the claimed fees. |
+
+
+### claimFeesToSelf
+
+
+Function to claim accumulated fees for `msg.sender` and send to `msg.sender`.
+Withdraws all pending fees. Partial claims are not possible.
+
+```solidity
+function claimFeesToSelf() external
+```
+
+
+
+
 ### transferNamespaceCreator
 
 
@@ -373,41 +408,6 @@ function acceptNamespaceCreator(string namespace) external
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | namespace | string | The namespace to accept creator rights for. |
-
-
-### claimFees
-
-
-Function to claim accumulated fees for `msg.sender` and send to `recipient`.
-Withdraws all pending fees. Partial claims are not possible.
-
-**Requirements:**
-- `recipient` must not be the zero address.
-- `msg.sender` must have pending fees to claim.
-
-```solidity
-function claimFees(address recipient) external
-```
-
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| recipient | address | The address that will receive the claimed fees. |
-
-
-### claimFeesToSelf
-
-
-Function to claim accumulated fees for `msg.sender` and send to `msg.sender`.
-Withdraws all pending fees. Partial claims are not possible.
-
-```solidity
-function claimFeesToSelf() external
-```
-
-
 
 
 ### getAddress

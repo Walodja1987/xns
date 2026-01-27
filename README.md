@@ -27,12 +27,12 @@
 6. [Contract Ownership Transfer](#-contract-ownership-transfer)
 7. [Namespace Creator Transfer](#-namespace-creator-transfer)
 8. [License and Deployment Policy](#-license-and-deployment-policy)
-9. [API Reference](#-api-reference)
+9. [API](#-api)
 10. [Developer Notes](#-developer-notes)
 
 ## 🚀 Overview
 
-**XNS** is an Ethereum-native name registry that **maps human-readable names to Ethereum addresses**. Share `vitalik.xns` or `my.token` instead of copying long hexadecimal strings.
+**XNS** is an Ethereum-native name registry that **maps human-readable names to Ethereum addresses**. Receive funds by sharing `vitalik.xns` instead of copying long hexadecimal strings like `0x8AdEFeb576dcF52F5220709c1B267d89d5208E78`. Display names instead of addresses in your dApp for a cleaner, more user-friendly experience.
 
 **Key properties:**
 - **Permanent:** Each name is irrevocably bound to an Ethereum address; no expiration, no transfer, no resale.
@@ -69,7 +69,7 @@ Labels and namespaces are subject to the following format rules:
 - ❌ `name-.og` (label cannot end with hyphen)
 - ❌ `my--name.888` (label cannot have consecutive hyphens)
 
-The same format rules apply to namespaces as well (e.g., `my.--name`, `info.$`, `hello.-ns` are all invalid).
+The same format rules apply to namespaces. For example, `--name`, `$rich`, and `-ns` are all invalid and cannot be registered.
 
 ### Bare Names
 
@@ -82,7 +82,7 @@ XNS supports **bare names**, i.e. names without a namespace suffix (e.g., `bob`,
 XNS features two types of namespaces: **public** and **private**.
 
 **Public Namespaces:**
-- Anyone can register names within a public namespace after a 7-day exclusivity period post namespace creation has ended.
+- Anyone can register names within a public namespace after a 7-day exclusivity period after namespace creation has ended.
 - During the exclusivity period, only the creator can register or sponsor names.
 - Creators receive 10% of all name registration fees in perpetuity.
 - Registration fee: 50 ETH.
@@ -284,7 +284,7 @@ The testnet contract has been parametrized as follows:
 
 XNS can be integrated into smart contracts, allowing users to identify contracts by a human-readable name (e.g., `myprotocol.xns`) instead of a long address.
 
-> **Note:** The naming of smart contracts via XNS applies to **new smart contracts** only, not existing ones. Existing contracts cannot be retroactively named, unless they implement EIP-1271 (see [Option 3](#option-3-sponsored-registration-via-eip-1271)).
+> **Note:** Existing contracts without EIP-1271 support cannot register names retroactively. For contracts that implement EIP-1271, see [Option 3](#option-3-sponsored-registration-via-eip-1271) for instructions on how to register names.
 
 This section includes examples of how to name smart contracts on Ethereum, the canonical XNS chain, as well as a guide on using XNS with multi-chain deployments.
 
@@ -546,9 +546,9 @@ identity with the canonical registry.
 
 XNS does not support cross-chain name equivalence.
 
-## 📚 API Reference
+## 📚 API
 
-See the [API Reference][api-reference] for complete documentation of all XNS contract functions, events, state variables, and types.
+See [API.md][api] for a complete documentation of all XNS contract functions, events, state variables, and types.
 
 ## 🔧 Developer Notes
 
@@ -606,7 +606,7 @@ See the [Developer Notes][dev-notes] for design decisions, code style guidelines
 
 [license]: https://github.com/Walodja1987/xns/blob/main/LICENSE
 
-[api-reference]: docs/API.md
+[api]: docs/API.md
 [dev-notes]: docs/DEV_NOTES.md
 
 [script-registerNameWithAuthorizationForERC20C]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerNameWithAuthorizationForERC20C.ts
