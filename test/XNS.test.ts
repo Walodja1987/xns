@@ -150,8 +150,8 @@ describe("XNS", function () {
         // Should have correct PRIVATE_NAMESPACE_REGISTRATION_FEE (10 ether)
         expect(await s.xns.PRIVATE_NAMESPACE_REGISTRATION_FEE()).to.equal(ethers.parseEther("10"));
 
-        // Should have correct EXCLUSIVITY_PERIOD (30 days)
-        expect(await s.xns.EXCLUSIVITY_PERIOD()).to.equal(30 * 24 * 60 * 60);
+        // Should have correct EXCLUSIVITY_PERIOD (7 days)
+        expect(await s.xns.EXCLUSIVITY_PERIOD()).to.equal(7 * 24 * 60 * 60);
 
         // Should have correct ONBOARDING_PERIOD (1 year)
         expect(await s.xns.ONBOARDING_PERIOD()).to.equal(365 * 24 * 60 * 60);
@@ -338,7 +338,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register names to accumulate fees for the owner (10% of each registration fee)
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
@@ -405,7 +405,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Transfer ownership to new owner
         await s.xns.connect(s.owner).transferOwnership(newOwnerAddress);
@@ -783,7 +783,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register names to accumulate fees for the creator (10% of each registration fee for public namespaces)
         await s.xns.connect(s.user3).registerName("alice", namespace, { value: pricePerName });
@@ -851,7 +851,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Transfer namespace creator to new creator
         await s.xns.connect(s.user1).transferNamespaceCreator(namespace, newCreatorAddress);
@@ -3644,7 +3644,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // ---------
         // Act: Register name with user2
@@ -3678,7 +3678,7 @@ describe("XNS", function () {
         expect(returnedNamespace).to.equal(namespace);
     });
 
-    it("Should allow anyone to register paid names in public namespace after exclusive period (30 days)", async () => {
+    it("Should allow anyone to register paid names in public namespace after exclusive period (7 days)", async () => {
         // ---------
         // Arrange: Fast-forward time past the exclusivity period
         // ---------
@@ -3693,8 +3693,8 @@ describe("XNS", function () {
 
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
         
-        // Fast-forward time past the exclusivity period (30 days + 1 day to be safe)
-        const timeToAdd = Number(exclusivityPeriod) + 86400; // 30 days + 1 day in seconds
+        // Fast-forward time past the exclusivity period (7 days + 1 day to be safe)
+        const timeToAdd = Number(exclusivityPeriod) + 86400; // 7 days + 1 day in seconds
         await time.increase(timeToAdd);
 
         // Verify we're past the exclusivity period
@@ -3753,7 +3753,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Get initial state
         // user2 is the payer, user1 is the namespace creator
@@ -3804,7 +3804,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Get user2 balance before transaction
         const balanceBefore = await ethers.provider.getBalance(s.user2.address);
@@ -3854,7 +3854,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Verify special namespace exists and has correct price
         const [returnedPrice, creator] = await getNamespaceInfoByString(namespace);
@@ -3906,7 +3906,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Get initial DETH burned amount for msg.sender (user2)
         const initialDETHBurned = await s.deth.burned(s.user2.address);
@@ -3942,7 +3942,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // ---------
         // Act: Deploy contract that registers name in constructor
@@ -3992,7 +3992,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Deploy contract without registering (empty label)
         const SelfRegisteringContract = await ethers.getContractFactory("SelfRegisteringContract");
@@ -4051,7 +4051,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Get deployer (user2) balance before deployment
         const balanceBefore = await ethers.provider.getBalance(s.user2.address);
@@ -4111,7 +4111,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Deploy contract without registering (empty label)
         const SelfRegisteringContract = await ethers.getContractFactory("SelfRegisteringContract");
@@ -4163,7 +4163,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // ---------
         // Act & Assert: Register name and verify event emission
@@ -4189,7 +4189,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // ---------
         // Act & Assert: Attempt to register name and expect revert
@@ -4209,7 +4209,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // ---------
         // Act & Assert: Attempt to register name and expect revert
@@ -4234,7 +4234,7 @@ describe("XNS", function () {
         // Fast-forward time past the exclusivity period to ensure private namespace restriction
         // is permanent (not time-based like public namespace exclusivity)
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // ---------
         // Act & Assert: Try to register name in private namespace and expect revert
@@ -4256,7 +4256,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // ---------
         // Act & Assert: Attempt to register name and expect revert
@@ -4304,7 +4304,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register first name for user2
         await s.xns.connect(s.user2).registerName(firstLabel, namespace, { value: pricePerName });
@@ -4332,7 +4332,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register name for user2
         await s.xns.connect(s.user2).registerName(label, namespace, { value: pricePerName });
@@ -4374,7 +4374,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Create signature from recipient (user2)
         const signature = await s.signRegisterNameAuth(s.user2, recipient, label, namespace);
@@ -4574,7 +4574,7 @@ describe("XNS", function () {
         expect(finalOwnerFees - initialOwnerFees).to.equal(expectedTotalOwnerFee);
     });
 
-    it("Should allow namespace creator to sponsor registrations in public namespace during exclusive period (30 days)", async () => {
+    it("Should allow namespace creator to sponsor registrations in public namespace during exclusive period (7 days)", async () => {
         // ---------
         // Arrange: Prepare parameters and verify we're within exclusivity period
         // ---------
@@ -4635,7 +4635,7 @@ describe("XNS", function () {
         expect(returnedNamespace).to.equal(namespace);
     });
 
-    it("Should allow anyone to sponsor registrations in public namespace after exclusive period (30 days)", async () => {
+    it("Should allow anyone to sponsor registrations in public namespace after exclusive period (7 days)", async () => {
         // ---------
         // Arrange: Prepare parameters and fast-forward past exclusivity period
         // ---------
@@ -4646,7 +4646,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Verify we're past the exclusivity period
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
@@ -4715,7 +4715,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Verify namespace is private
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
@@ -4776,7 +4776,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Get initial state
         const initialDETHBurned = await s.deth.burned(s.owner.address); // owner is the sponsor/payer
@@ -4835,7 +4835,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Get initial state
         const initialDETHBurned = await s.deth.burned(s.user1.address); // user1 (creator) is the sponsor/payer
@@ -4889,7 +4889,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Get wallet address from setup
         const walletAddress = await s.eip1271Wallet.getAddress();
@@ -4953,7 +4953,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Create signature from recipient (user2)
         const signature = await s.signRegisterNameAuth(s.user2, recipient, label, namespace);
@@ -5009,7 +5009,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Verify special namespace exists and has correct price
         const [returnedPrice, creator] = await getNamespaceInfoByString(namespace);
@@ -5078,7 +5078,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Create signature from recipient (user2)
         const signature = await s.signRegisterNameAuth(s.user2, recipient, label, namespace);
@@ -5116,7 +5116,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Create signature (will fail label validation before signature check)
         const signature = await s.signRegisterNameAuth(s.user2, recipient, invalidLabel, namespace);
@@ -5148,7 +5148,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Create signature (will fail recipient validation before signature check)
         const signature = await s.signRegisterNameAuth(s.user2, recipient, label, namespace);
@@ -5180,7 +5180,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Create signature (will fail namespace validation before signature check)
         const signature = await s.signRegisterNameAuth(s.user2, recipient, label, namespace);
@@ -5213,7 +5213,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Create signature from recipient (user2)
         const signature = await s.signRegisterNameAuth(s.user2, recipient, label, namespace);
@@ -5287,7 +5287,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Verify namespace is private
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
@@ -5326,7 +5326,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register first name for recipient (user2) using registerName
         await s.xns.connect(s.user2).registerName(firstLabel, namespace, { value: pricePerName });
@@ -5367,7 +5367,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register name for firstRecipient (user2) using registerName
         await s.xns.connect(s.user2).registerName(label, namespace, { value: pricePerName });
@@ -5412,7 +5412,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Create an invalid signature (random bytes)
         const invalidSignature = ethers.randomBytes(65);
@@ -5444,7 +5444,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Create signature from user1 (wrong recipient) instead of user2 (the actual recipient)
         const signature = await s.signRegisterNameAuth(s.user1, recipient, label, namespace);
@@ -5487,7 +5487,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Prepare multiple registrations
         const registrations = [
@@ -5596,7 +5596,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // First, register a name for user1 so they already have a name
         const firstLabel = "firstname";
@@ -5713,7 +5713,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // First, register "alice.xns" for user1
         const existingLabel = "alice";
@@ -5827,7 +5827,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // First, register names for all recipients so they all already have names
         await s.xns.connect(s.user1).registerName("first", namespace, { value: pricePerName });
@@ -5939,7 +5939,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // First, register a name for user1 so they already have a name (will be skipped)
         await s.xns.connect(s.user1).registerName("existing", namespace, { value: pricePerName });
@@ -6040,7 +6040,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // First, register a name for user2 so they already have a name (will be skipped)
         await s.xns.connect(s.user1).registerNameWithAuthorization(
@@ -6144,7 +6144,7 @@ describe("XNS", function () {
     
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
     
         // Prepare batch registrations: user1 and user2 as recipients (sponsor is owner)
         const registrations = [
@@ -6218,7 +6218,7 @@ describe("XNS", function () {
         expect(finalDETHBurnedUser2 - initialDETHBurnedUser2).to.equal(0n);
     });
 
-    it("Should allow namespace creator to sponsor batch registrations in public namespace during exclusive period (30 days)", async () => {
+    it("Should allow namespace creator to sponsor batch registrations in public namespace during exclusive period (7 days)", async () => {
         // ---------
         // Arrange: Prepare parameters and verify we're within exclusivity period
         // ---------
@@ -6305,7 +6305,7 @@ describe("XNS", function () {
         }
     });
 
-    it("Should allow anyone to sponsor batch registrations in public namespace after exclusive period (30 days)", async () => {
+    it("Should allow anyone to sponsor batch registrations in public namespace after exclusive period (7 days)", async () => {
         // ---------
         // Arrange: Prepare parameters and fast-forward past exclusivity period
         // ---------
@@ -6314,7 +6314,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Verify we're past the exclusivity period
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
@@ -6409,7 +6409,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Verify namespace is private
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
@@ -6496,7 +6496,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Get wallet address from setup
         const walletAddress = await s.eip1271Wallet.getAddress();
@@ -6590,7 +6590,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Verify we're past the exclusivity period
         const [, creator, createdAt] = await getNamespaceInfoByString(namespace);
@@ -6691,7 +6691,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Prepare batch registrations: user1, user2, and owner as recipients
         const registrations = [
@@ -6786,7 +6786,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Prepare registrations array with 2 items
         const registerNameAuths = [
@@ -6850,7 +6850,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Prepare registration with non-existent namespace
         const registerNameAuths = [
@@ -6890,7 +6890,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Prepare batch with 2 registrations
         const registrations = [
@@ -7023,7 +7023,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Verify namespace is private
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
@@ -7096,7 +7096,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Prepare batch with registrations in different namespaces
         const registerNameAuths = [
@@ -7143,7 +7143,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Prepare batch with one valid label and one invalid label
         const registerNameAuths = [
@@ -7190,7 +7190,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Prepare batch with one valid recipient and one zero address recipient
         const registerNameAuths = [
@@ -7237,7 +7237,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Prepare batch with two valid registrations
         const registerNameAuths = [
@@ -7284,7 +7284,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Prepare batch with two registrations
         const registerNameAuths = [
@@ -7331,7 +7331,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can sponsor
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Deploy RevertingReceiver contract that will revert when receiving ETH
         const RevertingReceiver = await ethers.getContractFactory("RevertingReceiver");
@@ -7412,7 +7412,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register a name to accumulate fees for the owner (10% of pricePerName)
         // Owner gets 10% of each registration fee
@@ -7459,7 +7459,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register a name to accumulate fees for the namespace creator (10% of pricePerName)
         // Namespace creator gets 10% of each registration fee in their namespace
@@ -7505,7 +7505,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Verify namespace is private
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
@@ -7596,7 +7596,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Verify namespace is private
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
@@ -7660,7 +7660,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register a name to accumulate fees for the owner (10% of pricePerName)
         // Owner gets 10% of each registration fee
@@ -7707,7 +7707,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register a name to accumulate fees for the namespace creator (10% of pricePerName)
         // Namespace creator gets 10% of each registration fee in their namespace
@@ -7749,7 +7749,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Reset fees by claiming any existing fees from namespace registration in setup
         const initialPendingFees = await s.xns.getPendingFees(s.owner.address);
@@ -7847,7 +7847,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register a name to accumulate fees for the owner (10% of pricePerName)
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
@@ -7885,7 +7885,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register a name to accumulate fees for the owner
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
@@ -7927,7 +7927,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register a name to accumulate fees for the owner
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
@@ -7971,7 +7971,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register a name to accumulate fees for the owner (10% of pricePerName)
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
@@ -8017,7 +8017,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register a name to accumulate fees for the namespace creator (10% of pricePerName)
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
@@ -8062,7 +8062,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period (even though it doesn't matter for private namespaces)
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Verify namespace is private
         const getNamespaceInfoByString = s.xns.getFunction("getNamespaceInfo(string)");
@@ -8144,7 +8144,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register a name to accumulate fees for the owner (10% of pricePerName)
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
@@ -8197,7 +8197,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register a name to accumulate fees for the owner
         await s.xns.connect(s.user2).registerName("alice", namespace, { value: pricePerName });
@@ -8437,7 +8437,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register name for user2
         await s.xns.connect(s.user2).registerName(label, namespace, { value: pricePerName });
@@ -8483,7 +8483,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register bare name for user2
         await s.xns.connect(s.user2).registerName(label, namespace, { value: pricePerName });
@@ -8516,7 +8516,7 @@ describe("XNS", function () {
 
         // Fast-forward time past the exclusivity period so anyone can register
         const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-        await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+        await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
         // Register bare name for user2
         await s.xns.connect(s.user2).registerName(label, namespace, { value: pricePerName });
@@ -9590,7 +9590,7 @@ describe("XNS", function () {
     // Functionality
     // -----------------------
 
-    it("Should return `true` for namespace within exclusivity period (30 days after creation)", async () => {
+    it("Should return `true` for namespace within exclusivity period (7 days after creation)", async () => {
       // ---------
       // Arrange: Register a new public namespace for testing
       // ---------
@@ -9610,7 +9610,7 @@ describe("XNS", function () {
       const result = await isInExclusivityPeriod(namespace);
 
       // ---------
-      // Assert: Should return true (namespace was just created, within 30 days)
+      // Assert: Should return true (namespace was just created, within 7 days)
       // ---------
       expect(result).to.equal(true);
     });
@@ -9628,9 +9628,9 @@ describe("XNS", function () {
       // Register public namespace
       await s.xns.connect(user3).registerPublicNamespace(namespace, pricePerName, { value: namespaceFee });
 
-      // Fast-forward past exclusivity period (30 days + 1 day)
+      // Fast-forward past exclusivity period (7 days + 1 day)
       const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-      await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+      await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
       // ---------
       // Act: Check if namespace is in exclusivity period
@@ -9709,7 +9709,7 @@ describe("XNS", function () {
       
       // Fast-forward time past the exclusivity period so anyone can register
       const exclusivityPeriod = await s.xns.EXCLUSIVITY_PERIOD();
-      await time.increase(Number(exclusivityPeriod) + 86400); // 30 days + 1 day
+      await time.increase(Number(exclusivityPeriod) + 86400); // 7 days + 1 day
 
       // Register a name to accumulate fees for the namespace creator (10% of pricePerName)
       // Namespace creator (user1) gets 10% of each registration fee in their namespace

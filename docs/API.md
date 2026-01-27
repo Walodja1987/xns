@@ -28,7 +28,7 @@ Label and namespace string requirements:
 - Anyone can register new namespaces by paying a one-time fee.
 - XNS features two types of namespaces: public and private.
 - **Public namespaces (50 ETH):**
-  - Open to everyone after a 30-day exclusivity period post namespace registration.
+  - Open to everyone after a 7-day exclusivity period post namespace registration.
   - During exclusivity, only the creator can register or sponsor names (via `registerNameWithAuthorization`
     or `batchRegisterNameWithAuthorization`).
   - After exclusivity, anyone can register or sponsor names (via `registerName`
@@ -50,7 +50,7 @@ Label and namespace string requirements:
 - Bare names are premium and cost 10 ETH per name.
 
 ### Name Registration
-- Users can register names in public namespaces after the 30-day exclusivity period using `registerName`.
+- Users can register names in public namespaces after the 7-day exclusivity period using `registerName`.
 - Each address can own at most one name.
 - Registration fees vary by namespace
 - Any excess payment is refunded.
@@ -78,14 +78,14 @@ Label and namespace string requirements:
 
 Function to register a paid name for `msg.sender`. To register a bare name
 (e.g., "vitalik"), use "x" as the namespace parameter.
-This function only works for public namespaces after the exclusivity period (30 days) has ended.
+This function only works for public namespaces after the exclusivity period (7 days) has ended.
 
 **Requirements:**
 - Label must be valid (non-empty, length 1–20, only lowercase letters, digits, and hyphens,
   cannot start or end with '-', cannot contain consecutive hyphens ('--')).
 - Namespace must exist and be public.
 - `msg.value` must be >= the namespace's registered price (excess will be refunded).
-- Namespace must be past the exclusivity period (30 days after creation).
+- Namespace must be past the exclusivity period (7 days after creation).
 - Caller must not already have a name.
 - Name must not already be registered.
 
