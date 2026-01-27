@@ -458,7 +458,7 @@ Example:
 | Avalanche                           | `0x1234…5678`      |
 
 
-## 📲 Contract Ownership Transfer
+## 🔐 Contract Ownership Transfer
 
 The XNS contract uses OpenZeppelin's `Ownable2Step` for 2-step contract ownership transfers. The initial owner is set at deployment and can be transferred using the following process:
 
@@ -480,7 +480,7 @@ Ownership transfers do **not** migrate already-accrued `_pendingFees`. Any fees 
 * [Initiate ownership transfer][script-transferOwnership]
 * [Accept ownership transfer][script-acceptOwnership]
 
-## 🏛️ Namespace Creator Transfer
+## 🔐 Namespace Creator Transfer
 
 Namespace creators can transfer their namespace (and future fee streams) using a 2-step process (`transferNamespaceCreator` → `acceptNamespaceCreator`), following the same pattern as contract ownership transfer.
 
