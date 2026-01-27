@@ -24,7 +24,7 @@
 3. [XNS Price list](#-xns-price-list)
 4. [Contract Address](#-contract-address)
 5. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
-6. [Contract Ownership Transfer](#-contract-ownership-transfer)
+6. [Contract Ownership Transfer](#contract-ownership-transfer)
 7. [Namespace Creator Transfer](#-namespace-creator-transfer)
 8. [License and Deployment Policy](#-license-and-deployment-policy)
 9. [API](#-api)
@@ -458,7 +458,7 @@ Example:
 | Avalanche                           | `0x1234…5678`      |
 
 
-## 🏛️ Contract Ownership Transfer
+## 📲 Contract Ownership Transfer
 
 The XNS contract uses OpenZeppelin's `Ownable2Step` for 2-step contract ownership transfers. The initial owner is set at deployment and can be transferred using the following process:
 
