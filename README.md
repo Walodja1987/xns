@@ -24,10 +24,11 @@
 3. [XNS Price list](#-xns-price-list)
 4. [Contract Address](#-contract-address)
 5. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
-6. [Contract Governance](#️-contract-governance)
-7. [License and Deployment Policy](#-license-and-deployment-policy)
-8. [API Reference](#-api-reference)
-9. [Developer Notes](#-developer-notes)
+6. [Contract Ownership Transfer](#-contract-ownership-transfer)
+7. [Namespace Creator Transfer](#-namespace-creator-transfer)
+8. [License and Deployment Policy](#-license-and-deployment-policy)
+9. [API Reference](#-api-reference)
+10. [Developer Notes](#-developer-notes)
 
 ## 🚀 Overview
 
@@ -457,9 +458,37 @@ Example:
 | Avalanche                           | `0x1234…5678`      |
 
 
-## 🏛️ Contract Governance
+## 🏛️ Contract Ownership Transfer
 
-The XNS contract uses a 2-step ownership transfer mechanism for enhanced security. The contract owner can transfer ownership to a new address, which must then accept the transfer to complete the process. For detailed information about ownership transfer, fee accounting, and owner privileges, see the [Contract Governance][dev-notes-governance] section in the Developer Notes.
+The XNS contract uses OpenZeppelin's `Ownable2Step` for 2-step contract ownership transfers. The initial owner is set at deployment and can be transferred using the following process:
+
+**Ownership Transfer Process:**
+1. Current owner calls `transferOwnership(newOwner)` to initiate transfer.
+2. Pending owner calls `acceptOwnership()` to complete transfer.
+3. Only after acceptance does the new owner gain control.
+
+**Cancellation:**
+- The current owner can cancel a pending transfer by calling `transferOwnership(address(0))`.
+- Alternatively, the owner can overwrite a pending transfer by calling `transferOwnership(differentAddress)` again.
+
+**Fee Accounting:**
+Ownership transfers do **not** migrate already-accrued `_pendingFees`. Any fees accumulated before `acceptOwnership()` remain claimable by the previous owner address. Only fees accrued **after** acceptance are credited to the new owner address.
+
+## 🏛️ Namespace Creator Transfer
+
+Namespace creators can transfer their namespace (and future fee streams) using a 2-step process (`transferNamespaceCreator` → `acceptNamespaceCreator`), following the same pattern as contract ownership transfer.
+
+**Creator Transfer Process:**
+1. Current creator calls `transferNamespaceCreator(namespace, newCreator)` to initiate transfer.
+2. Pending creator calls `acceptNamespaceCreator(namespace)` to complete transfer.
+3. Only after acceptance does the new creator gain control.
+
+**Cancellation:**
+- The current creator can cancel a pending transfer by calling `transferNamespaceCreator(namespace, address(0))`.
+- Alternatively, the creator can overwrite a pending transfer by calling `transferNamespaceCreator(namespace, differentAddress)` again.
+
+**Fee Accounting:**
+Creator transfers do **not** migrate already-accrued `_pendingFees`. Any fees accumulated before `acceptNamespaceCreator()` remain claimable by the previous creator address. Only fees accrued **after** acceptance are credited to the new creator address.
 
 ## 📄 License and Deployment Policy
 
@@ -561,6 +590,5 @@ See the [Developer Notes][dev-notes] for design decisions, code style guidelines
 
 [api-reference]: docs/API.md
 [dev-notes]: docs/DEV_NOTES.md
-[dev-notes-governance]: docs/DEV_NOTES.md#contract-governance
 
 [script-registerNameWithAuthorizationForERC20C]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/registerNameWithAuthorizationForERC20C.ts

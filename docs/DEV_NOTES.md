@@ -110,23 +110,7 @@ The contract uses `require` statements with descriptive error messages for error
 
 Although using inline assembly for hash computations could save gas, the code deliberately avoids it to prioritize clarity and ease of auditing.
 
-## Contract Governance
-
-The contract uses OpenZeppelin's `Ownable2Step` for 2-step contract ownership transfers. The initial owner is set at deployment and can be transferred using the following process:
-
-**Ownership Transfer Process:**
-1. Current owner calls `transferOwnership(newOwner)` to initiate transfer.
-2. Pending owner calls `acceptOwnership()` to complete transfer.
-3. Only after acceptance does the new owner gain control.
-
-**Cancellation:**
-- The current owner can cancel a pending transfer by calling `transferOwnership(address(0))`.
-- Alternatively, the owner can overwrite a pending transfer by calling `transferOwnership(differentAddress)` again.
-
-**Fee Accounting:**
-Ownership transfers do **not** migrate already-accrued `_pendingFees`. Any fees accumulated before `acceptOwnership()` remain claimable by the previous owner address. Only fees accrued **after** acceptance are credited to the new owner address.
-
-### XNS Contract Owner Privileges
+## XNS Contract Owner Privileges
 
 The contract owner has specific privileges that differ from regular users:
 
