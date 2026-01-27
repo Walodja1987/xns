@@ -83,6 +83,15 @@ Available example scripts:
 - [`claimFeesToSelf.ts`](../scripts/examples/claimFeesToSelf.ts) - Claim fees to yourself
 - [`claimFees.ts`](../scripts/examples/claimFees.ts) - Claim fees to a different recipient
 
+**Governance:**
+- [`owner.ts`](../scripts/examples/owner.ts) - Query the current contract owner
+- [`pendingOwner.ts`](../scripts/examples/pendingOwner.ts) - Query the pending contract owner
+- [`transferOwnership.ts`](../scripts/examples/transferOwnership.ts) - Initiate contract ownership transfer
+- [`acceptOwnership.ts`](../scripts/examples/acceptOwnership.ts) - Accept contract ownership transfer
+- [`getPendingNamespaceCreator.ts`](../scripts/examples/getPendingNamespaceCreator.ts) - Query the pending namespace creator
+- [`transferNamespaceCreator.ts`](../scripts/examples/transferNamespaceCreator.ts) - Initiate namespace creator transfer
+- [`acceptNamespaceCreator.ts`](../scripts/examples/acceptNamespaceCreator.ts) - Accept namespace creator transfer
+
 **Utility Scripts:**
 - [`generateSignature.ts`](../scripts/examples/generateSignature.ts) - Generate EIP-712 signature for Etherscan execution
 - [`deployMockERC20C.ts`](../scripts/examples/deployMockERC20C.ts) - Deploy a MockERC20C contract
@@ -110,23 +119,7 @@ The contract uses `require` statements with descriptive error messages for error
 
 Although using inline assembly for hash computations could save gas, the code deliberately avoids it to prioritize clarity and ease of auditing.
 
-## Contract Governance
-
-The contract uses OpenZeppelin's `Ownable2Step` for 2-step contract ownership transfers. The initial owner is set at deployment and can be transferred using the following process:
-
-**Ownership Transfer Process:**
-1. Current owner calls `transferOwnership(newOwner)` to initiate transfer.
-2. Pending owner calls `acceptOwnership()` to complete transfer.
-3. Only after acceptance does the new owner gain control.
-
-**Cancellation:**
-- The current owner can cancel a pending transfer by calling `transferOwnership(address(0))`.
-- Alternatively, the owner can overwrite a pending transfer by calling `transferOwnership(differentAddress)` again.
-
-**Fee Accounting:**
-Ownership transfers do **not** migrate already-accrued `_pendingFees`. Any fees accumulated before `acceptOwnership()` remain claimable by the previous owner address. Only fees accrued **after** acceptance are credited to the new owner address.
-
-### XNS Contract Owner Privileges
+## XNS Contract Owner Privileges
 
 The contract owner has specific privileges that differ from regular users:
 

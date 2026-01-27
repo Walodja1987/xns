@@ -66,15 +66,6 @@ Label and namespace string requirements:
   - Public namespaces: 10% to namespace creator, 10% to XNS contract owner
   - Private namespaces: 20% to XNS owner
 
-### Contract Ownership Transfer
-- The contract owner can be transferred using OpenZeppelin's 2-step ownership transfer
-  (`transferOwnership` → `acceptOwnership`).
-- Pending transfers can be canceled by calling `transferOwnership(address(0))`.
-- Alternatively, a pending transfer can be overwritten by calling `transferOwnership(newAddress)` again.
-- **Fee accounting note:** Ownership transfers do **not** migrate already-accrued `_pendingFees`.
-  Any fees accumulated before `acceptOwnership()` remain claimable by the previous owner address.
-  Only fees accrued **after** acceptance are credited to the new owner address.
-
 
 
 
@@ -329,6 +320,59 @@ function registerPrivateNamespaceFor(address creator, string namespace, uint256 
 | creator | address | The address that will be assigned as the namespace creator. |
 | namespace | string | The namespace to register. |
 | pricePerName | uint256 | The price per name for the namespace. |
+
+
+### transferNamespaceCreator
+
+
+Start a 2-step transfer of namespace creator to a new address.
+The new creator must call `acceptNamespaceCreator` to complete the transfer.
+
+Setting `newCreator` to the zero address is allowed; this can be used to cancel an initiated transfer.
+Alternatively, a pending transfer can be overwritten by calling this function again with a different address.
+
+**Requirements:**
+- `msg.sender` must be the current namespace creator.
+- Namespace must exist.
+
+**Fee Accounting Note:** Ownership transfers do **not** migrate already-accrued `_pendingFees`.
+Any fees accumulated before `acceptNamespaceCreator()` remain claimable by the previous creator address.
+Only fees accrued **after** acceptance are credited to the new creator address.
+
+```solidity
+function transferNamespaceCreator(string namespace, address newCreator) external
+```
+
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| namespace | string | The namespace to transfer creator rights for. |
+| newCreator | address | The address that will become the new namespace creator, or `address(0)` to cancel a pending transfer. |
+
+
+### acceptNamespaceCreator
+
+
+Accept a pending namespace creator transfer.
+Completes the 2-step transfer process started by `transferNamespaceCreator`.
+
+**Requirements:**
+- Namespace must exist.
+- There must be a pending creator transfer.
+- `msg.sender` must be the pending creator.
+
+```solidity
+function acceptNamespaceCreator(string namespace) external
+```
+
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| namespace | string | The namespace to accept creator rights for. |
 
 
 ### claimFees
@@ -588,6 +632,29 @@ function getPendingFees(address recipient) external view returns (uint256 amount
 | ---- | ---- | ----------- |
 | amount | uint256 | The amount of pending fees that can be claimed by the address. |
 
+### getPendingNamespaceCreator
+
+
+Get the pending namespace creator for a given namespace.
+Returns `address(0)` if there is no pending transfer.
+
+```solidity
+function getPendingNamespaceCreator(string namespace) external view returns (address pendingCreator)
+```
+
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| namespace | string | The namespace to check for pending creator. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| pendingCreator | address | The address of the pending namespace creator, or `address(0)` if none. |
+
 
 ## Events
 
@@ -629,6 +696,35 @@ event FeesClaimed(address recipient, uint256 amount)
 ```
 
 _Emitted in fee claiming functions._
+
+
+
+
+### NamespaceCreatorTransferStarted
+
+
+
+
+```solidity
+event NamespaceCreatorTransferStarted(string namespace, address oldCreator, address newCreator)
+```
+
+_Emitted when a namespace creator starts a transfer to a new creator (address that shall receive the creator fees).
+When `newCreator` is `address(0)`, this indicates cancellation of a pending transfer._
+
+
+
+
+### NamespaceCreatorTransferAccepted
+
+
+
+
+```solidity
+event NamespaceCreatorTransferAccepted(string namespace, address newCreator)
+```
+
+_Emitted when a pending namespace creator accepts the transfer._
 
 
 

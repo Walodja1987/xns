@@ -67,6 +67,38 @@ The following test cases are implemented in [XNS.test.ts](./XNS.test.ts) file.
 
 ---
 
+### Namespace Creator Transfer
+
+#### Functionality
+
+- Should allow namespace creator to transfer ownership
+  - Should allow namespace creator to start transfer via `transferNamespaceCreator(namespace, newCreator)`.
+  - Should set pending creator correctly.
+  - Should not change current creator until acceptance.
+  - Should emit `NamespaceCreatorTransferStarted` event.
+  - Should allow pending creator to accept transfer via `acceptNamespaceCreator(namespace)`.
+  - Should update namespace creator after acceptance.
+  - Should clear pending creator after acceptance.
+  - Should emit `NamespaceCreatorTransferAccepted` event.
+- Should allow new creator to use creator-only functions.
+  - New creator can sponsor registrations (public exclusivity period).
+  - New creator can sponsor registrations (private namespace).
+  - Old creator can no longer sponsor registrations.
+- Should not migrate pending fees (old creator can still claim).
+- Should credit new fees to new creator after transfer (10% for public namespaces).
+- Should allow creator to cancel transfer by calling `transferNamespaceCreator(namespace, address(0))`.
+- Should allow creator to overwrite pending transfer by calling `transferNamespaceCreator(namespace, newAddress)` again.
+
+#### Reverts
+
+- Should revert with `XNS: not namespace creator` error when non-creator tries to transfer.
+- Should revert with `XNS: namespace not found` error when namespace doesn't exist (transfer).
+- Should revert with `XNS: no pending creator` error when no pending transfer exists (accept).
+- Should revert with `XNS: not pending creator` error when non-pending-creator tries to accept.
+- Should revert with `XNS: namespace not found` error when namespace doesn't exist (accept).
+
+---
+
 ### isValidLabelOrNamespace
 
 #### Functionality
