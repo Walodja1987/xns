@@ -28,6 +28,16 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/*//////////////////////////////////////////////////////////////
+                            USER INPUTS
+//////////////////////////////////////////////////////////////*/
+
+// XNS contract owner address
+// Set to null to use the deployer address as the owner
+const xnsOwnerAddress: string | null = null;
+// Example: const xnsOwnerAddress: string | null = "0x9AdEFeb576dcF52F5220709c1B267d89d5208D78"; // use this address as the owner
+// Example: const xnsOwnerAddress: string | null = null; // use deployer address as the owner
+
 // Namespace tiers: price (in ETH) -> namespace
 const NAMESPACE_TIERS: { priceETH: string; namespace: string }[] = [
   // { priceETH: "0.001", namespace: "xns" },
@@ -65,9 +75,25 @@ export default async function main(hre: HardhatRuntimeEnvironment) {
     "ETH\n",
   );
 
-  // Deploy XNS (owner is the deployer)
+  // Get owner address from user input or use deployer address
+  const ownerAddress = xnsOwnerAddress || deployer.address;
+
+  // Validate owner address if provided
+  if (xnsOwnerAddress && !hre.ethers.isAddress(xnsOwnerAddress)) {
+    throw new Error(
+      `Invalid xnsOwnerAddress: ${xnsOwnerAddress}. Please provide a valid Ethereum address.`,
+    );
+  }
+
+  console.log(
+    `XNS contract owner will be: ${GREEN}${ownerAddress}${RESET}${
+      xnsOwnerAddress ? " (from user input)" : " (deployer address)"
+    }\n`,
+  );
+
+  // Deploy XNS
   const XNS = await hre.ethers.getContractFactory("XNS");
-  const xns = await XNS.deploy(deployer.address);
+  const xns = await XNS.deploy(ownerAddress);
   await xns.waitForDeployment();
 
   const contractAddress = await xns.getAddress();
@@ -116,7 +142,7 @@ export default async function main(hre: HardhatRuntimeEnvironment) {
   // Verify the contract
   await hre.run("verify:verify", {
     address: contractAddress,
-    constructorArguments: [deployer.address],
+    constructorArguments: [ownerAddress],
   });
 
   console.log("\nDeployment and verification completed successfully!");

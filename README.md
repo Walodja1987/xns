@@ -264,13 +264,13 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 
 ### Ethereum Mainnet
 
-The official XNS contract is live on Ethereum mainnet at: [xxx][etherscan-mainnet]
+The official XNS contract is live on Ethereum mainnet at: [0x648E4F05aF2b7eB85109A8dc8AE81D8E006457D8][etherscan-mainnet]
 
 This contract also owns the XNS "bare name": `xns`.
 
 ### Sepolia Testnet
 
-For testing purposes, the deployed contract on Sepolia can be used at: [0x13C08D86e5666D802c4Cba4684d1944A8d672d38][etherscan-sepolia-contract]
+For testing purposes, the deployed contract on Sepolia can be used at: [0x708a6a410Ea26E536F6534Ac5c98FDD73a4BFe23][etherscan-sepolia-contract]
 
 The testnet contract has been parametrized as follows:
 - Public namespace registration fee: 0.05 ether (instead of 50 ether)
@@ -600,8 +600,8 @@ See the [Developer Notes][dev-notes] for design decisions, code style guidelines
 [contract-MockERC20B]: https://github.com/Walodja1987/xns/blob/main/contracts/src/mocks/MockERC20B.sol
 [contract-MockERC20C]: https://github.com/Walodja1987/xns/blob/main/contracts/src/mocks/MockERC20C.sol
 
-[etherscan-mainnet]: https://etherscan.io/address/0x13C08D86e5666D802c4Cba4684d1944A8d672d38
-[etherscan-sepolia-contract]: https://sepolia.etherscan.io/address/0x13C08D86e5666D802c4Cba4684d1944A8d672d38
+[etherscan-mainnet]: https://etherscan.io/address/0x648E4F05aF2b7eB85109A8dc8AE81D8E006457D8
+[etherscan-sepolia-contract]: https://sepolia.etherscan.io/address/0x708a6a410Ea26E536F6534Ac5c98FDD73a4BFe23
 [etherscan-mainnet]: https://etherscan.io/address/xxx
 
 [license]: https://github.com/Walodja1987/xns/blob/main/LICENSE
