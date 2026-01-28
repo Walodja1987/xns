@@ -1,5 +1,0 @@
-[
-  "constructor(address,string,string) payable",
-  "function registerName(string,string) payable",
-  "function xns() view returns (address)"
-]
