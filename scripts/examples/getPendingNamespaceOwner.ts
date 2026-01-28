@@ -1,13 +1,13 @@
 /**
- * Script to query the pending namespace creator
+ * Script to query the pending namespace owner
  *
  * USAGE:
  * Run the script with:
- * `npx hardhat run scripts/examples/getPendingNamespaceCreator.ts --network <network_name>`
+ * `npx hardhat run scripts/examples/getPendingNamespaceOwner.ts --network <network_name>`
  *
  * EXAMPLE:
- * To query the pending namespace creator on Sepolia:
- * `npx hardhat run scripts/examples/getPendingNamespaceCreator.ts --network sepolia`
+ * To query the pending namespace owner on Sepolia:
+ * `npx hardhat run scripts/examples/getPendingNamespaceOwner.ts --network sepolia`
  *
  * REQUIRED SETUP:
  * Before running, set these environment variables using hardhat-vars:
@@ -52,25 +52,25 @@ async function main() {
 
   // Get namespace info to verify namespace exists
   const namespaceInfo = await xns.getNamespaceInfo(namespace);
-  if (namespaceInfo.creator === hre.ethers.ZeroAddress) {
+  if (namespaceInfo.owner === hre.ethers.ZeroAddress) {
     throw new Error(`Namespace "${namespace}" does not exist.`);
   }
 
   console.log(`\nNetwork: ${GREEN}${networkName}${RESET}`);
   console.log(`XNS contract: ${GREEN}${contractAddress}${RESET}`);
   console.log(`Namespace: ${GREEN}${namespace}${RESET}`);
-  console.log(`Current creator: ${GREEN}${namespaceInfo.creator}${RESET}\n`);
+  console.log(`Current namespace owner: ${GREEN}${namespaceInfo.owner}${RESET}\n`);
 
-  // Query pending creator
-  const pendingCreator = await xns.getPendingNamespaceCreator(namespace);
+  // Query pending namespace owner
+  const pendingOwner = await xns.getPendingNamespaceOwner(namespace);
 
-  if (pendingCreator === hre.ethers.ZeroAddress) {
-    console.log(`Pending creator: ${YELLOW}None (zero address)${RESET}`);
-    console.log(`${GREEN}✓${RESET} No pending namespace creator transfer\n`);
+  if (pendingOwner === hre.ethers.ZeroAddress) {
+    console.log(`Pending namespace owner: ${YELLOW}None (zero address)${RESET}`);
+    console.log(`${GREEN}✓${RESET} No pending namespace ownership transfer\n`);
   } else {
-    console.log(`Pending creator: ${GREEN}${pendingCreator}${RESET}`);
+    console.log(`Pending namespace owner: ${GREEN}${pendingOwner}${RESET}`);
     console.log(
-      `${YELLOW}⚠${RESET} Namespace creator transfer is pending. Pending creator must call acceptNamespaceCreator("${namespace}") to complete the transfer.\n`,
+      `${YELLOW}⚠${RESET} Namespace ownership transfer is pending. Pending namespace owner must call acceptNamespaceOwnership("${namespace}") to complete the transfer.\n`,
     );
   }
 }

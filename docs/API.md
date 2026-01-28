@@ -29,20 +29,20 @@ Label and namespace string requirements:
 - XNS features two types of namespaces: public and private.
 - **Public namespaces (50 ETH):**
   - Open to everyone after a 7-day exclusivity period post namespace registration.
-  - During exclusivity, only the creator can register or sponsor names (via `registerNameWithAuthorization`
+  - During exclusivity, only the namespace owner can register or sponsor names (via `registerNameWithAuthorization`
     or `batchRegisterNameWithAuthorization`).
   - After exclusivity, anyone can register or sponsor names (via `registerName`
     or `batchRegisterNameWithAuthorization`).
-  - Creators receive 10% of all name registration fees in perpetuity.
+  - Namespace owners receive 10% of all name registration fees in perpetuity.
 - **Private namespaces (10 ETH):**
-  - Only the creator can register names (via `registerNameWithAuthorization`
+  - Only the namespace owner can register names (via `registerNameWithAuthorization`
     or `batchRegisterNameWithAuthorization`).
-  - Creators do not receive fees; all fees go to the XNS contract owner.
+  - Namespace owners do not receive fees; all fees go to the XNS contract owner.
 - During the first year post XNS contract deployment, the contract owner can register
   namespaces for others at no cost.
 - The "eth" namespace is disallowed to avoid confusion with ENS.
 - The "x" namespace is associated with bare names (e.g. "vitalik" = "vitalik.x").
-- The contract owner is set as the creator of the "x" namespace at deployment.
+- The contract owner is set as the namespace owner of the "x" namespace at deployment.
 
 ### Bare Names
 - Bare names are names without a namespace (e.g., "vitalik" instead of "vitalik.x").
@@ -62,7 +62,7 @@ Label and namespace string requirements:
 ### ETH Burn and Fee Distribution
 - 80% of ETH sent is burnt via DETH.
 - 20% is credited as fees:
-  - Public namespaces: 10% to namespace creator, 10% to XNS contract owner
+  - Public namespaces: 10% to namespace owner, 10% to XNS contract owner
   - Private namespaces: 20% to XNS owner
 
 
@@ -91,10 +91,10 @@ This function only works for public namespaces after the exclusivity period (7 d
 **Fee Distribution:**
 - 80% of ETH is permanently burned via DETH.
 - 10% is credited to the contract owner.
-- 10% is credited to the namespace creator.
+- 10% is credited to the namespace owner.
 
 **Note:**
-- During the exclusivity period or for private namespaces, namespace creators must use
+- During the exclusivity period or for private namespaces, namespace owners must use
   `registerNameWithAuthorization` even for their own registrations.
 - Due to block reorganization risks, users should wait for a few blocks and verify
   the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
@@ -119,7 +119,7 @@ Function to sponsor a paid name registration for `recipient` who explicitly auth
 an EIP-712 signature.
 
 This function is **required** for:
-- All registrations in public namespaces during the exclusivity period (only namespace creator).
+- All registrations in public namespaces during the exclusivity period (only namespace owner).
 - All sponsored registrations in public namespaces after the exclusivity period (anyone).
 - All registrations in private namespaces.
 
@@ -131,7 +131,7 @@ Supports both EOA signatures and EIP-1271 contract wallet signatures.
 - `recipient` must not be the zero address.
 - Namespace must exist.
 - `msg.value` must be >= the namespace's registered price (excess will be refunded).
-- `msg.sender` must be the namespace creator for public namespaces during the exclusivity period
+- `msg.sender` must be the namespace owner for public namespaces during the exclusivity period
   or the contract owner for private namespaces.
 - Recipient must not already have a name.
 - Name must not already be registered.
@@ -139,7 +139,7 @@ Supports both EOA signatures and EIP-1271 contract wallet signatures.
 
 **Fee Distribution:**
 - 80% of ETH is permanently burned via DETH.
-- For public namespaces: 10% is credited to the namespace creator and 10% to the contract owner.
+- For public namespaces: 10% is credited to the namespace owner and 10% to the contract owner.
 - For private namespaces: 20% is credited to the contract owner.
 
 **Note:**
@@ -176,7 +176,7 @@ a name or the name is already registered (griefing protection). Skipped items ar
 
 **Fee Distribution:**
 - 80% of ETH is permanently burned via DETH.
-- For public namespaces: 10% is credited to the namespace creator and 10% to the contract owner.
+- For public namespaces: 10% is credited to the namespace owner and 10% to the contract owner.
 - For private namespaces: 20% is credited to the contract owner.
 
 **Note:** Input validation errors (invalid label, zero recipient, namespace mismatch, invalid signature)
@@ -275,12 +275,12 @@ foster adoption. No ETH is processed (function is non-payable) and no fees are c
 **Requirements:**
 - `msg.sender` must be the contract owner.
 - Must be called during the onboarding period (first year after contract deployment).
-- `creator` must not be the zero address.
+- `nsOwner` must not be the zero address.
 - No ETH should be sent (function is non-payable).
 - All validation requirements from `registerPublicNamespace` apply.
 
 ```solidity
-function registerPublicNamespaceFor(address creator, string namespace, uint256 pricePerName) external
+function registerPublicNamespaceFor(address nsOwner, string namespace, uint256 pricePerName) external
 ```
 
 
@@ -288,7 +288,7 @@ function registerPublicNamespaceFor(address creator, string namespace, uint256 p
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| creator | address | The address that will be assigned as the namespace creator (who will receive creator fees). |
+| nsOwner | address | The address that will be assigned as the namespace owner (the account that shall receive namespace registration fees). |
 | namespace | string | The namespace to register. |
 | pricePerName | uint256 | The price per name for the namespace. |
 
@@ -303,12 +303,12 @@ foster adoption. No ETH is processed (function is non-payable) and no fees are c
 **Requirements:**
 - `msg.sender` must be the contract owner.
 - Must be called during the onboarding period (first year after contract deployment).
-- `creator` must not be the zero address.
+- `nsOwner` must not be the zero address.
 - No ETH should be sent (function is non-payable).
 - All validation requirements from `registerPrivateNamespace` apply.
 
 ```solidity
-function registerPrivateNamespaceFor(address creator, string namespace, uint256 pricePerName) external
+function registerPrivateNamespaceFor(address nsOwner, string namespace, uint256 pricePerName) external
 ```
 
 
@@ -316,7 +316,7 @@ function registerPrivateNamespaceFor(address creator, string namespace, uint256 
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| creator | address | The address that will be assigned as the namespace creator. |
+| nsOwner | address | The address that will be assigned as the namespace owner. |
 | namespace | string | The namespace to register. |
 | pricePerName | uint256 | The price per name for the namespace. |
 
@@ -356,25 +356,25 @@ function claimFeesToSelf() external
 
 
 
-### transferNamespaceCreator
+### transferNamespaceOwnership
 
 
-Start a 2-step transfer of namespace creator to a new address.
-The new creator must call `acceptNamespaceCreator` to complete the transfer.
+Start a 2-step transfer of namespace ownership to a new address.
+The new namespace owner must call `acceptNamespaceOwnership` to complete the transfer.
 
-Setting `newCreator` to the zero address is allowed; this can be used to cancel an initiated transfer.
+Setting `newOwner` to the zero address is allowed; this can be used to cancel an initiated transfer.
 Alternatively, a pending transfer can be overwritten by calling this function again with a different address.
 
 **Requirements:**
-- `msg.sender` must be the current namespace creator.
+- `msg.sender` must be the current namespace owner.
 - Namespace must exist.
 
 **Fee Accounting Note:** Ownership transfers do **not** migrate already-accrued `_pendingFees`.
-Any fees accumulated before `acceptNamespaceCreator()` remain claimable by the previous creator address.
-Only fees accrued **after** acceptance are credited to the new creator address.
+Any fees accumulated before `acceptNamespaceOwnership()` remain claimable by the previous namespace owner address.
+Only fees accrued **after** acceptance are credited to the new namespace owner address.
 
 ```solidity
-function transferNamespaceCreator(string namespace, address newCreator) external
+function transferNamespaceOwnership(string namespace, address newOwner) external
 ```
 
 
@@ -382,23 +382,23 @@ function transferNamespaceCreator(string namespace, address newCreator) external
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| namespace | string | The namespace to transfer creator rights for. |
-| newCreator | address | The address that will become the new namespace creator, or `address(0)` to cancel a pending transfer. |
+| namespace | string | The namespace to transfer ownership for. |
+| newOwner | address | The address that will become the new namespace owner, or `address(0)` to cancel a pending transfer. |
 
 
-### acceptNamespaceCreator
+### acceptNamespaceOwnership
 
 
-Accept a pending namespace creator transfer.
-Completes the 2-step transfer process started by `transferNamespaceCreator`.
+Accept a pending namespace ownership transfer.
+Completes the 2-step transfer process started by `transferNamespaceOwnership`.
 
 **Requirements:**
 - Namespace must exist.
-- There must be a pending creator transfer.
-- `msg.sender` must be the pending creator.
+- There must be a pending namespace owner transfer.
+- `msg.sender` must be the pending namespace owner.
 
 ```solidity
-function acceptNamespaceCreator(string namespace) external
+function acceptNamespaceOwnership(string namespace) external
 ```
 
 
@@ -406,7 +406,7 @@ function acceptNamespaceCreator(string namespace) external
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| namespace | string | The namespace to accept creator rights for. |
+| namespace | string | The namespace to accept ownership for. |
 
 
 ### getAddress
@@ -490,7 +490,7 @@ function getName(address addr) external view returns (string)
 Function to retrieve the namespace metadata associated with `namespace`.
 
 ```solidity
-function getNamespaceInfo(string namespace) external view returns (uint256 pricePerName, address creator, uint64 createdAt, bool isPrivate)
+function getNamespaceInfo(string namespace) external view returns (uint256 pricePerName, address owner, uint64 createdAt, bool isPrivate)
 ```
 
 
@@ -505,7 +505,7 @@ function getNamespaceInfo(string namespace) external view returns (uint256 price
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | pricePerName | uint256 | The price per name for the namespace. |
-| creator | address | The creator of the namespace. |
+| owner | address | The namespace owner of the namespace. |
 | createdAt | uint64 | The timestamp when the namespace was created. |
 | isPrivate | bool | Whether the namespace is private. |
 
@@ -538,7 +538,7 @@ function getNamespacePrice(string namespace) external view returns (uint256 pric
 Function to check if a namespace is currently within its exclusivity period.
 Returns `true` if `block.timestamp <= createdAt + EXCLUSIVITY_PERIOD`, `false` otherwise.
 For private namespaces, this function will return `false` after the exclusivity period, but private namespaces
-remain creator-only forever regardless of this value.
+remain namespace-owner-only forever regardless of this value.
 
 ```solidity
 function isInExclusivityPeriod(string namespace) external view returns (bool inExclusivityPeriod)
@@ -631,14 +631,14 @@ function getPendingFees(address recipient) external view returns (uint256 amount
 | ---- | ---- | ----------- |
 | amount | uint256 | The amount of pending fees that can be claimed by the address. |
 
-### getPendingNamespaceCreator
+### getPendingNamespaceOwner
 
 
-Get the pending namespace creator for a given namespace.
+Get the pending namespace owner for a given namespace.
 Returns `address(0)` if there is no pending transfer.
 
 ```solidity
-function getPendingNamespaceCreator(string namespace) external view returns (address pendingCreator)
+function getPendingNamespaceOwner(string namespace) external view returns (address pendingOwner)
 ```
 
 
@@ -646,13 +646,13 @@ function getPendingNamespaceCreator(string namespace) external view returns (add
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| namespace | string | The namespace to check for pending creator. |
+| namespace | string | The namespace to check for pending namespace owner. |
 
 #### Return Values
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| pendingCreator | address | The address of the pending namespace creator, or `address(0)` if none. |
+| pendingOwner | address | The address of the pending namespace owner, or `address(0)` if none. |
 
 
 ## Events
@@ -677,7 +677,7 @@ _Emitted in name registration functions._
 
 
 ```solidity
-event NamespaceRegistered(string namespace, uint256 pricePerName, address creator, bool isPrivate)
+event NamespaceRegistered(string namespace, uint256 pricePerName, address owner, bool isPrivate)
 ```
 
 _Emitted in constructor when "x" namespace is registered, and in namespace registration functions._
@@ -699,31 +699,31 @@ _Emitted in fee claiming functions._
 
 
 
-### NamespaceCreatorTransferStarted
+### NamespaceOwnerTransferStarted
 
 
 
 
 ```solidity
-event NamespaceCreatorTransferStarted(string namespace, address oldCreator, address newCreator)
+event NamespaceOwnerTransferStarted(string namespace, address oldOwner, address newOwner)
 ```
 
-_Emitted when a namespace creator starts a transfer to a new creator (address that shall receive the creator fees).
-When `newCreator` is `address(0)`, this indicates cancellation of a pending transfer._
+_Emitted when a namespace owner starts a transfer to a new namespace owner (address that shall receive the nsOwnerFee).
+When `newOwner` is `address(0)`, this indicates cancellation of a pending transfer._
 
 
 
 
-### NamespaceCreatorTransferAccepted
+### NamespaceOwnerTransferAccepted
 
 
 
 
 ```solidity
-event NamespaceCreatorTransferAccepted(string namespace, address newCreator)
+event NamespaceOwnerTransferAccepted(string namespace, address newOwner)
 ```
 
-_Emitted when a pending namespace creator accepts the transfer._
+_Emitted when a pending namespace owner accepts the transfer._
 
 
 
@@ -775,7 +775,7 @@ uint256 PRIVATE_NAMESPACE_REGISTRATION_FEE
 ### EXCLUSIVITY_PERIOD
 
 
-Duration of the exclusive namespace-creator window for paid registrations
+Duration of the exclusive namespace-owner window for paid registrations
 (relevant for public namespace registrations only).
 
 ```solidity
@@ -888,7 +888,7 @@ address DETH
 ```solidity
 struct NamespaceData {
   uint256 pricePerName;
-  address creator;
+  address owner;
   uint64 createdAt;
   bool isPrivate;
 ```

@@ -25,7 +25,7 @@
 4. [Contract Address](#-contract-address)
 5. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
 6. [Contract Ownership Transfer](#-contract-ownership-transfer)
-7. [Namespace Creator Transfer](#-namespace-creator-transfer)
+7. [Namespace Owner Transfer](#-namespace-owner-transfer)
 8. [License and Deployment Policy](#-license-and-deployment-policy)
 9. [API](#-api)
 10. [Developer Notes](#-developer-notes)
@@ -39,7 +39,7 @@
 - **Universal naming:** Both EOAs and smart contracts can be named in the same unified registry.
 - **Globally unique:** Each name is unique across all Ethereum addresses, preventing conflicts like duplicate ERC20 token names.
 - **Permissionless namespaces:** Anyone can create their own namespace without requiring approval from any central party.
-- **Private namespaces:** Supports private namespaces where the creator maintains exclusive control over name registrations within their namespace.
+- **Private namespaces:** Supports private namespaces where the namespace owner maintains exclusive control over name registrations within their namespace.
 - **ETH burning:** 80% of registration fees are permanently burned, supporting Ethereum's deflationary mechanism.
 
 ### Name Format
@@ -83,13 +83,13 @@ XNS features two types of namespaces: **public** and **private**.
 
 **Public Namespaces:**
 - Anyone can register names within a public namespace after a 7-day exclusivity period after namespace creation has ended.
-- During the exclusivity period, only the creator can register or sponsor names.
-- Creators receive 10% of all name registration fees in perpetuity.
+- During the exclusivity period, only the namespace owner can register or sponsor names.
+- Namespace owners receive 10% of all name registration fees in perpetuity.
 - Registration fee: 50 ETH.
 
 **Private Namespaces:**
-- Only the creator can register names forever.
-- Creators do not receive fees; all fees go to the XNS contract owner.
+- Only the namespace owner can register names forever.
+- Namespace owners do not receive fees; all fees go to the XNS contract owner.
 - Registration fee: 10 ETH.
 
 Anyone can register a new namespace by paying the one-time registration fee. The `eth` namespace is disallowed to avoid confusion with ENS.
@@ -98,11 +98,11 @@ Anyone can register a new namespace by paying the one-time registration fee. The
 
 - **80%** of ETH sent is **burnt** via DETH.
 - **20%** is credited as **fees**:
-  - Public namespaces: 10% to namespace creator, 10% to XNS contract owner
+  - Public namespaces: 10% to namespace owner, 10% to XNS contract owner
   - Private namespaces: 20% to XNS owner
 
 **Notes:**
-* Namespace creators only receive fees from name registrations in their namespace (public namespaces only).
+* Namespace owners only receive fees from name registrations in their namespace (public namespaces only).
 * All ETH burns are recorded via the [DETH contract](https://github.com/Walodja1987/deth), a global ETH sink and burn attestation registry. Burns are tracked and verifiable as non-transferrable DETH credits minted at a 1:1 ratio, providing proof of contribution to Ethereum's deflationary mechanism.
 
 ## ✨ How It Works
@@ -116,7 +116,7 @@ Registering an XNS name in a public namespace is straightforward:
 3. **Register Name**: Send a transaction with the required ETH amount to register a name (see [`registerName`][api-registerName] in API docs). Any excess will be refunded.
 4. **Verify Resolution**: Wait a few blocks, then verify the name is registered (see [`getAddress`][api-getAddress] and [`getName`][api-getName] in API docs).
 
-**Note:** [`registerName`][api-registerName] only works for public namespaces after the exclusivity period (7 days) has ended. During the exclusivity period or for private namespaces, namespace creators must use [`registerNameWithAuthorization`][api-registerNameWithAuthorization] even for their own registrations.
+**Note:** [`registerName`][api-registerName] only works for public namespaces after the exclusivity period (7 days) has ended. During the exclusivity period or for private namespaces, namespace owners must use [`registerNameWithAuthorization`][api-registerNameWithAuthorization] even for their own registrations.
 
 **Example scripts:**
 * [Name registration for EOA][script-registerName]
@@ -156,8 +156,8 @@ XNS supports **authorized name registration** via [`registerNameWithAuthorizatio
 - Any scenario where someone else pays registration fees on behalf of recipients.
 
 **Important restrictions:**
-- For public namespaces: During the 7-day exclusivity period, only the namespace creator can sponsor registrations.
-- For private namespaces: Only the namespace creator can sponsor registrations forever.
+- For public namespaces: During the 7-day exclusivity period, only the namespace owner can sponsor registrations.
+- For private namespaces: Only the namespace owner can sponsor registrations forever.
 
 **Batch registration:** 
 - XNS also supports [`batchRegisterNameWithAuthorization`][api-batchRegisterNameWithAuthorization] to register multiple names within the same namespace in a single transaction. See the API documentation for details.
@@ -192,18 +192,18 @@ XNS provides simple on-chain resolution for names and addresses.
 1. **Choose a Namespace:** Select an available namespace and set the desired price per name (must be >= 0.001 ETH and a multiple of 0.001 ETH).
 2. **Register Namespace:** Submit a transaction with the required ETH to register the namespace (see [`registerPublicNamespace`][api-registerPublicNamespace] in the API docs). Any excess will be refunded.
 
-Public namespace creators have an exclusive 7-day window to register or sponsor any name within their namespace. After this period, anyone can freely register names via [`registerName`][api-registerName]. **During the exclusivity period, use [`registerNameWithAuthorization`][api-registerNameWithAuthorization] even for their own registrations.**
+Public namespace owners have an exclusive 7-day window to register or sponsor any name within their namespace. After this period, anyone can freely register names via [`registerName`][api-registerName]. **During the exclusivity period, use [`registerNameWithAuthorization`][api-registerNameWithAuthorization] even for their own registrations.**
 
 **How to register a private namespace:**
 1. **Choose a Namespace:** Select an available namespace and set the desired price per name (must be >= 0.005 ETH and a multiple of 0.001 ETH).
 2. **Register Namespace:** Submit a transaction with the required ETH to register the namespace (see [`registerPrivateNamespace`][api-registerPrivateNamespace] in the API docs). Any excess will be refunded.
 
-The private namespace creator registers names via the authorized flow (see [`registerNameWithAuthorization`][api-registerNameWithAuthorization] in the API docs). **This is the only way to register names in private namespaces, including registrations for the creator themselves.**
+The private namespace owner registers names via the authorized flow (see [`registerNameWithAuthorization`][api-registerNameWithAuthorization] in the API docs). **This is the only way to register names in private namespaces, including registrations for the namespace owner themselves.**
 
 **Notes:**
 * Regular users always pay the standard fees when registering namespaces via [`registerPublicNamespace`][api-registerPublicNamespace] or [`registerPrivateNamespace`][api-registerPrivateNamespace].
 * During the onboarding period (first year after contract deployment), the XNS contract owner can register public and private namespaces at no cost using [`registerPublicNamespaceFor`][api-registerPublicNamespaceFor] and [`registerPrivateNamespaceFor`][api-registerPrivateNamespaceFor], respectively, to foster adoption. These are OWNER-only functions that allow registering namespaces for other addresses during the onboarding period.
-* **Security recommendation:** Namespace creators should consider using multisig wallets to reduce the risk of wallet access loss or compromise. This is especially important for public namespace creators who receive ongoing fee rewards, and for private namespace creators who maintain exclusive control over their namespace.
+* **Security recommendation:** Namespace owners should consider using multisig wallets to reduce the risk of wallet access loss or compromise. This is especially important for public namespace owners who receive ongoing fee rewards, and for private namespace owners who maintain exclusive control over their namespace.
 
   **Example scripts:**
   * [Register public namespace for another address (OWNER-only)][script-registerPublicNamespaceFor]
@@ -215,7 +215,7 @@ Namespaces can be registered directly via [Etherscan][etherscan-sepolia].
 
 <img width="665" height="303" alt="image" src="https://github.com/user-attachments/assets/90b4cded-bb3c-468e-a645-5c6405bac0e0" />
 
-> 💡**Note:** In the screenshot, `2000000000000000` (in wei) is the registration fee set by the creator for users to pay when registering names in the namespace.
+> 💡**Note:** In the screenshot, `2000000000000000` (in wei) is the registration fee set by the namespace owner for users to pay when registering names in the namespace.
 
 To register a private namespace, use the [`registerPrivateNamespace`][api-registerPrivateNamespace] function with the same input fields as the public version. The required registration fee is **10 ETH** (entered in the first field instead of 50); if more than 10 ETH is sent, the excess will be automatically refunded.
 
@@ -227,7 +227,7 @@ To register a private namespace, use the [`registerPrivateNamespace`][api-regist
 
 Namespace details can be retrieved using [`getNamespaceInfo`][api-getNamespaceInfo]. The details include:
 - Price per name
-- Creator address
+- Namespace owner address
 - Creation timestamp
 - Whether it's private or public
 
@@ -240,7 +240,7 @@ The exclusivity period can be checked using [`isInExclusivityPeriod`][api-isInEx
 
 #### Claiming Fees
 
-Fees earned by namespace creators and the XNS contract owner accumulate within the XNS contract and must be claimed to be withdrawn. Available actions:
+Fees earned by namespace owners and the XNS contract owner accumulate within the XNS contract and must be claimed to be withdrawn. Available actions:
 - Check pending fees for any address ([`getPendingFees`][api-getPendingFees])
 - Claim fees to caller ([`claimFeesToSelf`][api-claimFeesToSelf])
 - Claim fees to a different recipient ([`claimFees`][api-claimFees])
@@ -275,7 +275,7 @@ For testing purposes, the deployed contract on Sepolia can be used at: [0x04c9Aa
 The testnet contract has been parametrized as follows:
 - Public namespace registration fee: 0.05 ether (instead of 50 ether)
 - Private namespace registration fee: 0.01 ether (instead of 10 ether)
-- Namespace creator exclusive period: 300 seconds (instead of 7 days)
+- Namespace owner exclusive period: 300 seconds (instead of 7 days)
 - Onboarding period: 100 days (instead of 365 days)
 - Bare name price: 0.01 ether (instead of 10 ether)
 
@@ -480,26 +480,26 @@ Ownership transfers do **not** migrate already-accrued `_pendingFees`. Any fees 
 * [Initiate ownership transfer][script-transferOwnership]
 * [Accept ownership transfer][script-acceptOwnership]
 
-## 🔐 Namespace Creator Transfer
+## 🔐 Namespace Owner Transfer
 
-Namespace creators can transfer their namespace (and future fee streams) using a 2-step process (`transferNamespaceCreator` → `acceptNamespaceCreator`), following the same pattern as contract ownership transfer.
+Namespace owners can transfer their namespace (and future fee streams) using a 2-step process (`transferNamespaceOwnership` → `acceptNamespaceOwnership`), following the same pattern as contract ownership transfer.
 
-**Creator Transfer Process:**
-1. Current creator calls `transferNamespaceCreator(namespace, newCreator)` to initiate transfer.
-2. Pending creator calls `acceptNamespaceCreator(namespace)` to complete transfer.
-3. Only after acceptance does the new creator gain control.
+**Namespace Owner Transfer Process:**
+1. Current namespace owner calls `transferNamespaceOwnership(namespace, newOwner)` to initiate transfer.
+2. Pending namespace owner calls `acceptNamespaceOwnership(namespace)` to complete transfer.
+3. Only after acceptance does the new namespace owner gain control.
 
 **Cancellation:**
-- The current creator can cancel a pending transfer by calling `transferNamespaceCreator(namespace, address(0))`.
-- Alternatively, the creator can overwrite a pending transfer by calling `transferNamespaceCreator(namespace, differentAddress)` again.
+- The current namespace owner can cancel a pending transfer by calling `transferNamespaceOwnership(namespace, address(0))`.
+- Alternatively, the namespace owner can overwrite a pending transfer by calling `transferNamespaceOwnership(namespace, differentAddress)` again.
 
 **Fee Accounting:**
-Creator transfers do **not** migrate already-accrued `_pendingFees`. Any fees accumulated before `acceptNamespaceCreator()` remain claimable by the previous creator address. Only fees accrued **after** acceptance are credited to the new creator address.
+Namespace owner transfers do **not** migrate already-accrued `_pendingFees`. Any fees accumulated before `acceptNamespaceOwnership()` remain claimable by the previous namespace owner address. Only fees accrued **after** acceptance are credited to the new namespace owner address.
 
 **Example scripts:**
-* [Query pending namespace creator][script-getPendingNamespaceCreator]
-* [Initiate namespace creator transfer][script-transferNamespaceCreator]
-* [Accept namespace creator transfer][script-acceptNamespaceCreator]
+* [Query pending namespace owner][script-getPendingNamespaceOwner]
+* [Initiate namespace ownership transfer][script-transferNamespaceOwnership]
+* [Accept namespace ownership transfer][script-acceptNamespaceOwnership]
 
 ## 📄 License and Deployment Policy
 
@@ -592,9 +592,9 @@ See the [Developer Notes][dev-notes] for design decisions, code style guidelines
 [script-pendingOwner]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/pendingOwner.ts
 [script-transferOwnership]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/transferOwnership.ts
 [script-acceptOwnership]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/acceptOwnership.ts
-[script-getPendingNamespaceCreator]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getPendingNamespaceCreator.ts
-[script-transferNamespaceCreator]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/transferNamespaceCreator.ts
-[script-acceptNamespaceCreator]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/acceptNamespaceCreator.ts
+[script-getPendingNamespaceOwner]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/getPendingNamespaceOwner.ts
+[script-transferNamespaceOwnership]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/transferNamespaceOwnership.ts
+[script-acceptNamespaceOwnership]: https://github.com/Walodja1987/xns/blob/main/scripts/examples/acceptNamespaceOwnership.ts
 
 [contract-MockERC20A]: https://github.com/Walodja1987/xns/blob/main/contracts/src/mocks/MockERC20A.sol
 [contract-MockERC20B]: https://github.com/Walodja1987/xns/blob/main/contracts/src/mocks/MockERC20B.sol

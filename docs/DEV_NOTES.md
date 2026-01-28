@@ -88,9 +88,9 @@ Available example scripts:
 - [`pendingOwner.ts`](../scripts/examples/pendingOwner.ts) - Query the pending contract owner
 - [`transferOwnership.ts`](../scripts/examples/transferOwnership.ts) - Initiate contract ownership transfer
 - [`acceptOwnership.ts`](../scripts/examples/acceptOwnership.ts) - Accept contract ownership transfer
-- [`getPendingNamespaceCreator.ts`](../scripts/examples/getPendingNamespaceCreator.ts) - Query the pending namespace creator
-- [`transferNamespaceCreator.ts`](../scripts/examples/transferNamespaceCreator.ts) - Initiate namespace creator transfer
-- [`acceptNamespaceCreator.ts`](../scripts/examples/acceptNamespaceCreator.ts) - Accept namespace creator transfer
+- [`getPendingNamespaceOwner.ts`](../scripts/examples/getPendingNamespaceOwner.ts) - Query the pending namespace owner
+- [`transferNamespaceOwnership.ts`](../scripts/examples/transferNamespaceOwnership.ts) - Initiate namespace ownership transfer
+- [`acceptNamespaceOwnership.ts`](../scripts/examples/acceptNamespaceOwnership.ts) - Accept namespace ownership transfer
 
 **Utility Scripts:**
 - [`generateSignature.ts`](../scripts/examples/generateSignature.ts) - Generate EIP-712 signature for Etherscan execution
