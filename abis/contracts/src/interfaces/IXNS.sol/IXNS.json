@@ -1,10 +1,10 @@
 [
   "event FeesClaimed(address indexed,uint256)",
   "event NameRegistered(string indexed,string indexed,address indexed)",
-  "event NamespaceCreatorTransferAccepted(string indexed,address indexed)",
-  "event NamespaceCreatorTransferStarted(string indexed,address indexed,address indexed)",
+  "event NamespaceOwnerTransferAccepted(string indexed,address indexed)",
+  "event NamespaceOwnerTransferStarted(string indexed,address indexed,address indexed)",
   "event NamespaceRegistered(string indexed,uint256,address indexed,bool)",
-  "function acceptNamespaceCreator(string)",
+  "function acceptNamespaceOwnership(string)",
   "function batchRegisterNameWithAuthorization(tuple(address,string,string)[],bytes[]) payable returns (uint256)",
   "function claimFees(address)",
   "function claimFeesToSelf()",
@@ -14,7 +14,7 @@
   "function getNamespaceInfo(string) view returns (uint256, address, uint64, bool)",
   "function getNamespacePrice(string) view returns (uint256)",
   "function getPendingFees(address) view returns (uint256)",
-  "function getPendingNamespaceCreator(string) view returns (address)",
+  "function getPendingNamespaceOwner(string) view returns (address)",
   "function isInExclusivityPeriod(string) view returns (bool)",
   "function isValidLabelOrNamespace(string) pure returns (bool)",
   "function isValidSignature(tuple(address,string,string),bytes) view returns (bool)",
@@ -24,5 +24,5 @@
   "function registerPrivateNamespaceFor(address,string,uint256)",
   "function registerPublicNamespace(string,uint256) payable",
   "function registerPublicNamespaceFor(address,string,uint256)",
-  "function transferNamespaceCreator(string,address)"
+  "function transferNamespaceOwnership(string,address)"
 ]

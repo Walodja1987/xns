@@ -45,20 +45,20 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 /// - XNS features two types of namespaces: public and private.
 /// - **Public namespaces (50 ETH):**
 ///   - Open to everyone after a 7-day exclusivity period post namespace registration.
-///   - During exclusivity, only the creator can register or sponsor names (via `registerNameWithAuthorization`
+///   - During exclusivity, only the namespace owner can register or sponsor names (via `registerNameWithAuthorization`
 ///     or `batchRegisterNameWithAuthorization`).
 ///   - After exclusivity, anyone can register or sponsor names (via `registerName`
 ///     or `batchRegisterNameWithAuthorization`).
-///   - Creators receive 10% of all name registration fees in perpetuity.
+///   - Namespace owners receive 10% of all name registration fees in perpetuity.
 /// - **Private namespaces (10 ETH):**
-///   - Only the creator can register names (via `registerNameWithAuthorization`
+///   - Only the namespace owner can register names (via `registerNameWithAuthorization`
 ///     or `batchRegisterNameWithAuthorization`).
-///   - Creators do not receive fees; all fees go to the XNS contract owner.
+///   - Namespace owners do not receive fees; all fees go to the XNS contract owner.
 /// - During the first year post XNS contract deployment, the contract owner can register
 ///   namespaces for others at no cost.
 /// - The "eth" namespace is disallowed to avoid confusion with ENS.
 /// - The "x" namespace is associated with bare names (e.g. "vitalik" = "vitalik.x").
-/// - The contract owner is set as the creator of the "x" namespace at deployment.
+/// - The contract owner is set as the namespace owner of the "x" namespace at deployment.
 ///
 /// ### Bare Names
 /// - Bare names are names without a namespace (e.g., "vitalik" instead of "vitalik.x").
@@ -78,7 +78,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 /// ### ETH Burn and Fee Distribution
 /// - 80% of ETH sent is burnt via DETH.
 /// - 20% is credited as fees:
-///   - Public namespaces: 10% to namespace creator, 10% to XNS contract owner
+///   - Public namespaces: 10% to namespace owner, 10% to XNS contract owner
 ///   - Private namespaces: 20% to XNS owner
 contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     // -------------------------------------------------------------------------
@@ -88,7 +88,7 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     /// @dev Data structure to store namespace metadata.
     struct NamespaceData {
         uint256 pricePerName;
-        address creator;
+        address owner;
         uint64 createdAt;
         bool isPrivate;
     }
@@ -122,8 +122,8 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     // Mapping from address to pending fees that can be claimed.
     mapping(address => uint256) private _pendingFees;
 
-    // Mapping from namespace hash to pending namespace creator address.
-    mapping(bytes32 => address) private _pendingNamespaceCreator;
+    // Mapping from namespace hash to pending namespace owner address.
+    mapping(bytes32 => address) private _pendingNamespaceOwner;
 
     // EIP-712 struct type hash for `RegisterNameAuth`.
     bytes32 private constant _REGISTER_NAME_AUTH_TYPEHASH =
@@ -146,7 +146,7 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     /// @notice Fee to register a private namespace.
     uint256 public constant PRIVATE_NAMESPACE_REGISTRATION_FEE = 10 ether;
 
-    /// @notice Duration of the exclusive namespace-creator window for paid registrations
+    /// @notice Duration of the exclusive namespace-owner window for paid registrations
     /// (relevant for public namespace registrations only).
     uint256 public constant EXCLUSIVITY_PERIOD = 7 days;
 
@@ -182,17 +182,17 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
 
     /// @dev Emitted in constructor when "x" namespace is registered, and in namespace registration functions.
-    event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator, bool isPrivate);
+    event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed owner, bool isPrivate);
 
     /// @dev Emitted in fee claiming functions.
     event FeesClaimed(address indexed recipient, uint256 amount);
 
-    /// @dev Emitted when a namespace creator starts a transfer to a new creator (address that shall receive the creator fees).
-    /// When `newCreator` is `address(0)`, this indicates cancellation of a pending transfer.
-    event NamespaceCreatorTransferStarted(string indexed namespace, address indexed oldCreator, address indexed newCreator);
+    /// @dev Emitted when a namespace owner starts a transfer to a new namespace owner (address that shall receive the nsOwnerFee).
+    /// When `newOwner` is `address(0)`, this indicates cancellation of a pending transfer.
+    event NamespaceOwnerTransferStarted(string indexed namespace, address indexed oldOwner, address indexed newOwner);
 
-    /// @dev Emitted when a pending namespace creator accepts the transfer.
-    event NamespaceCreatorTransferAccepted(string indexed namespace, address indexed newCreator);
+    /// @dev Emitted when a pending namespace owner accepts the transfer.
+    event NamespaceOwnerTransferAccepted(string indexed namespace, address indexed newOwner);
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -200,7 +200,7 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
 
     /// @dev Initializes the contract by setting the XNS contract owner (via OpenZeppelin's `Ownable` contract)
     /// and deployment timestamp. Also pre-registers the special public namespace "x" (associated with bare names) with the
-    /// given owner as its creator and a price of 10 ETH per name. Additionally, registers the bare name "xns" for the
+    /// given owner as its namespace owner and a price of 10 ETH per name. Additionally, registers the bare name "xns" for the
     /// XNS contract itself.
     /// @param initialOwner Address that will own the contract and receive protocol fees (should not be `address(0)`).
     constructor(address initialOwner) EIP712("XNS", "1") Ownable(initialOwner) {
@@ -211,7 +211,7 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
         // Register special public namespace "x" associated with bare names as the very first namespace.
         _namespaces[keccak256(bytes(BARE_NAME_NAMESPACE))] = NamespaceData({
             pricePerName: BARE_NAME_PRICE,
-            creator: initialOwner,
+            owner: initialOwner,
             createdAt: uint64(block.timestamp),
             isPrivate: false
         });
@@ -250,10 +250,10 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     /// **Fee Distribution:**
     /// - 80% of ETH is permanently burned via DETH.
     /// - 10% is credited to the contract owner.
-    /// - 10% is credited to the namespace creator.
+    /// - 10% is credited to the namespace owner.
     ///
     /// **Note:**
-    /// - During the exclusivity period or for private namespaces, namespace creators must use
+    /// - During the exclusivity period or for private namespaces, namespace owners must use
     ///   `registerNameWithAuthorization` even for their own registrations.
     /// - Due to block reorganization risks, users should wait for a few blocks and verify
     ///   the name resolves correctly using the `getAddress` or `getName` function before sharing it publicly.
@@ -264,7 +264,7 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
         require(_isValidLabelOrNamespace(label), "XNS: invalid label");
 
         NamespaceData memory ns = _namespaces[keccak256(bytes(namespace))];
-        require(ns.creator != address(0), "XNS: namespace not found");
+        require(ns.owner != address(0), "XNS: namespace not found");
         require(!ns.isPrivate, "XNS: only for public namespaces");
 
         require(msg.value >= ns.pricePerName, "XNS: insufficient payment");
@@ -282,14 +282,14 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
         emit NameRegistered(label, namespace, msg.sender);
 
         // Process payment: burn 80%, credit fees, and refund excess.
-        _processETHPayment(ns.pricePerName, ns.creator);
+        _processETHPayment(ns.pricePerName, ns.owner);
     }
 
     /// @notice Function to sponsor a paid name registration for `recipient` who explicitly authorized it via
     /// an EIP-712 signature.
     ///
     /// This function is **required** for:
-    /// - All registrations in public namespaces during the exclusivity period (only namespace creator).
+    /// - All registrations in public namespaces during the exclusivity period (only namespace owner).
     /// - All sponsored registrations in public namespaces after the exclusivity period (anyone).
     /// - All registrations in private namespaces.
     ///
@@ -301,7 +301,7 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     /// - `recipient` must not be the zero address.
     /// - Namespace must exist.
     /// - `msg.value` must be >= the namespace's registered price (excess will be refunded).
-    /// - `msg.sender` must be the namespace creator for public namespaces during the exclusivity period
+    /// - `msg.sender` must be the namespace owner for public namespaces during the exclusivity period
     ///   or the contract owner for private namespaces.
     /// - Recipient must not already have a name.
     /// - Name must not already be registered.
@@ -309,7 +309,7 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     ///
     /// **Fee Distribution:**
     /// - 80% of ETH is permanently burned via DETH.
-    /// - For public namespaces: 10% is credited to the namespace creator and 10% to the contract owner.
+    /// - For public namespaces: 10% is credited to the namespace owner and 10% to the contract owner.
     /// - For private namespaces: 20% is credited to the contract owner.
     ///
     /// **Note:**
@@ -329,14 +329,14 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
 
         bytes32 nsHash = keccak256(bytes(registerNameAuth.namespace));
         NamespaceData memory ns = _namespaces[nsHash];
-        require(ns.creator != address(0), "XNS: namespace not found");
+        require(ns.owner != address(0), "XNS: namespace not found");
 
         require(msg.value >= ns.pricePerName, "XNS: insufficient payment");
 
         if (ns.isPrivate) {
-            require(msg.sender == ns.creator, "XNS: not namespace creator (private)");
+            require(msg.sender == ns.owner, "XNS: not namespace owner (private)");
         } else if (block.timestamp <= ns.createdAt + EXCLUSIVITY_PERIOD) {
-            require(msg.sender == ns.creator, "XNS: not namespace creator (exclusivity period)");
+            require(msg.sender == ns.owner, "XNS: not namespace owner (exclusivity period)");
         }
 
         require(
@@ -358,8 +358,8 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
         emit NameRegistered(registerNameAuth.label, registerNameAuth.namespace, registerNameAuth.recipient);
 
         // Process payment: burn 80%, credit fees, and refund excess.
-        address creatorFeeRecipient = ns.isPrivate ? owner() : ns.creator;
-        _processETHPayment(ns.pricePerName, creatorFeeRecipient);
+        address nsOwnerFeeRecipient = ns.isPrivate ? owner() : ns.owner;
+        _processETHPayment(ns.pricePerName, nsOwnerFeeRecipient);
     }
 
     /// @notice Batch version of `registerNameWithAuthorization` to register multiple names with a single transaction.
@@ -374,7 +374,7 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     ///
     /// **Fee Distribution:**
     /// - 80% of ETH is permanently burned via DETH.
-    /// - For public namespaces: 10% is credited to the namespace creator and 10% to the contract owner.
+    /// - For public namespaces: 10% is credited to the namespace owner and 10% to the contract owner.
     /// - For private namespaces: 20% is credited to the contract owner.
     ///
     /// **Note:** Input validation errors (invalid label, zero recipient, namespace mismatch, invalid signature)
@@ -393,12 +393,12 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
 
         bytes32 firstNsHash = keccak256(bytes(registerNameAuths[0].namespace));
         NamespaceData memory ns = _namespaces[firstNsHash];
-        require(ns.creator != address(0), "XNS: namespace not found");
+        require(ns.owner != address(0), "XNS: namespace not found");
 
         if (ns.isPrivate) {
-            require(msg.sender == ns.creator, "XNS: not namespace creator (private)");
+            require(msg.sender == ns.owner, "XNS: not namespace owner (private)");
         } else if (block.timestamp <= ns.createdAt + EXCLUSIVITY_PERIOD) {
-            require(msg.sender == ns.creator, "XNS: not namespace creator (exclusivity period)");
+            require(msg.sender == ns.owner, "XNS: not namespace owner (exclusivity period)");
         }
 
         // Validate and register all names, skipping where the recipient already has a name
@@ -440,10 +440,10 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
         if (successful > 0) {
             uint256 actualTotal = ns.pricePerName * successful;
             require(msg.value >= actualTotal, "XNS: insufficient payment");
-            address creatorFeeRecipient = ns.isPrivate ? owner() : ns.creator;
+            address nsOwnerFeeRecipient = ns.isPrivate ? owner() : ns.owner;
 
             // Process payment: burn 80%, credit fees, and refund excess.
-            _processETHPayment(actualTotal, creatorFeeRecipient);
+            _processETHPayment(actualTotal, nsOwnerFeeRecipient);
             return successful;
         }
 
@@ -514,19 +514,20 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     /// **Requirements:**
     /// - `msg.sender` must be the contract owner.
     /// - Must be called during the onboarding period (first year after contract deployment).
-    /// - `creator` must not be the zero address.
+    /// - `nsOwner` must not be the zero address.
     /// - No ETH should be sent (function is non-payable).
     /// - All validation requirements from `registerPublicNamespace` apply.
     ///
-    /// @param creator The address that will be assigned as the namespace creator (who will receive creator fees).
+    /// @param nsOwner The address that will be assigned as the namespace owner
+    /// (the account that shall receive namespace registration fees).
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace.
-    function registerPublicNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external {
-        require(msg.sender == owner(), "XNS: not owner");
+    function registerPublicNamespaceFor(address nsOwner, string calldata namespace, uint256 pricePerName) external {
+        require(msg.sender == owner(), "XNS: not contract owner");
         require(block.timestamp <= DEPLOYED_AT + ONBOARDING_PERIOD, "XNS: onboarding over");
-        require(creator != address(0), "XNS: 0x creator");
+        require(nsOwner != address(0), "XNS: 0x nsOwner");
 
-        _registerNamespace(namespace, pricePerName, creator, false);
+        _registerNamespace(namespace, pricePerName, nsOwner, false);
     }
 
     /// @notice Contract owner-only function to register a private namespace for another address during the onboarding period.
@@ -536,19 +537,19 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     /// **Requirements:**
     /// - `msg.sender` must be the contract owner.
     /// - Must be called during the onboarding period (first year after contract deployment).
-    /// - `creator` must not be the zero address.
+    /// - `nsOwner` must not be the zero address.
     /// - No ETH should be sent (function is non-payable).
     /// - All validation requirements from `registerPrivateNamespace` apply.
     ///
-    /// @param creator The address that will be assigned as the namespace creator.
+    /// @param nsOwner The address that will be assigned as the namespace owner.
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace.
-    function registerPrivateNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external {
-        require(msg.sender == owner(), "XNS: not owner");
+    function registerPrivateNamespaceFor(address nsOwner, string calldata namespace, uint256 pricePerName) external {
+        require(msg.sender == owner(), "XNS: not contract owner");
         require(block.timestamp <= DEPLOYED_AT + ONBOARDING_PERIOD, "XNS: onboarding over");
-        require(creator != address(0), "XNS: 0x creator");
+        require(nsOwner != address(0), "XNS: 0x nsOwner");
 
-        _registerNamespace(namespace, pricePerName, creator, true);
+        _registerNamespace(namespace, pricePerName, nsOwner, true);
     }
 
     /// @dev Helper function to register a namespace (used in namespace registration functions):
@@ -559,9 +560,9 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     /// @param namespace The namespace to register.
     /// @param pricePerName The price per name for the namespace. Must be >= 0.001 ETH for public namespaces,
     /// >= 0.005 ETH for private namespaces, and a multiple of 0.001 ETH.
-    /// @param creator The address that will be assigned as the namespace creator.
+    /// @param owner The address that will be assigned as the namespace owner.
     /// @param isPrivate Whether the namespace is private.
-    function _registerNamespace(string calldata namespace, uint256 pricePerName, address creator, bool isPrivate) private {
+    function _registerNamespace(string calldata namespace, uint256 pricePerName, address owner, bool isPrivate) private {
         require(_isValidLabelOrNamespace(namespace), "XNS: invalid namespace");
 
         bytes32 nsHash = keccak256(bytes(namespace));
@@ -569,7 +570,7 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
         // Forbid "eth" namespace to avoid confusion with ENS.
         require(nsHash != _ETH_NAMESPACE_HASH, "XNS: 'eth' namespace forbidden");
 
-        require(_namespaces[nsHash].creator == address(0), "XNS: namespace already exists");
+        require(_namespaces[nsHash].owner == address(0), "XNS: namespace already exists");
 
         // Check minimum price based on namespace type (public namespaces are more common, check first)
         if (!isPrivate) {
@@ -581,12 +582,12 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
 
         _namespaces[nsHash] = NamespaceData({
             pricePerName: pricePerName,
-            creator: creator,
+            owner: owner,
             createdAt: uint64(block.timestamp),
             isPrivate: isPrivate
         });
 
-        emit NamespaceRegistered(namespace, pricePerName, creator, isPrivate);
+        emit NamespaceRegistered(namespace, pricePerName, owner, isPrivate);
     }
 
     /// @notice Function to claim accumulated fees for `msg.sender` and send to `recipient`.
@@ -622,54 +623,54 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
         emit FeesClaimed(recipient, amount);
     }
 
-    /// @notice Start a 2-step transfer of namespace creator to a new address.
-    /// The new creator must call `acceptNamespaceCreator` to complete the transfer.
+    /// @notice Start a 2-step transfer of namespace ownership to a new address.
+    /// The new namespace owner must call `acceptNamespaceOwnership` to complete the transfer.
     ///
-    /// Setting `newCreator` to the zero address is allowed; this can be used to cancel an initiated transfer.
+    /// Setting `newOwner` to the zero address is allowed; this can be used to cancel an initiated transfer.
     /// Alternatively, a pending transfer can be overwritten by calling this function again with a different address.
     ///
     /// **Requirements:**
-    /// - `msg.sender` must be the current namespace creator.
+    /// - `msg.sender` must be the current namespace owner.
     /// - Namespace must exist.
     ///
     /// **Fee Accounting Note:** Ownership transfers do **not** migrate already-accrued `_pendingFees`.
-    /// Any fees accumulated before `acceptNamespaceCreator()` remain claimable by the previous creator address.
-    /// Only fees accrued **after** acceptance are credited to the new creator address.
+    /// Any fees accumulated before `acceptNamespaceOwnership()` remain claimable by the previous namespace owner address.
+    /// Only fees accrued **after** acceptance are credited to the new namespace owner address.
     ///
-    /// @param namespace The namespace to transfer creator rights for.
-    /// @param newCreator The address that will become the new namespace creator, or `address(0)` to cancel a pending transfer.
-    function transferNamespaceCreator(string calldata namespace, address newCreator) external {
+    /// @param namespace The namespace to transfer ownership for.
+    /// @param newOwner The address that will become the new namespace owner, or `address(0)` to cancel a pending transfer.
+    function transferNamespaceOwnership(string calldata namespace, address newOwner) external {
         bytes32 nsHash = keccak256(bytes(namespace));
         NamespaceData storage ns = _namespaces[nsHash];
-        require(ns.creator != address(0), "XNS: namespace not found");
-        require(msg.sender == ns.creator, "XNS: not namespace creator");
+        require(ns.owner != address(0), "XNS: namespace not found");
+        require(msg.sender == ns.owner, "XNS: not namespace owner");
 
-        _pendingNamespaceCreator[nsHash] = newCreator;
-        emit NamespaceCreatorTransferStarted(namespace, ns.creator, newCreator);
+        _pendingNamespaceOwner[nsHash] = newOwner;
+        emit NamespaceOwnerTransferStarted(namespace, ns.owner, newOwner);
     }
 
-    /// @notice Accept a pending namespace creator transfer.
-    /// Completes the 2-step transfer process started by `transferNamespaceCreator`.
+    /// @notice Accept a pending namespace ownership transfer.
+    /// Completes the 2-step transfer process started by `transferNamespaceOwnership`.
     ///
     /// **Requirements:**
     /// - Namespace must exist.
-    /// - There must be a pending creator transfer.
-    /// - `msg.sender` must be the pending creator.
+    /// - There must be a pending namespace owner transfer.
+    /// - `msg.sender` must be the pending namespace owner.
     ///
-    /// @param namespace The namespace to accept creator rights for.
-    function acceptNamespaceCreator(string calldata namespace) external {
+    /// @param namespace The namespace to accept ownership for.
+    function acceptNamespaceOwnership(string calldata namespace) external {
         bytes32 nsHash = keccak256(bytes(namespace));
         NamespaceData storage ns = _namespaces[nsHash];
-        require(ns.creator != address(0), "XNS: namespace not found");
+        require(ns.owner != address(0), "XNS: namespace not found");
 
-        address pending = _pendingNamespaceCreator[nsHash];
-        require(pending != address(0), "XNS: no pending creator");
-        require(msg.sender == pending, "XNS: not pending creator");
+        address pending = _pendingNamespaceOwner[nsHash];
+        require(pending != address(0), "XNS: no pending owner");
+        require(msg.sender == pending, "XNS: not pending owner");
 
-        ns.creator = pending;
-        delete _pendingNamespaceCreator[nsHash];
+        ns.owner = pending;
+        delete _pendingNamespaceOwner[nsHash];
 
-        emit NamespaceCreatorTransferAccepted(namespace, pending);
+        emit NamespaceOwnerTransferAccepted(namespace, pending);
     }
 
     // =========================================================================
@@ -756,15 +757,15 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     /// @notice Function to retrieve the namespace metadata associated with `namespace`.
     /// @param namespace The namespace to retrieve the metadata for.
     /// @return pricePerName The price per name for the namespace.
-    /// @return creator The creator of the namespace.
+    /// @return owner The namespace owner of the namespace.
     /// @return createdAt The timestamp when the namespace was created.
     /// @return isPrivate Whether the namespace is private.
     function getNamespaceInfo(
         string calldata namespace
-    ) external view returns (uint256 pricePerName, address creator, uint64 createdAt, bool isPrivate) {
+    ) external view returns (uint256 pricePerName, address owner, uint64 createdAt, bool isPrivate) {
         NamespaceData memory ns = _namespaces[keccak256(bytes(namespace))];
-        require(ns.creator != address(0), "XNS: namespace not found");
-        return (ns.pricePerName, ns.creator, ns.createdAt, ns.isPrivate);
+        require(ns.owner != address(0), "XNS: namespace not found");
+        return (ns.pricePerName, ns.owner, ns.createdAt, ns.isPrivate);
     }
 
     /// @notice Function to retrieve only the price per name for a given namespace.
@@ -773,19 +774,19 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     /// @return pricePerName The price per name for the namespace.
     function getNamespacePrice(string calldata namespace) external view returns (uint256 pricePerName) {
         NamespaceData memory ns = _namespaces[keccak256(bytes(namespace))];
-        require(ns.creator != address(0), "XNS: namespace not found");
+        require(ns.owner != address(0), "XNS: namespace not found");
         return ns.pricePerName;
     }
 
     /// @notice Function to check if a namespace is currently within its exclusivity period.
     /// Returns `true` if `block.timestamp <= createdAt + EXCLUSIVITY_PERIOD`, `false` otherwise.
     /// For private namespaces, this function will return `false` after the exclusivity period, but private namespaces
-    /// remain creator-only forever regardless of this value.
+    /// remain namespace-owner-only forever regardless of this value.
     /// @param namespace The namespace to check.
     /// @return inExclusivityPeriod `true` if the namespace is within its exclusivity period, `false` otherwise.
     function isInExclusivityPeriod(string calldata namespace) external view returns (bool inExclusivityPeriod) {
         NamespaceData memory ns = _namespaces[keccak256(bytes(namespace))];
-        require(ns.creator != address(0), "XNS: namespace not found");
+        require(ns.owner != address(0), "XNS: namespace not found");
         return block.timestamp <= ns.createdAt + EXCLUSIVITY_PERIOD;
     }
 
@@ -822,12 +823,12 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
         return _pendingFees[recipient];
     }
 
-    /// @notice Get the pending namespace creator for a given namespace.
+    /// @notice Get the pending namespace owner for a given namespace.
     /// Returns `address(0)` if there is no pending transfer.
-    /// @param namespace The namespace to check for pending creator.
-    /// @return pendingCreator The address of the pending namespace creator, or `address(0)` if none.
-    function getPendingNamespaceCreator(string calldata namespace) external view returns (address pendingCreator) {
-        return _pendingNamespaceCreator[keccak256(bytes(namespace))];
+    /// @param namespace The namespace to check for pending namespace owner.
+    /// @return pendingOwner The address of the pending namespace owner, or `address(0)` if none.
+    function getPendingNamespaceOwner(string calldata namespace) external view returns (address pendingOwner) {
+        return _pendingNamespaceOwner[keccak256(bytes(namespace))];
     }
 
     // =========================================================================
@@ -837,22 +838,22 @@ contract XNS is EIP712, Ownable2Step, ReentrancyGuard {
     /// @dev Helper function to process ETH payment (used in `registerName`, `registerNameWithAuthorization`,
     /// `batchRegisterNameWithAuthorization`, `registerPublicNamespace`, and `registerPrivateNamespace`):
     /// - Burn 80% via DETH (credits `msg.sender` with DETH)
-    /// - Credit fees: 10% to `creatorFeeRecipient` and 10% to contract owner
+    /// - Credit fees: 10% to `nsOwnerFeeRecipient` and 10% to contract owner
     /// - Refund any excess payment
     /// @param requiredAmount The required amount of ETH for the operation (excess will be refunded).
-    /// @param creatorFeeRecipient The address that shall receive the 10% creator fee.
-    function _processETHPayment(uint256 requiredAmount, address creatorFeeRecipient) private {
+    /// @param nsOwnerFeeRecipient The address that shall receive the 10% nsOwnerFee.
+    function _processETHPayment(uint256 requiredAmount, address nsOwnerFeeRecipient) private {
         uint256 burnAmount = (requiredAmount * 80) / 100;
-        uint256 creatorFee = (requiredAmount * 10) / 100;
-        uint256 ownerFee = requiredAmount - burnAmount - creatorFee;
+        uint256 nsOwnerFee = (requiredAmount * 10) / 100;
+        uint256 ownerFee = requiredAmount - burnAmount - nsOwnerFee;
 
         // Burn 80% via DETH contract and credit `msg.sender` (payer/sponsor) with DETH.
         IDETH(DETH).burn{value: burnAmount}(msg.sender);
 
-        // Credit fees: 10% to `creatorFeeRecipient`, 10% to contract owner.
-        // If `creatorFeeRecipient` == contract owner, contract owner effectively gets the full 20%
+        // Credit fees: 10% to `nsOwnerFeeRecipient`, 10% to contract owner.
+        // If `nsOwnerFeeRecipient` == contract owner, contract owner effectively gets the full 20%
         // (credited twice into the same mapping slot).
-        _pendingFees[creatorFeeRecipient] += creatorFee;
+        _pendingFees[nsOwnerFeeRecipient] += nsOwnerFee;
         _pendingFees[owner()] += ownerFee;
 
         // Refund excess payment.

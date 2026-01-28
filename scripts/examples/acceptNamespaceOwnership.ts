@@ -1,13 +1,13 @@
 /**
- * Script to accept namespace creator transfer
+ * Script to accept namespace ownership transfer
  *
  * USAGE:
  * Run the script with:
- * `npx hardhat run scripts/examples/acceptNamespaceCreator.ts --network <network_name>`
+ * `npx hardhat run scripts/examples/acceptNamespaceOwnership.ts --network <network_name>`
  *
  * EXAMPLE:
- * To accept namespace creator transfer on Sepolia:
- * `npx hardhat run scripts/examples/acceptNamespaceCreator.ts --network sepolia`
+ * To accept namespace ownership transfer on Sepolia:
+ * `npx hardhat run scripts/examples/acceptNamespaceOwnership.ts --network sepolia`
  *
  * REQUIRED SETUP:
  * Before running, set these environment variables using hardhat-vars:
@@ -33,11 +33,11 @@ const RED = "\x1b[31m";
                             USER INPUTS
 //////////////////////////////////////////////////////////////*/
 
-// Namespace to accept creator transfer for (e.g., "xns", "yolo", etc.)
+// Namespace to accept ownership transfer for (e.g., "xns", "yolo", etc.)
 const namespace = "xns";
 
 // Signer index (0 = account 1, 1 = account 2, 2 = account 3, etc.)
-// This account must be the pending namespace creator
+// This account must be the pending namespace owner
 const signerIndex = 0;
 
 async function main() {
@@ -56,57 +56,57 @@ async function main() {
 
   // Get signer
   const signers = await hre.ethers.getSigners();
-  const pendingCreator = signers[signerIndex];
+  const pendingOwner = signers[signerIndex];
 
-  // Get namespace info to check current creator
+  // Get namespace info to check current namespace owner
   const namespaceInfo = await xns.getNamespaceInfo(namespace);
-  const currentCreator = namespaceInfo.creator;
+  const currentOwner = namespaceInfo.owner;
 
-  if (currentCreator === hre.ethers.ZeroAddress) {
+  if (currentOwner === hre.ethers.ZeroAddress) {
     throw new Error(`Namespace "${namespace}" does not exist.`);
   }
 
-  // Check pending creator
-  const pendingCreatorAddress = await xns.getPendingNamespaceCreator(namespace);
-  if (pendingCreatorAddress === hre.ethers.ZeroAddress) {
+  // Check pending namespace owner
+  const pendingOwnerAddress = await xns.getPendingNamespaceOwner(namespace);
+  if (pendingOwnerAddress === hre.ethers.ZeroAddress) {
     throw new Error(
-      `No pending namespace creator transfer for namespace "${namespace}". Creator must call transferNamespaceCreator() first.`,
+      `No pending namespace ownership transfer for namespace "${namespace}". Namespace owner must call transferNamespaceOwnership() first.`,
     );
   }
 
-  if (pendingCreatorAddress.toLowerCase() !== pendingCreator.address.toLowerCase()) {
+  if (pendingOwnerAddress.toLowerCase() !== pendingOwner.address.toLowerCase()) {
     throw new Error(
-      `Signer ${pendingCreator.address} is not the pending creator of namespace "${namespace}". Pending creator is: ${pendingCreatorAddress}`,
+      `Signer ${pendingOwner.address} is not the pending namespace owner of namespace "${namespace}". Pending namespace owner is: ${pendingOwnerAddress}`,
     );
   }
 
   console.log(`\nNetwork: ${GREEN}${networkName}${RESET}`);
   console.log(`XNS contract: ${GREEN}${contractAddress}${RESET}`);
   console.log(`Namespace: ${GREEN}${namespace}${RESET}`);
-  console.log(`Current creator: ${GREEN}${currentCreator}${RESET}`);
-  console.log(`Pending creator: ${GREEN}${pendingCreatorAddress}${RESET}\n`);
+  console.log(`Current namespace owner: ${GREEN}${currentOwner}${RESET}`);
+  console.log(`Pending namespace owner: ${GREEN}${pendingOwnerAddress}${RESET}\n`);
 
-  // Accept namespace creator transfer
-  console.log(`Accepting namespace creator transfer...\n`);
+  // Accept namespace ownership transfer
+  console.log(`Accepting namespace ownership transfer...\n`);
 
-  const acceptTx = await xns.connect(pendingCreator).acceptNamespaceCreator(namespace);
+  const acceptTx = await xns.connect(pendingOwner).acceptNamespaceOwnership(namespace);
 
   console.log(`Transaction hash: ${GREEN}${acceptTx.hash}${RESET}\n`);
 
   console.log("Waiting for confirmation...\n");
   const receipt = await acceptTx.wait();
 
-  // Verify namespace creator was transferred
+  // Verify namespace owner was transferred
   const namespaceInfoAfter = await xns.getNamespaceInfo(namespace);
-  const newCreator = namespaceInfoAfter.creator;
-  const pendingCreatorAfter = await xns.getPendingNamespaceCreator(namespace);
+  const newOwner = namespaceInfoAfter.owner;
+  const pendingOwnerAfter = await xns.getPendingNamespaceOwner(namespace);
 
-  console.log(`\n${GREEN}✓ Namespace creator transfer completed successfully!${RESET}\n`);
-  console.log(`Previous creator: ${GREEN}${currentCreator}${RESET}`);
-  console.log(`New creator: ${GREEN}${newCreator}${RESET}`);
-  console.log(`Pending creator: ${GREEN}${pendingCreatorAfter}${RESET} (cleared)`);
+  console.log(`\n${GREEN}✓ Namespace ownership transfer completed successfully!${RESET}\n`);
+  console.log(`Previous namespace owner: ${GREEN}${currentOwner}${RESET}`);
+  console.log(`New namespace owner: ${GREEN}${newOwner}${RESET}`);
+  console.log(`Pending namespace owner: ${GREEN}${pendingOwnerAfter}${RESET} (cleared)`);
   console.log(
-    `\n${GREEN}✓${RESET} The new creator now has full control of namespace "${namespace}".\n`,
+    `\n${GREEN}✓${RESET} The new namespace owner now has full control of namespace "${namespace}".\n`,
   );
 }
 

@@ -9,10 +9,10 @@ interface IXNS {
     }
 
     event NameRegistered(string indexed label, string indexed namespace, address indexed owner);
-    event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed creator, bool isPrivate);
+    event NamespaceRegistered(string indexed namespace, uint256 pricePerName, address indexed owner, bool isPrivate);
     event FeesClaimed(address indexed recipient, uint256 amount);
-    event NamespaceCreatorTransferStarted(string indexed namespace, address indexed oldCreator, address indexed newCreator);
-    event NamespaceCreatorTransferAccepted(string indexed namespace, address indexed newCreator);
+    event NamespaceOwnerTransferStarted(string indexed namespace, address indexed oldOwner, address indexed newOwner);
+    event NamespaceOwnerTransferAccepted(string indexed namespace, address indexed newOwner);
 
     function registerName(string calldata label, string calldata namespace) external payable;
     function registerNameWithAuthorization(RegisterNameAuth calldata registerNameAuth, bytes calldata signature) external payable;
@@ -22,23 +22,23 @@ interface IXNS {
     ) external payable returns (uint256 successfulCount);
     function registerPublicNamespace(string calldata namespace, uint256 pricePerName) external payable;
     function registerPrivateNamespace(string calldata namespace, uint256 pricePerName) external payable;
-    function registerPublicNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external;
-    function registerPrivateNamespaceFor(address creator, string calldata namespace, uint256 pricePerName) external;
+    function registerPublicNamespaceFor(address nsOwner, string calldata namespace, uint256 pricePerName) external;
+    function registerPrivateNamespaceFor(address nsOwner, string calldata namespace, uint256 pricePerName) external;
     function claimFees(address recipient) external;
     function claimFeesToSelf() external;
-    function transferNamespaceCreator(string calldata namespace, address newCreator) external;
-    function acceptNamespaceCreator(string calldata namespace) external;
+    function transferNamespaceOwnership(string calldata namespace, address newOwner) external;
+    function acceptNamespaceOwnership(string calldata namespace) external;
 
     function getAddress(string calldata label, string calldata namespace) external view returns (address addr);
     function getAddress(string calldata fullName) external view returns (address addr);
     function getName(address addr) external view returns (string memory);
-    function getNamespaceInfo(string calldata namespace) external view returns (uint256 pricePerName, address creator, uint64 createdAt, bool isPrivate);
+    function getNamespaceInfo(string calldata namespace) external view returns (uint256 pricePerName, address owner, uint64 createdAt, bool isPrivate);
     function getNamespacePrice(string calldata namespace) external view returns (uint256 pricePerName);
     function isInExclusivityPeriod(string calldata namespace) external view returns (bool inExclusivityPeriod);
     function isValidLabelOrNamespace(string calldata labelOrNamespace) external pure returns (bool isValid);
     function isValidSignature(RegisterNameAuth calldata registerNameAuth,bytes calldata signature) external view returns (bool isValid);
     function getPendingFees(address recipient) external view returns (uint256 amount);
-    function getPendingNamespaceCreator(string calldata namespace) external view returns (address pendingCreator);
+    function getPendingNamespaceOwner(string calldata namespace) external view returns (address pendingOwner);
 
     // OpenZeppelin Ownable2Step functions (inherited, not declared in interface):
     // function transferOwnership(address newOwner) external;
