@@ -125,7 +125,7 @@ Registering an XNS name in a public namespace is straightforward:
 
 #### Name Registration via Etherscan
 
-Names can be registered for EOAs directly via [Etherscan][etherscan-sepolia].
+Names can be registered for EOAs directly via [Etherscan][etherscan-mainnet].
 
 > ⚠️**Important:** Ensure the connected wallet address is the one to be named.
 
@@ -211,7 +211,7 @@ The private namespace owner registers names via the authorized flow (see [`regis
 
 #### Example: Public Namespace Registration via Etherscan
 
-Namespaces can be registered directly via [Etherscan][etherscan-sepolia].
+Namespaces can be registered directly via [Etherscan][etherscan-mainnet].
 
 <img width="665" height="303" alt="image" src="https://github.com/user-attachments/assets/90b4cded-bb3c-468e-a645-5c6405bac0e0" />
 
@@ -270,7 +270,7 @@ This contract also owns the XNS "bare name": `xns`.
 
 ### Sepolia Testnet
 
-For testing purposes, the deployed contract on Sepolia can be used at: [0x04c9AafC2d30857781dd1B3540411e24FA536e39][etherscan-sepolia-contract]
+For testing purposes, the deployed contract on Sepolia can be used at: [0x13C08D86e5666D802c4Cba4684d1944A8d672d38][etherscan-sepolia-contract]
 
 The testnet contract has been parametrized as follows:
 - Public namespace registration fee: 0.05 ether (instead of 50 ether)
@@ -600,8 +600,8 @@ See the [Developer Notes][dev-notes] for design decisions, code style guidelines
 [contract-MockERC20B]: https://github.com/Walodja1987/xns/blob/main/contracts/src/mocks/MockERC20B.sol
 [contract-MockERC20C]: https://github.com/Walodja1987/xns/blob/main/contracts/src/mocks/MockERC20C.sol
 
-[etherscan-sepolia]: https://sepolia.etherscan.io/address/0x4f1d1F8C7C96C2798B0A473fE35633A47dad37f9
-[etherscan-sepolia-contract]: https://sepolia.etherscan.io/address/0x04c9AafC2d30857781dd1B3540411e24FA536e39
+[etherscan-mainnet]: https://etherscan.io/address/0x13C08D86e5666D802c4Cba4684d1944A8d672d38
+[etherscan-sepolia-contract]: https://sepolia.etherscan.io/address/0x13C08D86e5666D802c4Cba4684d1944A8d672d38
 [etherscan-mainnet]: https://etherscan.io/address/xxx
 
 [license]: https://github.com/Walodja1987/xns/blob/main/LICENSE
