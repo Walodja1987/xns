@@ -1,5 +1,5 @@
 // XNS contract addresses by network
 export const XNS_ADDRESS: Record<string, string> = {
-  mainnet: "", // TBD - will be set after deployment
-  sepolia: "0x13C08D86e5666D802c4Cba4684d1944A8d672d38",
+  ethMain: "0x648E4F05aF2b7eB85109A8dc8AE81D8E006457D8",
+  sepolia: "0x708a6a410Ea26E536F6534Ac5c98FDD73a4BFe23",
 };
