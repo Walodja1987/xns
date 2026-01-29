@@ -252,13 +252,28 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 
 ## 🔥 XNS Price list
 
-> **Note**: The price list may not be complete as new namespaces can be added over time. We do our best to keep it updated. It also does not include private namespaces.
+| Namespace        | ETH Amount   | Example Name   |
+|------------------|-------------|---------------|
+| xns              | 0.001 ETH   | bob.xns        |
+| gm               | 0.002 ETH   | max.gm     |
+| diva             | 0.003 ETH   | miss.diva     |
+| yolo             | 0.005 ETH   | alice.yolo     |
+| chad             | 0.007 ETH   | crypto.chad        |
+| og               | 0.008 ETH   | punk.og        |
+| token            | 0.010 ETH   | uni.token      |
+| web3             | 0.010 ETH   | cool-app.web3      |
+| bull             | 0.015 ETH   | cyber.bull      |
+| 100x             | 0.030 ETH   | pump.100x      |
+| dao              | 0.200 ETH   | dev.dao      |
+| 888              | 0.888 ETH   | lucky.888      |
+| defi             | 1.000 ETH   | myprotocol.defi      |
+| more to come...  |             |               |
 
-| Namespace        | ETH Amount   |
-|------------------|-------------|
-| xns              | 0.001 ETH   |
-| more to come...  |             |
 
+**Notes:**
+* The price list only shows public namespaces.
+* The price list may not be complete as new namespaces can be added over time. If you notice a missing namespace, feel free to [open an issue](https://github.com/Walodja1987/xns/issues) to request an update to the table.
+* Prices on Sepolia may differ from mainnet. To obtain the current price for any namespace, use the [`getNamespaceInfo`][api-getNamespaceInfo] or [`getNamespacePrice`][api-getNamespaceInfo] functions.
 
 ## 🧾 Contract Address
 
