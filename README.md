@@ -26,9 +26,10 @@
 5. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
 6. [Contract Ownership Transfer](#-contract-ownership-transfer)
 7. [Namespace Owner Transfer](#-namespace-owner-transfer)
-8. [License and Deployment Policy](#-license-and-deployment-policy)
-9. [API](#-api)
-10. [Developer Notes](#-developer-notes)
+8. [Privacy Considerations](#-privacy-considerations)
+9. [License and Deployment Policy](#-license-and-deployment-policy)
+10. [API](#-api)
+11. [Developer Notes](#-developer-notes)
 
 ## 🚀 Overview
 
@@ -267,7 +268,10 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 | dao              | 0.200 ETH   | dev.dao      |
 | 888              | 0.888 ETH   | lucky.888      |
 | defi             | 1.000 ETH   | myprotocol.defi      |
+| x <sup>1</sup>                | 10.000 ETH  | vitalik (bare name) |
 | more to come...  |             |               |
+
+<sup>1</sup> The "x" namespace is special and associated with bare names. Names like "vitalik" (without a namespace) are equivalent to "vitalik.x".
 
 
 **Notes:**
@@ -515,6 +519,30 @@ Namespace owner transfers do **not** migrate already-accrued `_pendingFees`. Any
 * [Query pending namespace owner][script-getPendingNamespaceOwner]
 * [Initiate namespace ownership transfer][script-transferNamespaceOwnership]
 * [Accept namespace ownership transfer][script-acceptNamespaceOwnership]
+
+## 🔒 Privacy Considerations
+
+XNS names can enhance privacy when used thoughtfully, but the privacy implications depend on your name choice and how you share it.
+
+### Off-Chain Communication Benefit
+
+Traditional Ethereum addresses (e.g., `0x8AdEFeb576dcF52F5220709c1B267d89d5208E78`) are long hexadecimal strings that are typically shared through digital channels like email, messaging apps, or social media. This creates a **digital trail** that links your identity to your address, which can be monitored, analyzed, and potentially used for surveillance or correlation attacks.
+
+With XNS, you can share addresses **off-chain** (verbally or in person) using memorable names like `alice.xns` or `1x45.xns`. The counterparty can easily remember and use the name without needing to copy-paste a long address, reducing digital traces that link your identity to your address.
+
+### Name Choice Matters
+
+**⚠️ Important:** The privacy benefit is **conditional** and depends on your name choice:
+
+- ✅ **Privacy-enhancing:** Using pseudonymous names (e.g., `1x45.xns`, `alice.xns`, `crypto123.xns`) that don't reveal your real identity, combined with off-chain sharing, can reduce identity-address correlation.
+- ❌ **Privacy-reducing:** Using identifiable names (e.g., `frank-walter.xns`, `john-smith.xns`) that reveal your real identity can actually **worsen** privacy compared to random addresses, as they create a direct, permanent link between your name and address on-chain.
+
+### Best Practices for Privacy-Conscious Users
+
+- Use **pseudonymous or random-looking names** that don't reveal your identity
+- Share names **off-chain** (verbally or in person) when possible
+- Avoid using your real name, email, social media handles (e.g., @yourhandle), or other identifiable information in your XNS name
+- Consider the privacy implications before choosing a name, as names are permanent and non-transferable
 
 ## 📄 License and Deployment Policy
 
