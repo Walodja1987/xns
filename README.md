@@ -256,22 +256,30 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 | Namespace        | ETH Amount   | Example Name   |
 |------------------|-------------|---------------|
 | xns              | 0.001 ETH   | bob.xns        |
+| trb              | 0.001 ETH   | my-oracle.trb        |
+| auditor          | 0.001 ETH   | best.auditor        |
 | gm               | 0.002 ETH   | max.gm     |
+| me               | 0.002 ETH   | its.me     |
 | diva             | 0.003 ETH   | miss.diva     |
+| mana             | 0.003 ETH   | give.mana     |
 | yolo             | 0.005 ETH   | alice.yolo     |
 | chad             | 0.007 ETH   | crypto.chad        |
 | og               | 0.008 ETH   | punk.og        |
 | token            | 0.010 ETH   | uni.token      |
 | web3             | 0.010 ETH   | cool-app.web3      |
 | bull             | 0.015 ETH   | cyber.bull      |
+| alpha            | 0.020 ETH   | soros.alpha      |
+| ag               | 0.020 ETH   | company.ag      |
+| ltd              | 0.020 ETH   | company.ltd      |
+| company          | 0.020 ETH   | tech.company      |
+| pay              | 0.020 ETH   | charity.pay      |
 | 100x             | 0.030 ETH   | pump.100x      |
 | dao              | 0.200 ETH   | dev.dao      |
 | 888              | 0.888 ETH   | lucky.888      |
 | defi             | 1.000 ETH   | myprotocol.defi      |
-| x <sup>1</sup>                | 10.000 ETH  | vitalik (bare name) |
-| more to come...  |             |               |
+| x                | 10.000 ETH  | vitalik (bare name) |
 
-<sup>1</sup> The "x" namespace is special and associated with bare names. Names like "vitalik" (without a namespace) are equivalent to "vitalik.x".
+> The "x" namespace is special and associated with bare names. "vitalik.x" is equivalent to "vitalik" (bare name).
 
 
 **Notes:**
