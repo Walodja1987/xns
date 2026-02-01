@@ -258,6 +258,8 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 | xns              | 0.001 ETH   | bob.xns        |
 | trb              | 0.001 ETH   | my-oracle.trb        |
 | auditor          | 0.001 ETH   | best.auditor        |
+| diamond          | 0.001 ETH   | nick.diamond        |
+| facet            | 0.001 ETH   | 0x77.facet        |
 | gm               | 0.002 ETH   | max.gm     |
 | me               | 0.002 ETH   | its.me     |
 | diva             | 0.003 ETH   | miss.diva     |
