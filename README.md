@@ -1,4 +1,4 @@
-# XNS – The Name Registry on Ethereum
+# XNS – The Name Layer on Ethereum
 
 ```
 //////////////////////////////
