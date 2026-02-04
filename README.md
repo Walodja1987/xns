@@ -260,25 +260,39 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 | auditor          | 0.001 ETH   | best.auditor        |
 | diamond          | 0.001 ETH   | nick.diamond        |
 | facet            | 0.001 ETH   | 0x77.facet        |
+| give             | 0.002 ETH   | impact.give        |
+| impact           | 0.002 ETH   | safe-dogs.impact        |
 | gm               | 0.002 ETH   | max.gm     |
 | me               | 0.002 ETH   | its.me     |
+| dev              | 0.002 ETH   | front.dev     |
 | diva             | 0.003 ETH   | miss.diva     |
 | mana             | 0.003 ETH   | give.mana     |
 | yolo             | 0.005 ETH   | alice.yolo     |
+| bot              | 0.006 ETH   | wallee.bot     |
 | chad             | 0.007 ETH   | crypto.chad        |
 | og               | 0.008 ETH   | punk.og        |
+| ape              | 0.008 ETH   | 100x.ape        |
+| long             | 0.008 ETH   | leveraged.long        |
+| gwei             | 0.009 ETH   | give-me.gwei        |
 | token            | 0.010 ETH   | uni.token      |
+| coin             | 0.010 ETH   | pepe.coin      |
 | web3             | 0.010 ETH   | cool-app.web3      |
 | bull             | 0.015 ETH   | cyber.bull      |
+| ai               | 0.015 ETH   | x12d.ai      |
+| brrr             | 0.018 ETH   | printer-goes.brrr      |
 | alpha            | 0.020 ETH   | soros.alpha      |
 | ag               | 0.020 ETH   | company.ag      |
 | ltd              | 0.020 ETH   | company.ltd      |
 | company          | 0.020 ETH   | tech.company      |
 | pay              | 0.020 ETH   | charity.pay      |
+| 0x               | 0.025 ETH   | my-protocol.0x      |
 | 100x             | 0.030 ETH   | pump.100x      |
+| 67               | 0.067 ETH   | meme.67      |
 | dao              | 0.200 ETH   | dev.dao      |
+| xxx              | 0.666 ETH   | duck.xxx      |
 | 888              | 0.888 ETH   | lucky.888      |
 | defi             | 1.000 ETH   | myprotocol.defi      |
+| 1                | 1.000 ETH   | one.1      |
 | x                | 10.000 ETH  | vitalik (bare name) |
 
 > The "x" namespace is special and associated with bare names. "vitalik.x" is equivalent to "vitalik" (bare name).
