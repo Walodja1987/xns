@@ -253,7 +253,7 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 
 ## 🔥 XNS Price list
 
-| Namespace        | ETH Amount   | Example Name   |
+| Namespace        | Price (ETH)   | Example Name   |
 |------------------|-------------|---------------|
 | xns              | 0.001 ETH   | bob.xns        |
 | trb              | 0.001 ETH   | my-oracle.trb        |
