@@ -274,6 +274,7 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 | ape              | 0.008 ETH   | 100x.ape        |
 | long             | 0.008 ETH   | leveraged.long        |
 | gwei             | 0.009 ETH   | give-me.gwei        |
+| gu               | 0.010 ETH   | king.gu      |
 | token            | 0.010 ETH   | uni.token      |
 | coin             | 0.010 ETH   | pepe.coin      |
 | web3             | 0.010 ETH   | cool-app.web3      |
