@@ -21,19 +21,20 @@
    2.2 [Name Registration With Authorization](#name-registration-with-authorization) \
    2.3 [Name Resolution](#name-resolution) \
    2.4 [Namespace Registration](#namespace-registration)
-3. [XNS Price list](#-xns-price-list)
-4. [Contract Address](#-contract-address)
-5. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
-6. [Contract Ownership Transfer](#-contract-ownership-transfer)
-7. [Namespace Owner Transfer](#-namespace-owner-transfer)
-8. [Privacy Considerations](#-privacy-considerations)
-9. [License and Deployment Policy](#-license-and-deployment-policy)
-10. [API](#-api)
-11. [Developer Notes](#-developer-notes)
+3. [How Is XNS Different from ENS?](#-how-is-xns-different-from-ens)
+4. [XNS Price list](#-xns-price-list)
+5. [Contract Address](#-contract-address)
+6. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
+7. [Contract Ownership Transfer](#-contract-ownership-transfer)
+8. [Namespace Owner Transfer](#-namespace-owner-transfer)
+9. [Privacy Considerations](#-privacy-considerations)
+10. [License and Deployment Policy](#-license-and-deployment-policy)
+11. [API](#-api)
+12. [Developer Notes](#-developer-notes)
 
 ## 🚀 Overview
 
-**XNS** is an Ethereum-native name registry that **maps human-readable names to Ethereum addresses**. Receive funds by sharing `vitalik.xns` instead of copying long hexadecimal strings like `0x8AdEFeb576dcF52F5220709c1B267d89d5208E78`. Display names instead of addresses in your dApp for a cleaner, more user-friendly experience.
+**XNS** is an **immutable address book for Ethereum**. It maps human-readable names to Ethereum addresses so you can send crypto to `vitalik.xns` instead of `0x8AdEFeb576dcF52F5220709c1B267d89d5208E78`. With XNS, applications and wallets can show user-friendly names in place of long hexadecimal addresses, making every Ethereum interaction simpler and safer.
 
 **Key properties:**
 - **Permanent:** Each name is irrevocably bound to an Ethereum address; no expiration, no transfer, no resale.
@@ -105,6 +106,27 @@ Anyone can register a new namespace by paying the one-time registration fee. The
 **Notes:**
 * Namespace owners only receive fees from name registrations in their namespace (public namespaces only).
 * All ETH burns are recorded via the [DETH contract](https://github.com/Walodja1987/deth), a global ETH sink and burn attestation registry. Burns are tracked and verifiable as non-transferrable DETH credits minted at a 1:1 ratio, providing proof of contribution to Ethereum's deflationary mechanism.
+
+## 🔍 How Is XNS Different from ENS?
+
+**ENS** replicates the web2 domain model with a rent-seeking approach:
+
+- **Names expire:** Users must renew their names, creating ongoing subscription costs for users.
+- **Name sniping:** If a user forgets to renew, others can grab their name, especially if it previously received funds. If they don't notice and continue sharing the name, funds will be lost.
+- **Transferable names:** ENS names are transferable and tradeable, thereby encouraging speculation rather than use as permanent identity.
+- **Complex:** Unnecessarily complex architecture for the purpose of simple name-to-address mapping.
+- **Lack of Ethereum alignment:** ENS previously considered launching a separate "namechain" (now cancelled) and has a token that does not provide direct value accrual to ETH holders.
+
+> To put it simply: ENS names work like bank account numbers that expire. Forget to renew, and your number is reassigned to a stranger. Keep sharing it without noticing, and every payment goes to the wrong person.
+
+
+**XNS** takes a fundamentally different approach:
+
+- **Names are permanent** and never expire.
+- **Names are non-transferable**, discouraging speculation.
+- **Aligned with ETH holders:** 80 % of registration fees (paid in ETH) are burned, accruing value to ETH holders by reducing the supply. No valueless governance token needed.
+
+Beyond these core differences, XNS offers additional capabilities: permissionless namespace registration (for a fee), support for private namespaces with exclusive control as well as smart contract naming.
 
 ## ✨ How It Works
 
@@ -267,33 +289,38 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 | dev              | 0.002 ETH   | front.dev     |
 | diva             | 0.003 ETH   | miss.diva     |
 | mana             | 0.003 ETH   | give.mana     |
+| wagmi            | 0.004 ETH   | bob.wagmi     |
 | yolo             | 0.005 ETH   | alice.yolo     |
 | bot              | 0.006 ETH   | wallee.bot     |
 | chad             | 0.007 ETH   | crypto.chad        |
 | og               | 0.008 ETH   | punk.og        |
 | ape              | 0.008 ETH   | 100x.ape        |
 | long             | 0.008 ETH   | leveraged.long        |
+| short            | 0.008 ETH   | leveraged.short       |
 | gwei             | 0.009 ETH   | give-me.gwei        |
 | gu               | 0.010 ETH   | king.gu      |
 | token            | 0.010 ETH   | uni.token      |
 | coin             | 0.010 ETH   | pepe.coin      |
 | web3             | 0.010 ETH   | cool-app.web3      |
+| agent            | 0.012 ETH   | clawd.agent      |
 | bull             | 0.015 ETH   | cyber.bull      |
 | ai               | 0.015 ETH   | x12d.ai      |
 | brrr             | 0.018 ETH   | printer-goes.brrr      |
 | alpha            | 0.020 ETH   | soros.alpha      |
-| ag               | 0.020 ETH   | company.ag      |
-| ltd              | 0.020 ETH   | company.ltd      |
-| company          | 0.020 ETH   | tech.company      |
+| ag               | 0.020 ETH   | my-company.ag      |
+| ltd              | 0.020 ETH   | freezer.ltd      |
+| comp             | 0.020 ETH   | tech.comp      |
 | pay              | 0.020 ETH   | charity.pay      |
 | 0x               | 0.025 ETH   | my-protocol.0x      |
 | 100x             | 0.030 ETH   | pump.100x      |
+| czar             | 0.035 ETH   | crypto.czar      |
 | 67               | 0.067 ETH   | meme.67      |
 | dao              | 0.200 ETH   | dev.dao      |
 | xxx              | 0.666 ETH   | duck.xxx      |
 | 888              | 0.888 ETH   | lucky.888      |
 | defi             | 1.000 ETH   | myprotocol.defi      |
 | 1                | 1.000 ETH   | one.1      |
+| y                | 1.500 ETH   | tom-ba.y      |
 | x                | 10.000 ETH  | vitalik (bare name) |
 
 > The "x" namespace is special and associated with bare names. "vitalik.x" is equivalent to "vitalik" (bare name).
