@@ -38,6 +38,7 @@
 
 **Key properties:**
 - **Permanent:** Each name is irrevocably bound to an Ethereum address; no expiration, no transfer, no resale.
+- **Fully on-chain:** No off-chain dependencies. Names and addresses can be resolved entirely on-chain via `getName` and `getAddress` function.
 - **Universal naming:** Both EOAs and smart contracts can be named in the same unified registry.
 - **Globally unique:** Each name is unique across all Ethereum addresses, preventing conflicts like duplicate ERC20 token names.
 - **Permissionless namespaces:** Anyone can create their own namespace without requiring approval from any central party.
