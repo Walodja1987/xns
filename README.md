@@ -298,7 +298,6 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 | yolo             | 0.005 ETH   | alice.yolo     |
 | buidl            | 0.005 ETH   | jack.buidl      |
 | algo             | 0.005 ETH   | my.algo      |
-| cow              | 0.005 ETH   | holy.cow      |
 | ser              | 0.005 ETH   | gm.ser      |
 | retard           | 0.005 ETH   | fulltime.retard      |
 | bot              | 0.006 ETH   | wallee.bot     |
@@ -312,7 +311,6 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 | lol              | 0.008 ETH   | kek.lol      |
 | anon             | 0.008 ETH   | based.anon      |
 | zero             | 0.008 ETH   | sub.zero      |
-| vega             | 0.008 ETH   | star.vega      |
 | gwei             | 0.009 ETH   | give-me.gwei        |
 | gu               | 0.010 ETH   | king.gu      |
 | token            | 0.010 ETH   | uni.token      |
@@ -321,7 +319,6 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 | erc              | 0.010 ETH   | eth.erc      |
 | erc20            | 0.010 ETH   | aave-token.erc20      |
 | cc               | 0.010 ETH   | my.cc      |
-| safe             | 0.010 ETH   | gnosis.safe      |
 | game             | 0.010 ETH   | end.game      |
 | boss             | 0.010 ETH   | like-a.boss      |
 | one              | 0.010 ETH   | the.one      |
