@@ -276,89 +276,35 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 
 ## 🔥 XNS Price list
 
-| Namespace        | Price (ETH)   | Example Name   |
-|------------------|-------------|---------------|
-| xns              | 0.001 ETH   | bob.xns        |
-| trb              | 0.001 ETH   | my-oracle.trb        |
-| auditor          | 0.001 ETH   | best.auditor        |
-| diamond          | 0.001 ETH   | nick.diamond        |
-| facet            | 0.001 ETH   | 0x77.facet        |
-| give             | 0.002 ETH   | impact.give        |
-| impact           | 0.002 ETH   | safe-dogs.impact        |
-| gm               | 0.002 ETH   | max.gm     |
-| me               | 0.002 ETH   | its.me     |
-| dev              | 0.002 ETH   | front.dev     |
-| diva             | 0.003 ETH   | miss.diva     |
-| mana             | 0.003 ETH   | give.mana     |
-| xly              | 0.003 ETH   | exact.xly      |
-| intern           | 0.003 ETH   | summer.intern      |
-| wagmi            | 0.004 ETH   | bob.wagmi     |
-| ngmi             | 0.004 ETH   | we.ngmi      |
-| uno              | 0.004 ETH   | numero.uno      |
-| yolo             | 0.005 ETH   | alice.yolo     |
-| buidl            | 0.005 ETH   | jack.buidl      |
-| algo             | 0.005 ETH   | my.algo      |
-| ser              | 0.005 ETH   | gm.ser      |
-| retard           | 0.005 ETH   | fulltime.retard      |
-| bot              | 0.006 ETH   | wallee.bot     |
-| chad             | 0.007 ETH   | crypto.chad        |
-| rekt             | 0.007 ETH   | get.rekt      |
-| og               | 0.008 ETH   | punk.og        |
-| ape              | 0.008 ETH   | 100x.ape        |
-| long             | 0.008 ETH   | leveraged.long        |
-| short            | 0.008 ETH   | leveraged.short       |
-| bet              | 0.008 ETH   | sure.bet      |
-| lol              | 0.008 ETH   | kek.lol      |
-| anon             | 0.008 ETH   | based.anon      |
-| zero             | 0.008 ETH   | sub.zero      |
-| gwei             | 0.009 ETH   | give-me.gwei        |
-| gu               | 0.010 ETH   | king.gu      |
-| token            | 0.010 ETH   | uni.token      |
-| coin             | 0.010 ETH   | pepe.coin      |
-| web3             | 0.010 ETH   | cool-app.web3      |
-| erc              | 0.010 ETH   | eth.erc      |
-| erc20            | 0.010 ETH   | aave-token.erc20      |
-| cc               | 0.010 ETH   | my.cc      |
-| game             | 0.010 ETH   | end.game      |
-| boss             | 0.010 ETH   | like-a.boss      |
-| one              | 0.010 ETH   | the.one      |
-| agent            | 0.012 ETH   | clawd.agent      |
-| bull             | 0.015 ETH   | cyber.bull      |
-| ai               | 0.015 ETH   | x12d.ai      |
-| id               | 0.015 ETH   | wallet.id      |
-| meme             | 0.015 ETH   | dank.meme      |
-| pepe             | 0.015 ETH   | rare.pepe      |
-| vault            | 0.015 ETH   | defi.vault      |
-| brrr             | 0.018 ETH   | printer-goes.brrr      |
-| ooo              | 0.019 ETH   | m.ooo      |
-| alpha            | 0.020 ETH   | soros.alpha      |
-| ag               | 0.020 ETH   | my-company.ag      |
-| ltd              | 0.020 ETH   | freezer.ltd      |
-| comp             | 0.020 ETH   | tech.comp      |
-| fund             | 0.020 ETH   | kick.fund      |
-| pay              | 0.020 ETH   | charity.pay      |
-| fi               | 0.020 ETH   | de.fi      |
-| inc              | 0.020 ETH   | tech.inc      |
-| labs             | 0.020 ETH   | genesis.labs      |
-| prime            | 0.020 ETH   | optimus.prime      |
-| world            | 0.020 ETH   | hello.world      |
-| cash             | 0.023 ETH   | jonny.cash      |
-| 0x               | 0.025 ETH   | my-protocol.0x      |
-| vc               | 0.025 ETH   | a16z.vc      |
-| bank             | 0.025 ETH   | swiss.bank      |
-| capital          | 0.025 ETH   | venture.capital      |
-| 100x             | 0.030 ETH   | pump.100x      |
-| czar             | 0.035 ETH   | crypto.czar      |
-| 67               | 0.067 ETH   | meme.67      |
-| 69               | 0.069 ETH   | nice.69      |
-| dao              | 0.200 ETH   | dev.dao      |
-| xxx              | 0.666 ETH   | duck.xxx      |
-| 888              | 0.888 ETH   | lucky.888      |
-| defi             | 1.000 ETH   | myprotocol.defi      |
-| 1                | 1.000 ETH   | one.1      |
-| y                | 1.500 ETH   | tom-ba.y      |
-| v                | 1.500 ETH   | vee.v      |
-| x                | 10.000 ETH  | vitalik (bare name) |
+| Price | Namespaces | Example Names |
+|---|---|---|
+| 0.001 ETH | `xns`, `trb`, `auditor`, `diamond`, `facet` | bob.xns, my-oracle.trb, best.auditor |
+| 0.002 ETH | `give`, `impact`, `gm`, `me`, `dev` | max.gm, its.me, front.dev |
+| 0.003 ETH | `diva`, `mana`, `xly`, `intern` | miss.diva, give.mana, exact.xly |
+| 0.004 ETH | `wagmi`, `ngmi`, `uno` | bob.wagmi, we.ngmi, numero.uno |
+| 0.005 ETH | `yolo`, `buidl`, `algo`, `ser`, `retard` | alice.yolo, jack.buidl, gm.ser |
+| 0.006 ETH | `bot` | wallee.bot |
+| 0.007 ETH | `chad`, `rekt` | crypto.chad, get.rekt |
+| 0.008 ETH | `og`, `ape`, `long`, `short`, `bet`, `lol`, `anon`, `zero` | punk.og, 100x.ape, based.anon |
+| 0.009 ETH | `gwei` | give-me.gwei |
+| 0.010 ETH | `gu`, `token`, `coin`, `web3`, `erc`, `erc20`, `cc`, `game`, `boss`, `one` | uni.token, pepe.coin, end.game |
+| 0.012 ETH | `agent` | clawd.agent |
+| 0.015 ETH | `bull`, `ai`, `id`, `meme`, `pepe`, `vault` | cyber.bull, dank.meme, defi.vault |
+| 0.018 ETH | `brrr` | printer-goes.brrr |
+| 0.019 ETH | `ooo` | m.ooo |
+| 0.020 ETH | `alpha`, `ag`, `ltd`, `comp`, `fund`, `pay`, `fi`, `inc`, `labs`, `prime`, `world` | soros.alpha, de.fi, genesis.labs |
+| 0.023 ETH | `cash` | jonny.cash |
+| 0.025 ETH | `0x`, `vc`, `bank`, `capital` | my-protocol.0x, a16z.vc, swiss.bank |
+| 0.030 ETH | `100x` | pump.100x |
+| 0.035 ETH | `czar` | crypto.czar |
+| 0.067 ETH | `67` | meme.67 |
+| 0.069 ETH | `69` | nice.69 |
+| 0.200 ETH | `dao` | dev.dao |
+| 0.666 ETH | `xxx` | duck.xxx |
+| 0.888 ETH | `888` | lucky.888 |
+| 1.000 ETH | `defi`, `1` | myprotocol.defi, one.1 |
+| 1.500 ETH | `y`, `v` | tom-ba.y, vee.v |
+| 10.000 ETH | `x` | vitalik (bare name) |
 
 > The "x" namespace is special and associated with bare names. "vitalik.x" is equivalent to "vitalik" (bare name).
 
