@@ -278,21 +278,23 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 
 | Price | Namespaces | Example Names |
 |---|---|---|
-| 0.001 ETH | `xns`, `trb`, `auditor`, `diamond`, `facet`, `x2x` | bob.xns, my-oracle.trb, best.auditor |
-| 0.002 ETH | `give`, `impact`, `gm`, `me`, `dev`, `emu`, `omg`, `tn` | max.gm, its.me, front.dev |
-| 0.003 ETH | `diva`, `mana`, `xly`, `intern`, `donate` | miss.diva, give.mana, exact.xly |
-| 0.004 ETH | `wagmi`, `ngmi`, `uno`, `nfa` | bob.wagmi, we.ngmi, numero.uno |
-| 0.005 ETH | `yolo`, `buidl`, `algo`, `ser`, `retard` | alice.yolo, jack.buidl, gm.ser |
-| 0.006 ETH | `bot`, `mod` | wallee.bot |
+| 0.001 ETH | `xns`, `trb`, `auditor`, `diamond`, `facet`, `x2x`, `123`, `8pm`, `acc`, `alt`, `fam`, `frog`, `goat`, `idgaf`, `off`, `rulez`, `ship`, `tab`, `whatever`, `dca` | bob.xns, my-oracle.trb, best.auditor |
+| 0.002 ETH | `give`, `impact`, `gm`, `me`, `dev`, `emu`, `omg`, `tn`, `dj`, `eco`, `gn`, `inx`, `md`, `mr`, `mrs`, `ngo`, `50c`, `not`, `or`, `org`, `px`, `rx`, `yes`, `joy`, `app`, `trader`, `wallet` | max.gm, its.me, front.dev |
+| 0.003 ETH | `diva`, `mana`, `xly`, `intern`, `donate`, `01`, `3d`, `4d`, `ash`, `bold`, `bruh`, `cake`, `cubic`, `dot`, `fly`, `guy`, `her`, `him`, `max`, `ten`, `ok` | miss.diva, give.mana, exact.xly |
+| 0.004 ETH | `wagmi`, `ngmi`, `uno`, `nfa`, `agi`, `aura`, `dyor`, `flip`, `hub`, `hype`, `iron`, `mobi`, `vibe`, `wild` | bob.wagmi, we.ngmi, numero.uno |
+| 0.005 ETH | `yolo`, `buidl`, `algo`, `ser`, `retard`, `arb`, `club`, `cow`, `crown`, `crypto`, `fame`, `guru`, `jewel`, `love`, `safe`, `ultra`, `babe` | alice.yolo, jack.buidl, gm.ser |
+| 0.006 ETH | `bot`, `mod`, `geo`, `ice` | wallee.bot |
 | 0.007 ETH | `chad`, `rekt`, `007` | crypto.chad, get.rekt |
-| 0.008 ETH | `og`, `ape`, `long`, `short`, `bet`, `lol`, `anon`, `zero` | punk.og, 100x.ape, based.anon |
+| 0.008 ETH | `og`, `ape`, `long`, `short`, `bet`, `lol`, `anon`, `zero`, `1x`, `yq` | punk.og, 100x.ape, based.anon |
 | 0.009 ETH | `gwei` | give-me.gwei |
 | 0.010 ETH | `gu`, `token`, `coin`, `web3`, `erc`, `erc20`, `cc`, `game`, `boss`, `one`, `mc`, `tx`, `gp`, `amb`, `ws`, `us`, `new`, `bq`, `bd`, `dat`, `dna`, `bit` | uni.token, pepe.coin, end.game |
-| 0.012 ETH | `agent` | clawd.agent |
+| 0.011 ETH | `code` | write.code |
+| 0.012 ETH | `agent`, `pro` | clawd.agent |
 | 0.015 ETH | `bull`, `ai`, `id`, `meme`, `pepe`, `vault`, `degen`, `gg`, `clan`, `rocks`, `kol`, `perp`, `cool`, `vega`, `dope`, `dex`, `yoda` | cyber.bull, dank.meme, defi.vault |
+| 0.016 ETH | `milady`, `punk` | glam.milady, anon.punk |
 | 0.018 ETH | `brrr` | printer-goes.brrr |
 | 0.019 ETH | `ooo` | m.ooo |
-| 0.020 ETH | `alpha`, `ag`, `ltd`, `comp`, `fund`, `pay`, `fi`, `inc`, `labs`, `prime`, `world`, `etf`, `queen`, `king`, `ceo`, `lux`, `rwa`, `tech`, `hq`, `gold` | soros.alpha, de.fi, genesis.labs |
+| 0.020 ETH | `alpha`, `ag`, `ltd`, `comp`, `fund`, `pay`, `fi`, `inc`, `labs`, `prime`, `world`, `etf`, `queen`, `king`, `ceo`, `lux`, `rwa`, `tech`, `hq`, `gold`, `art`, `index`, `store` | soros.alpha, de.fi, genesis.labs |
 | 0.023 ETH | `cash` | jonny.cash |
 | 0.025 ETH | `0x`, `vc`, `bank`, `capital` | my-protocol.0x, a16z.vc, swiss.bank |
 | 0.030 ETH | `100x` | pump.100x |
@@ -300,11 +302,12 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 | 0.067 ETH | `67` | meme.67 |
 | 0.069 ETH | `69` | nice.69 |
 | 0.200 ETH | `dao` | dev.dao |
-| 0.666 ETH | `xxx` | duck.xxx |
+| 0.589 ETH | `589` | lucky.589 |
+| 0.666 ETH | `xxx`, `18plus`, `sex`, `porn` | duck.xxx |
 | 0.777 ETH | `777` | jackpot.777 |
 | 0.888 ETH | `888` | lucky.888 |
 | 1.000 ETH | `defi`, `1` | myprotocol.defi, one.1 |
-| 1.500 ETH | `y`, `v` | tom-ba.y, vee.v |
+| 1.500 ETH | `y`, `v`, `u` | tom-ba.y, vee.v |
 | 10.000 ETH | `x` | vitalik (bare name) |
 
 > The "x" namespace is special and associated with bare names. "vitalik.x" is equivalent to "vitalik" (bare name).
