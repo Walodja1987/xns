@@ -58,16 +58,6 @@ contract SubnameRegistry {
         _registerSubnameFor(recipient, subLabel, parentLabel, parentNamespace);
     }
 
-    /// @notice Register a subname using `sub@parent.namespace` format.
-    /// @dev Examples:
-    /// - `bob@hello.xns`
-    /// - `bob@hello` (parent interpreted as bare name => `hello.x`)
-    /// @param atName Subname in `@` format.
-    function registerSubnameAt(string calldata atName) external {
-        (string memory subLabel, string memory parentLabel, string memory parentNamespace) = _parseAtName(atName);
-        _registerSubnameFor(msg.sender, subLabel, parentLabel, parentNamespace);
-    }
-
     /// @notice Resolve a registered subname owner by separate parts.
     /// @param subLabel Subname label.
     /// @param parentLabel Parent label.
@@ -83,10 +73,10 @@ contract SubnameRegistry {
     }
 
     /// @notice Resolve a registered subname owner by `sub@parent.namespace` format.
-    /// @param atName Subname in `@` format.
+    /// @param fullSubname Subname in `@` format.
     /// @return owner Address of subname owner, or zero address if not registered.
-    function getSubnameOwnerAt(string calldata atName) external view returns (address owner) {
-        (string memory subLabel, string memory parentLabel, string memory parentNamespace) = _parseAtName(atName);
+    function getSubnameOwner(string calldata fullSubname) external view returns (address owner) {
+        (string memory subLabel, string memory parentLabel, string memory parentNamespace) = _parseAtName(fullSubname);
         return _subnameToOwner[_getSubnameKey(subLabel, parentLabel, parentNamespace)];
     }
 
