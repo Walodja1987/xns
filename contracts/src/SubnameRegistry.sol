@@ -5,9 +5,7 @@ import {IXNS} from "./interfaces/IXNS.sol";
 
 /// @title SubnameRegistry
 /// @notice Zero-cost subname registry for existing XNS names.
-/// @dev Supports both display forms:
-/// - `bob@hello.xns` (preferred visual distinction)
-/// - `bob.hello.xns` (resolver-level compatibility)
+/// @dev Subnames use `@` format (e.g., `bob@hello.xns`).
 ///
 /// Subname registration is free (no protocol fee), but transaction gas still applies.
 contract SubnameRegistry {

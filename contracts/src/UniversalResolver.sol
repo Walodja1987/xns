@@ -17,7 +17,6 @@ interface ISubnameRegistry {
 /// @notice Resolver that supports:
 /// - Top-level XNS names (`hello.xns`, `vitalik`)
 /// - Subnames via `@` format (`bob@hello.xns`)
-/// - Subnames via dotted format (`bob.hello.xns`)
 contract UniversalResolver {
     IXNS public immutable xns;
     ISubnameRegistry public immutable subnameRegistry;
@@ -47,7 +46,7 @@ contract UniversalResolver {
             return xns.getAddress(name);
         }
 
-        return _resolveDotSubname(name);
+        return address(0);
     }
 
     /// @notice Resolve `sub@parent.namespace` style names.
@@ -56,49 +55,9 @@ contract UniversalResolver {
         return _resolveAt(atName);
     }
 
-    /// @notice Resolve `sub.parent.namespace` style names.
-    /// @dev Returns `address(0)` for malformed names.
-    function resolveDotSubname(string calldata dottedSubname) external view returns (address) {
-        return _resolveDotSubname(dottedSubname);
-    }
-
     function _resolveAt(string calldata atName) private view returns (address) {
         (bool ok, string memory subLabel, string memory parentLabel, string memory parentNamespace) = _tryParseAtName(atName);
         if (!ok) return address(0);
-        return subnameRegistry.getSubnameOwner(subLabel, parentLabel, parentNamespace);
-    }
-
-    function _resolveDotSubname(string calldata dottedSubname) private view returns (address) {
-        bytes memory b = bytes(dottedSubname);
-        uint256 len = b.length;
-        if (len == 0) return address(0);
-
-        uint256 firstDot = type(uint256).max;
-        for (uint256 i = 0; i < len; i++) {
-            if (b[i] == 0x2E) {
-                firstDot = i;
-                break;
-            }
-        }
-
-        if (firstDot == type(uint256).max || firstDot == 0 || firstDot == len - 1) {
-            return address(0);
-        }
-
-        bytes memory subBytes = new bytes(firstDot);
-        for (uint256 i = 0; i < firstDot; i++) {
-            subBytes[i] = b[i];
-        }
-        string memory subLabel = string(subBytes);
-
-        bytes memory parentBytes = new bytes(len - firstDot - 1);
-        for (uint256 i = 0; i < parentBytes.length; i++) {
-            parentBytes[i] = b[firstDot + 1 + i];
-        }
-
-        (bool ok, string memory parentLabel, string memory parentNamespace) = _tryParseParentName(string(parentBytes));
-        if (!ok) return address(0);
-
         return subnameRegistry.getSubnameOwner(subLabel, parentLabel, parentNamespace);
     }
 
