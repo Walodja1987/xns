@@ -2,13 +2,15 @@
 pragma solidity 0.8.28;
 
 import {IXNS} from "./interfaces/IXNS.sol";
+import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
 /// @title SubnameRegistry
 /// @notice Zero-cost subname registry for existing XNS names.
 /// @dev Subnames use `@` format (e.g., `bob@hello.xns`).
 ///
 /// Subname registration is free (no protocol fee), but transaction gas still applies.
-contract SubnameRegistry {
+contract SubnameRegistry is EIP712 {
     /// @notice XNS contract used as source of truth for parent names.
     IXNS public immutable xns;
 
@@ -18,6 +20,21 @@ contract SubnameRegistry {
     /// @dev Mapping from subname key => subname owner.
     mapping(bytes32 => address) private _subnameToOwner;
 
+    /// @dev Per parent-name setting. False (default) means owner-only registration.
+    mapping(bytes32 => bool) private _isPublicSubnameRegistration;
+
+    /// @dev EIP-712 struct type hash for `RegisterSubnameAuth`.
+    bytes32 private constant _REGISTER_SUBNAME_AUTH_TYPEHASH =
+        keccak256("RegisterSubnameAuth(address recipient,string subLabel,string parentLabel,string parentNamespace)");
+
+    /// @dev Argument for `registerSubnameWithAuthorization`.
+    struct RegisterSubnameAuth {
+        address recipient;
+        string subLabel;
+        string parentLabel;
+        string parentNamespace;
+    }
+
     /// @dev Emitted when a subname is registered.
     event SubnameRegistered(
         string indexed subLabel,
@@ -26,8 +43,11 @@ contract SubnameRegistry {
         address owner
     );
 
+    /// @dev Emitted when subname registration mode is updated for a parent name.
+    event SubnameRegistrationModeSet(string indexed parentLabel, string indexed parentNamespace, bool isPublic);
+
     /// @param xnsAddress Address of deployed XNS contract.
-    constructor(address xnsAddress) {
+    constructor(address xnsAddress) EIP712("SubnameRegistry", "1") {
         require(xnsAddress != address(0), "SubnameRegistry: zero xns");
         xns = IXNS(xnsAddress);
     }
@@ -41,21 +61,43 @@ contract SubnameRegistry {
         string calldata parentLabel,
         string calldata parentNamespace
     ) external {
-        _registerSubnameFor(msg.sender, subLabel, parentLabel, parentNamespace);
+        _registerSubname(msg.sender, msg.sender, subLabel, parentLabel, parentNamespace);
     }
 
-    /// @notice Register a subname for a custom `recipient` (zero protocol cost).
-    /// @param recipient Recipient of the subname.
-    /// @param subLabel Subname label (e.g., "bob").
-    /// @param parentLabel Parent label (e.g., "hello").
-    /// @param parentNamespace Parent namespace (e.g., "xns"). Use empty string for bare parent names.
-    function registerSubnameFor(
-        address recipient,
-        string calldata subLabel,
-        string calldata parentLabel,
-        string calldata parentNamespace
+    /// @notice Sponsor registration for a recipient who authorizes it via EIP-712 signature.
+    /// @dev By default, only parent owner can call this. If parent enables public mode, anyone can sponsor.
+    function registerSubnameWithAuthorization(
+        RegisterSubnameAuth calldata registerSubnameAuth,
+        bytes calldata signature
     ) external {
-        _registerSubnameFor(recipient, subLabel, parentLabel, parentNamespace);
+        require(registerSubnameAuth.recipient != address(0), "SubnameRegistry: zero recipient");
+        require(_isValidSignature(registerSubnameAuth, signature), "SubnameRegistry: bad authorization");
+
+        _registerSubname(
+            msg.sender,
+            registerSubnameAuth.recipient,
+            registerSubnameAuth.subLabel,
+            registerSubnameAuth.parentLabel,
+            registerSubnameAuth.parentNamespace
+        );
+    }
+
+    /// @notice Set whether subname registration is open to everyone for a parent name.
+    /// @dev Default is owner-only (`isPublic = false`).
+    function setPublicSubnameRegistration(
+        string calldata parentLabel,
+        string calldata parentNamespace,
+        bool isPublic
+    ) external {
+        string memory ns = _normalizeNamespace(parentNamespace);
+        _requireValidParent(parentLabel, ns);
+
+        address parentOwner = xns.getAddress(parentLabel, ns);
+        require(parentOwner != address(0), "SubnameRegistry: parent not found");
+        require(msg.sender == parentOwner, "SubnameRegistry: not parent owner");
+
+        _isPublicSubnameRegistration[_getParentKey(parentLabel, ns)] = isPublic;
+        emit SubnameRegistrationModeSet(parentLabel, ns, isPublic);
     }
 
     /// @notice Resolve a registered subname owner by separate parts.
@@ -80,12 +122,30 @@ contract SubnameRegistry {
         return _subnameToOwner[_getSubnameKey(subLabel, parentLabel, parentNamespace)];
     }
 
+    /// @notice Check whether a parent name currently allows public subname registration.
+    function isPublicSubnameRegistration(
+        string calldata parentLabel,
+        string calldata parentNamespace
+    ) external view returns (bool isPublic) {
+        string memory ns = _normalizeNamespace(parentNamespace);
+        return _isPublicSubnameRegistration[_getParentKey(parentLabel, ns)];
+    }
+
     /// @notice Check if a sublabel is valid under XNS character rules.
     function isValidSubLabel(string calldata subLabel) external pure returns (bool isValid) {
         return _isValidLabelLike(subLabel);
     }
 
-    function _registerSubnameFor(
+    /// @notice Validate signature for register-subname authorization.
+    function isValidSignature(
+        RegisterSubnameAuth calldata registerSubnameAuth,
+        bytes calldata signature
+    ) external view returns (bool isValid) {
+        return _isValidSignature(registerSubnameAuth, signature);
+    }
+
+    function _registerSubname(
+        address operator,
         address recipient,
         string memory subLabel,
         string memory parentLabel,
@@ -97,11 +157,13 @@ contract SubnameRegistry {
 
         require(recipient != address(0), "SubnameRegistry: zero recipient");
         require(_isValidLabelLike(subLabel), "SubnameRegistry: invalid subLabel");
-        require(_isValidLabelLike(parentLabel), "SubnameRegistry: invalid parent label");
-        require(_isValidLabelLike(parentNamespace), "SubnameRegistry: invalid parent namespace");
+        _requireValidParent(parentLabel, parentNamespace);
 
         address parentOwner = xns.getAddress(parentLabel, parentNamespace);
         require(parentOwner != address(0), "SubnameRegistry: parent not found");
+        if (!_isPublicSubnameRegistration[_getParentKey(parentLabel, parentNamespace)]) {
+            require(operator == parentOwner, "SubnameRegistry: not parent owner");
+        }
 
         bytes32 key = _getSubnameKey(subLabel, parentLabel, parentNamespace);
         require(_subnameToOwner[key] == address(0), "SubnameRegistry: subname exists");
@@ -123,6 +185,10 @@ contract SubnameRegistry {
         string memory parentNamespace
     ) private pure returns (bytes32 key) {
         key = keccak256(abi.encodePacked(subLabel, "@", parentLabel, ".", parentNamespace));
+    }
+
+    function _getParentKey(string memory parentLabel, string memory parentNamespace) private pure returns (bytes32 key) {
+        key = keccak256(abi.encodePacked(parentLabel, ".", parentNamespace));
     }
 
     function _parseAtName(
@@ -197,6 +263,11 @@ contract SubnameRegistry {
         parentNamespace = string(nsBytes);
     }
 
+    function _requireValidParent(string memory parentLabel, string memory parentNamespace) private pure {
+        require(_isValidLabelLike(parentLabel), "SubnameRegistry: invalid parent label");
+        require(_isValidLabelLike(parentNamespace), "SubnameRegistry: invalid parent namespace");
+    }
+
     /// @dev Same character rules as XNS label/namespace validation.
     function _isValidLabelLike(string memory value) private pure returns (bool isValid) {
         bytes memory b = bytes(value);
@@ -215,5 +286,27 @@ contract SubnameRegistry {
 
         if (b[0] == 0x2D || b[len - 1] == 0x2D) return false;
         return true;
+    }
+
+    function _isValidSignature(
+        RegisterSubnameAuth calldata registerSubnameAuth,
+        bytes calldata signature
+    ) private view returns (bool isValid) {
+        bytes32 digest = _hashTypedDataV4(_getRegisterSubnameAuthHash(registerSubnameAuth));
+        return SignatureChecker.isValidSignatureNow(registerSubnameAuth.recipient, digest, signature);
+    }
+
+    function _getRegisterSubnameAuthHash(
+        RegisterSubnameAuth calldata registerSubnameAuth
+    ) private pure returns (bytes32 registerSubnameAuthHash) {
+        registerSubnameAuthHash = keccak256(
+            abi.encode(
+                _REGISTER_SUBNAME_AUTH_TYPEHASH,
+                registerSubnameAuth.recipient,
+                keccak256(bytes(registerSubnameAuth.subLabel)),
+                keccak256(bytes(registerSubnameAuth.parentLabel)),
+                keccak256(bytes(registerSubnameAuth.parentNamespace))
+            )
+        );
     }
 }
