@@ -1,5 +1,5 @@
 [
-  "constructor(address)",
+  "constructor(address) payable",
   "function XNS() view returns (address)",
   "function getAddress(string,string) view returns (address)",
   "function getAddress(string) view returns (address)",

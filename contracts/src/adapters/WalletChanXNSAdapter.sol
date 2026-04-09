@@ -15,15 +15,24 @@ import {IXNS} from "../interfaces/IXNS.sol";
 /// - Bare names (e.g. "alice") are forwarded to XNS unchanged
 /// - Names in blocked namespaces (e.g. "alice.mega", "bob.wei") resolve to address(0)
 /// - Reverse lookup returns an empty string if the resolved XNS name ends in ".mega" or ".wei"
+///
+/// Deployment:
+/// - Constructor is `payable`: forwards `msg.value` to `registerName` (no on-chain price check; saves gas).
+/// - Registers this contract as `walletchanadapter.xns` (XNS allows only lowercase labels).
+/// - The public `xns` namespace must exist, be public, and be past its exclusivity period.
+/// - **Send exactly the name price in wei** (0.001 ETH on Ethereum mainnet for `xns`). Overpayment triggers an XNS refund to this contract, which has no `receive()` and will revert; underpayment also reverts.
 contract WalletChanXNSAdapter {
     IXNS public immutable XNS;
 
     bytes32 private constant _MEGA_HASH = keccak256(bytes("mega"));
     bytes32 private constant _WEI_HASH = keccak256(bytes("wei"));
 
-    constructor(address xns) {
+    /// @dev On Ethereum mainnet, send **exactly 0.001 ETH** (`1e15` wei) so XNS does not refund; this contract has no `receive()`, so excess payment causes refund + revert.
+    ///      Other networks: match `xns` price exactly. Too little → `XNS: insufficient payment`.
+    constructor(address xns) payable {
         require(xns != address(0), "WalletChanAdapter: zero XNS");
         XNS = IXNS(xns);
+        XNS.registerName{value: msg.value}("walletchanadapter", "xns");
     }
 
     /// @notice Resolve a full name like "alice", "alice.x", "alice.gm", "alice.mega".
