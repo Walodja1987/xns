@@ -76,7 +76,9 @@ contract WalletChanXNSAdapter is IWalletChanXNSAdapter {
         return _isBlockedNamespace(namespace);
     }
 
-    /// @dev Private helper for `isBlockedNamespace`.
+    /// @dev Helper function to check if a namespace is blocked (i.e. "mega" or "wei").
+    /// @param namespace The namespace to check.
+    /// @return True if the namespace is "mega" or "wei", false otherwise.
     function _isBlockedNamespace(string memory namespace) private pure returns (bool) {
         bytes32 nsHash = keccak256(bytes(namespace));
         return nsHash == _MEGA_HASH || nsHash == _WEI_HASH;
