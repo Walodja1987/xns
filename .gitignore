@@ -86,6 +86,9 @@ deployments-zk
 # Miscellaneous files
 bin
 out
+# Namespace tooling writes to scripts/tools/out/; keep only out/.gitignore tracked
+!scripts/tools/out/
+!scripts/tools/out/.gitignore
 
 # Directory including context files
 context
