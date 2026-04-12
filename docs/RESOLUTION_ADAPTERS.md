@@ -27,7 +27,7 @@ Excludes namespaces **`mega`** and **`wei`** for resolution.
 | Network | Address |
 |---------|---------|
 | Ethereum mainnet | *TBD — update after deployment* |
-| Sepolia | *TBD — update after deployment* |
+| Sepolia | [0x0489d46237AcDe4B2CA8A8Fde1BBf9a96282175a](https://sepolia.etherscan.io/address/0x0489d46237AcDe4B2CA8A8Fde1BBf9a96282175a) |
 
 The adapter registers on each network’s XNS registry as **`walletchanadapter.xns`** and can be resolved with `getAddress` on the [XNS registry contract addresses for that network](../README.md#contract-address).
 

@@ -11,9 +11,8 @@
  * Same as `deployXNS.ts` — `PRIVATE_KEY`, `ETHERSCAN_API_KEY`, and the RPC var for your network
  * (e.g. `ETH_SEPOLIA_TESTNET_URL`). See `hardhat.config.ts`.
  *
- * XNS address:
- * - By default, resolved from `constants/addresses.ts` using the Hardhat network name (`sepolia`, `ethMain`, …).
- * - Override with `xnsAddressOverride` below for other networks or local testing.
+ * XNS address: read from `constants/addresses.ts` using the Hardhat network name (`sepolia`, `ethMain`, …).
+ * Add a key there before deploying on a new network.
  */
 
 import hre, { HardhatRuntimeEnvironment } from "hardhat";
@@ -26,29 +25,18 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/*//////////////////////////////////////////////////////////////
-                            USER INPUT
-//////////////////////////////////////////////////////////////*/
-
-/** Set to a concrete address to skip `constants/addresses.ts` lookup. */
-const xnsAddressOverride: string | null = null;
-
 function resolveXnsAddress(): string {
-  if (xnsAddressOverride !== null) {
-    if (!hre.ethers.isAddress(xnsAddressOverride)) {
-      throw new Error(`Invalid xnsAddressOverride: ${xnsAddressOverride}`);
-    }
-    return xnsAddressOverride;
-  }
-
   const name = hre.network.name;
-  const fromConstants = XNS_ADDRESS[name as keyof typeof XNS_ADDRESS];
-  if (!fromConstants) {
+  const raw = XNS_ADDRESS[name];
+  if (!raw) {
     throw new Error(
-      `No XNS address for network "${name}". Set xnsAddressOverride in scripts/deploy/deployWalletChanXNSAdapter.ts or add an entry to constants/addresses.ts.`,
+      `No XNS address for network "${name}" in constants/addresses.ts. Add an entry keyed by that network name.`,
     );
   }
-  return fromConstants;
+  if (!hre.ethers.isAddress(raw)) {
+    throw new Error(`Invalid XNS address in constants/addresses.ts for "${name}": ${raw}`);
+  }
+  return hre.ethers.getAddress(raw);
 }
 
 export default async function main(hre: HardhatRuntimeEnvironment) {
