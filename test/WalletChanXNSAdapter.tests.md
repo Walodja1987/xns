@@ -31,6 +31,7 @@ The following matches [WalletChanXNSAdapter.tests.ts](./WalletChanXNSAdapter.tes
 #### Edge cases
 
 - Should not read out of bounds for strings shorter than `.wei` / `.mega` (empty string forwards to XNS).
+- Should forward `fullName` ending with uppercase `.MEGA` / `.WEI` to XNS unchanged (adapter suffix check is lowercase ASCII only); result should match `XNS.getAddress(fullName)` (typically `address(0)` if not registered).
 
 ---
 
@@ -46,6 +47,7 @@ The following matches [WalletChanXNSAdapter.tests.ts](./WalletChanXNSAdapter.tes
 #### Edge cases
 
 - Should forward to XNS when `namespace` is empty (`""` does not hash to `mega` / `wei`).
+- Should forward when `namespace` is uppercase `MEGA` / `WEI` (not blocked; must match `XNS.getAddress(label, namespace)`).
 
 ---
 

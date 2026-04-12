@@ -99,6 +99,14 @@ describe("WalletChanXNSAdapter", function () {
       expect(await af("bob.wei")).to.equal(ethers.ZeroAddress);
     });
 
+    it("Should forward fullName with uppercase .MEGA / .wei suffix to XNS (suffix check is lowercase-only)", async function () {
+      const getAddrFull = s.xns.getFunction("getAddress(string)");
+      const af = adapterGetFullName(s.adapter);
+      expect(await af("bob.WEI")).to.equal(await getAddrFull("bob.WEI"));
+      expect(await af("alice.MEGA")).to.equal(await getAddrFull("alice.MEGA"));
+      expect(await af("bob.WEI")).to.equal(ethers.ZeroAddress);
+    });
+
     it("Should forward bare mega and wei to XNS (not blocked)", async function () {
       const xns = s.xns;
       const barePrice = await xns.BARE_NAME_PRICE();
@@ -152,6 +160,14 @@ describe("WalletChanXNSAdapter", function () {
     it("Should return address(0) for namespace wei", async function () {
       const ap = adapterGetLabelNs(s.adapter);
       expect(await ap("any", "wei")).to.equal(ethers.ZeroAddress);
+    });
+
+    it("Should forward to XNS when namespace is uppercase MEGA or WEI (hash mismatch vs blocked lowercase)", async function () {
+      const getAddr2 = s.xns.getFunction("getAddress(string,string)");
+      const ap = adapterGetLabelNs(s.adapter);
+      expect(await ap("any", "WEI")).to.equal(await getAddr2("any", "WEI"));
+      expect(await ap("any", "MEGA")).to.equal(await getAddr2("any", "MEGA"));
+      expect(await ap("any", "WEI")).to.equal(ethers.ZeroAddress);
     });
 
     it("Should forward empty namespace to XNS (bare name)", async function () {

@@ -15,22 +15,23 @@
 
 ## Table of contents
 
-1. [Overview](#-overview)
-2. [How It Works](#-how-it-works) \
+1. [Overview](#overview)
+2. [How It Works](#how-it-works) \
    2.1 [Name Registration](#name-registration) \
    2.2 [Name Registration With Authorization](#name-registration-with-authorization) \
    2.3 [Name Resolution](#name-resolution) \
    2.4 [Namespace Registration](#namespace-registration)
-3. [How Is XNS Different from ENS?](#-how-is-xns-different-from-ens)
-4. [XNS Price list](#-xns-price-list)
-5. [Contract Address](#-contract-address)
-6. [Integration Guide for Contract Developers](#-integration-guide-for-contract-developers)
-7. [Contract Ownership Transfer](#-contract-ownership-transfer)
-8. [Namespace Owner Transfer](#-namespace-owner-transfer)
-9. [Privacy Considerations](#-privacy-considerations)
-10. [License and Deployment Policy](#-license-and-deployment-policy)
-11. [API](#-api)
-12. [Developer Notes](#-developer-notes)
+3. [How Is XNS Different from ENS?](#how-is-xns-different-from-ens)
+4. [XNS Price list](#xns-price-list)
+5. [Contract Address](#contract-address)
+6. [Integration Guide for Contract Developers](#integration-guide-for-contract-developers)
+7. [Resolution adapters](#resolution-adapters)
+8. [Contract Ownership Transfer](#contract-ownership-transfer)
+9. [Namespace Owner Transfer](#namespace-owner-transfer)
+10. [Privacy Considerations](#privacy-considerations)
+11. [License and Deployment Policy](#license-and-deployment-policy)
+12. [API](#api)
+13. [Developer Notes](#developer-notes)
 
 ## 🚀 Overview
 
@@ -135,7 +136,7 @@ Beyond these core differences, XNS offers additional capabilities: permissionles
 
 Registering an XNS name in a public namespace is straightforward:
 
-1. **Check Available Namespaces**: Browse the [XNS price list](#-xns-price-list) to find available namespaces and their registration fees (e.g., names within the `xns` namespace cost 0.001 ETH).
+1. **Check Available Namespaces**: Browse the [XNS price list](#xns-price-list) to find available namespaces and their registration fees (e.g., names within the `xns` namespace cost 0.001 ETH).
 2. **Choose a Name**: e.g., `alice.xns` (must not be registered yet).
 3. **Register Name**: Send a transaction with the required ETH amount to register a name (see [`registerName`][api-registerName] in API docs). Any excess will be refunded.
 4. **Verify Resolution**: Wait a few blocks, then verify the name is registered (see [`getAddress`][api-getAddress] and [`getName`][api-getName] in API docs).
@@ -326,15 +327,19 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 
 ## 🧾 Contract Address
 
+This section provides the official **XNS registry** contract addresses deployed on Ethereum and Sepolia Testnet, which are used for name registrations and  resolution.
+
+> **Note:** Some integrations expose **optional resolution adapters** at separate addresses (they may exclude certain namespaces from resolution). **Deployed addresses**, interfaces, and behavior are documented in [Resolution adapters](docs/RESOLUTION_ADAPTERS.md). A short overview appears in [Resolution adapters](#resolution-adapters) below.
+
 ### Ethereum Mainnet
 
-The official XNS contract is live on Ethereum mainnet at: [0x648E4F05aF2b7eB85109A8dc8AE81D8E006457D8][etherscan-mainnet]
+**XNS registry** (canonical contract; registration + resolution): [0x648E4F05aF2b7eB85109A8dc8AE81D8E006457D8][etherscan-mainnet]
 
 This contract also owns the XNS "bare name": `xns`.
 
 ### Sepolia Testnet
 
-For testing purposes, the deployed contract on Sepolia can be used at: [0x708a6a410Ea26E536F6534Ac5c98FDD73a4BFe23][etherscan-sepolia-contract]
+**XNS registry:** [0x708a6a410Ea26E536F6534Ac5c98FDD73a4BFe23][etherscan-sepolia-contract]
 
 The testnet contract has been parametrized as follows:
 - Public namespace registration fee: 0.05 ether (instead of 50 ether)
@@ -342,7 +347,6 @@ The testnet contract has been parametrized as follows:
 - Namespace owner exclusive period: 300 seconds (instead of 7 days)
 - Onboarding period: 100 days (instead of 365 days)
 - Bare name price: 0.01 ether (instead of 10 ether)
-
 
 ## 🔧 Integration Guide for Contract Developers
 
@@ -356,7 +360,7 @@ This section includes examples of how to name smart contracts on Ethereum, the c
 
 There are three ways to integrate XNS:
 
-> **Note:** The following examples demonstrate XNS integration for contracts that are only deployed on Ethereum. For contracts deployed on multiple chains, see the [Using XNS Names with Multi-Chain Deployments](#-using-xns-names-with-multi-chain-deployments) section below for important guidance and considerations.
+> **Note:** The following examples demonstrate XNS integration for contracts that are only deployed on Ethereum. For contracts deployed on multiple chains, see the [Using XNS Names with Multi-Chain Deployments](#using-xns-names-with-multi-chain-deployments) section below for important guidance and considerations.
 
 #### Option 1: Register via Constructor
 
@@ -521,6 +525,13 @@ Example:
 | Ethereum / Arbitrum / Optimism / Base | `myprotocol.xns`   |
 | Avalanche                           | `0x1234…5678`      |
 
+## 🔌 Resolution adapters
+
+**Resolution adapters** are optional contracts that forward resolution to XNS with extra product rules. They are **not** a substitute for the registry when registering names—use the XNS registry addresses in [Contract Address](#contract-address).
+
+For full specs (interfaces, blocking rules, **deployed addresses**), see [Resolution adapters](docs/RESOLUTION_ADAPTERS.md).
+
+- **[WalletChan XNS adapter](docs/RESOLUTION_ADAPTERS.md#walletchan-xns-adapter)** — forwards resolution to XNS except for WalletChan-reserved namespaces `mega` and `wei`.
 
 ## 🔐 Contract Ownership Transfer
 

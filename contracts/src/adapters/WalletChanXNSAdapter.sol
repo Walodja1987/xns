@@ -16,6 +16,9 @@ import {IWalletChanXNSAdapter} from "../interfaces/IWalletChanXNSAdapter.sol";
 /// - All other names (including bare names) are forwarded to XNS unchanged
 /// - Reverse lookup (address -> name) returns an empty string if the resolved XNS name ends in ".mega" or ".wei"
 ///
+/// Note: Suffix blocking uses lowercase ".mega" / ".wei" only; variants like ".WEI" are forwarded. XNS registration
+/// allows only lowercase [a-z0-9-], so those keys are not registered and XNS.getAddress returns address(0).
+///
 /// The deployed adapter registers itself on XNS as `walletchanadapter.xns`.
 contract WalletChanXNSAdapter is IWalletChanXNSAdapter {
     IXNS public immutable XNS;
