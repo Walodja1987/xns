@@ -8,7 +8,7 @@
  * Before first deployment, set these environment variables using hardhat-vars:
  *
  * 1. Network Independent Setup:
- *    - PRIVATE_KEY:       `npx hardhat vars set PRIVATE_KEY`
+ *    - MNEMONIC:       `npx hardhat vars set MNEMONIC`
  *    - ETHERSCAN_API_KEY: `npx hardhat vars set ETHERSCAN_API_KEY`
  *
  * 2. Network Specific Setup:

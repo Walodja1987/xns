@@ -8,7 +8,7 @@
  * `npx hardhat run scripts/deploy/deployWalletChanXNSAdapter.ts --network sepolia`
  *
  * REQUIRED SETUP:
- * Same as `deployXNS.ts` — `PRIVATE_KEY`, `ETHERSCAN_API_KEY`, and the RPC var for your network
+ * Same as `deployXNS.ts` — `MNEMONIC`, `ETHERSCAN_API_KEY`, and the RPC var for your network
  * (e.g. `ETH_SEPOLIA_TESTNET_URL`). See `hardhat.config.ts`.
  *
  * XNS address: read from `constants/addresses.ts` using the Hardhat network name (`sepolia`, `ethMain`, …).
