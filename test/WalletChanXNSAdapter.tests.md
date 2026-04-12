@@ -13,7 +13,7 @@ The following matches [WalletChanXNSAdapter.tests.ts](./WalletChanXNSAdapter.tes
 
 #### Reverts
 
-- Should revert with `WalletChanAdapter: zero XNS` when `xns` is `address(0)`.
+- Should revert with `WalletChanAdapter: 0x XNS` when `xns` is `address(0)`.
 - Should revert when `registerName` reverts (e.g. insufficient payment, wrong `msg.value` for `xns` price), if tested against a real XNS fixture.
 
 ---

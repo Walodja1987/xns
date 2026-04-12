@@ -58,9 +58,9 @@ describe("WalletChanXNSAdapter", function () {
   }
 
   describe("Constructor", function () {
-    it("Should revert with `WalletChanAdapter: zero XNS` when xns is zero address", async function () {
+    it("Should revert with `WalletChanAdapter: 0x XNS` when xns is zero address", async function () {
       await expect(ethers.deployContract("WalletChanXNSAdapter", [ethers.ZeroAddress], { value: 0 })).to.be.revertedWith(
-        "WalletChanAdapter: zero XNS",
+        "WalletChanAdapter: 0x XNS",
       );
     });
 
