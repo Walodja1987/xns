@@ -39,10 +39,10 @@ const RED = "\x1b[31m";
 //////////////////////////////////////////////////////////////*/
 
 // Namespace to register (e.g., "yolo", "ape", "100x")
-const namespace = "my-public-namespace";
+const namespace = "coc";
 
 // Price per name in ETH (must be multiple of 0.001 ETH)
-const pricePerNameETH = "0.001";
+const pricePerNameETH = "0.002";
 
 // Signer index (0 = account 1, 1 = account 2, 2 = account 3, etc.)
 const signerIndex = 0;
