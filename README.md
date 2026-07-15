@@ -276,6 +276,12 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 
 ## 🔥 XNS Price list
 
+> For the canonical, machine-readable list of all namespaces (public and private), see [`constants/namespaces.json`](./constants/namespaces.json).
+
+### Public Namespaces
+
+Public namespaces are open — anyone can register a name under them by paying the listed price.
+
 | Price | Namespaces | Example Names |
 |---|---|---|
 | 0.001 ETH | `0-balance`, `1-cent`, `123`, `314159`, `8pm`, `a-lot`, `abi`, `acc`, `action`, `address`, `afaict`, `aggr`, `agree`, `allez`, `alliance`, `alt`, `always-winning`, `ani`, `apr`, `arena`, `auction`, `auditor`, `aug`, `avg-joe`, `bagholder`, `banger`, `banned`, `believe-in-something`, `bin`, `bird`, `black`, `blanc`, `bonk`, `book`, `boom`, `brave`, `break`, `broke-bro`, `browser`, `buy-high-sell-low`, `buy-the-dip`, `by-design`, `cafe`, `carpe-diem`, `carrot`, `catalyst`, `chain`, `cheater`, `check-this-out`, `cheers`, `cheese`, `cloud`, `cold`, `come-in-and-register`, `commit`, `compete`, `cooking`, `copium`, `cozy`, `crispy`, `crops`, `cross`, `dance`, `dca`, `dec`, `defamfi`, `deth`, `diamond`, `discount`, `done`, `drain`, `drako`, `dream`, `drink`, `dude`, `earth`, `edition`, `elite`, `emoji`, `enum`, `energy`, `ethcc`, `ether`, `ethereum`, `facet`, `fam`, `feb`, `fire`, `for-real`, `for-sale`, `fresh`, `frog`, `game-over`, `garbage`, `get-it-done`, `goal`, `goat`, `grain-of-salt`, `green`, `green-candle-lover`, `green-only`, `group`, `guardian`, `haha`, `hard-rug`, `harmony`, `have-fun`, `hello`, `hide`, `hold-my-beer`, `honey`, `hooligan`, `hopium`, `horn`, `hyper`, `hyperinflation`, `i-am`, `i-am-not`, `i-dont`, `i-know`, `i-think`, `ico-craze`, `idgaf`, `idk`, `indeed`, `industry`, `jan`, `jesus`, `jpg`, `json`, `jul`, `jun`, `k-pop`, `kek`, `layer`, `legend`, `level`, `leverage`, `lion`, `liquidated`, `literally`, `looking-for-a-job`, `lowcost`, `mar`, `market`, `married`, `mate`, `matrix`, `max-pain`, `may`, `maybe`, `milk`, `mint`, `miracle`, `mmiwg2slgbtqqiaplus`, `multisigfi`, `my-problem`, `native`, `nature`, `nevertheless`, `no-brainer`, `no-idea`, `no-problem`, `no-war`, `normie`, `north`, `not-a-scam`, `not-ens`, `nov`, `oct`, `off`, `office`, `offside`, `ok-ok`, `on-it`, `online`, `orange`, `otc`, `other`, `ouais`, `p2p`, `p33`, `panda`, `peanut`, `penny`, `pizza`, `plasma`, `platin`, `play`, `pleb`, `png`, `poc`, `post-mortem`, `pre-rich`, `probably`, `purple`, `pwned`, `race`, `radio`, `rails`, `rainbow`, `record`, `refill`, `reload`, `reset`, `rgb`, `road`, `route`, `rulez`, `sauce`, `sausage`, `scam`, `scared`, `scout`, `script`, `sep`, `service`, `share`, `ship`, `shirt`, `shit`, `sidelined`, `silver`, `skill-issue`, `slow-rug`, `smile`, `smoke`, `snake`, `snow`, `soft-rug`, `south`, `spartan`, `spend`, `stack`, `stack-too-deep`, `status`, `straight`, `structured`, `style`, `svg`, `synth`, `tab`, `tacit`, `talisman`, `the-end`, `this-is-fine`, `thor`, `thumbs-up`, `tour-de-finance`, `transfer`, `trb`, `trust-me-bro`, `trustmebrofi`, `txt`, `ubi`, `unlimited`, `unwind`, `vanity`, `verse`, `very`, `victim`, `vinyl`, `virus`, `we-are-so-back`, `week`, `wellness`, `whatever`, `white`, `why-not`, `wolve`, `x-factor`, `x2x`, `xns`, `yadayada`, `yellow`, `your-problem`, `yummy`, `zation`, `zip` | bob.xns, my-oracle.trb, best.auditor |
@@ -319,8 +325,13 @@ Fees earned by namespace owners and the XNS contract owner accumulate within the
 > The "x" namespace is special and associated with bare names. "vitalik.x" is equivalent to "vitalik" (bare name).
 
 
+### Private Namespaces
+
+Private namespaces are restricted — only the namespace owner can register names under them. There are currently 137 private namespaces, all priced at 0.005 ETH. These include thematic namespaces such as `divine`, `celestial`, `arcane`, `seraphim`, `genesis`, `valhalla`, `dragon`, and many more.
+
+See [`constants/namespaces.json`](./constants/namespaces.json) for the full list.
+
 **Notes:**
-* The price list only shows public namespaces.
 * The price list may not be complete as new namespaces can be added over time. If you notice a missing namespace, feel free to [open an issue](https://github.com/Walodja1987/xns/issues) to request an update to the table.
 * Prices on Sepolia may differ from mainnet. To obtain the current price for any namespace, use the [`getNamespaceInfo`][api-getNamespaceInfo] or [`getNamespacePrice`][api-getNamespaceInfo] functions.
 
