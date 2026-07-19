@@ -4382,6 +4382,21 @@
         "isPrivate": false
       },
       {
+        "name": "aegide",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "aegides",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "aegises",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "aether",
         "price": "0.005",
         "isPrivate": true
@@ -4392,7 +4407,32 @@
         "isPrivate": true
       },
       {
+        "name": "aethergem",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "aethergems",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "aethers",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "angel",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "angela",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "angelas",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4402,7 +4442,17 @@
         "isPrivate": true
       },
       {
+        "name": "angelica",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "angels",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "arcanes",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4422,6 +4472,11 @@
         "isPrivate": true
       },
       {
+        "name": "arcanics",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "arcanist",
         "price": "0.005",
         "isPrivate": true
@@ -4432,7 +4487,57 @@
         "isPrivate": true
       },
       {
+        "name": "arche",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "arches",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "archs",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "artemis",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "ascend",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "ascended",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "ascends",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "ascension",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "athena",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "beacon",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "beaconed",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4457,7 +4562,17 @@
         "isPrivate": true
       },
       {
+        "name": "bloodstones",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "celestial",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "celestials",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4467,7 +4582,22 @@
         "isPrivate": true
       },
       {
+        "name": "chaosed",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "chaoses",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "cherubim",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "cherubims",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4482,12 +4612,27 @@
         "isPrivate": true
       },
       {
+        "name": "crested",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "crests",
         "price": "0.005",
         "isPrivate": true
       },
       {
+        "name": "crowns",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "crystal",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "crystals",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4562,6 +4707,11 @@
         "isPrivate": true
       },
       {
+        "name": "dawns",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "diadem",
         "price": "0.005",
         "isPrivate": true
@@ -4573,6 +4723,11 @@
       },
       {
         "name": "divine",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "divines",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4627,7 +4782,57 @@
         "isPrivate": true
       },
       {
+        "name": "divisions",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "divisions0",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "divisions1",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "divisions2",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "divisions3",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "divisions4",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "divisions5",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "divisions6",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "divisions7",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "dragonegg",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "dragoneggs",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4642,7 +4847,32 @@
         "isPrivate": true
       },
       {
+        "name": "elis",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "elm",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "elmed",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "elms",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "ely",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "elys",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4662,7 +4892,22 @@
         "isPrivate": true
       },
       {
+        "name": "eminencecrest",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "eminencecrests",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "emperor",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "emperors",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4672,12 +4917,37 @@
         "isPrivate": true
       },
       {
+        "name": "empyreans",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "fanoras",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "fires",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "flame",
         "price": "0.005",
         "isPrivate": true
       },
       {
+        "name": "flames",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "fractal",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "fractaled",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4702,6 +4972,11 @@
         "isPrivate": true
       },
       {
+        "name": "gods",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "godstone",
         "price": "0.005",
         "isPrivate": true
@@ -4713,6 +4988,11 @@
       },
       {
         "name": "grimoire",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "grimoires",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4737,12 +5017,52 @@
         "isPrivate": true
       },
       {
+        "name": "hecate",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "holies",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "holy",
         "price": "0.005",
         "isPrivate": true
       },
       {
+        "name": "honor",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "honoraries",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "honorarium",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "honorary",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "honors",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "ignite",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "ignites",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4762,7 +5082,22 @@
         "isPrivate": true
       },
       {
+        "name": "justicars",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "justice",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "justices",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "kings",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4802,7 +5137,22 @@
         "isPrivate": true
       },
       {
+        "name": "limboed",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "limbos",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "lucid",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "lucids",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4812,7 +5162,17 @@
         "isPrivate": true
       },
       {
+        "name": "lucifiers",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "mage",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "mages",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4827,7 +5187,42 @@
         "isPrivate": true
       },
       {
+        "name": "magicians",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "magics",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "malefic",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "maleficdoll",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "maleficdolls",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "malefics",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "mythic",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "mythics",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4847,6 +5242,21 @@
         "isPrivate": true
       },
       {
+        "name": "oath",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "oaths",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "orbed",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "orbs",
         "price": "0.005",
         "isPrivate": true
@@ -4857,7 +5267,27 @@
         "isPrivate": true
       },
       {
+        "name": "paretos",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "phanoras",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "primordial",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "primordials",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "queens",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4877,7 +5307,17 @@
         "isPrivate": true
       },
       {
+        "name": "reapers",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "reverie",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "reveried",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4892,12 +5332,32 @@
         "isPrivate": true
       },
       {
+        "name": "runics",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "sbt",
         "price": "0.005",
         "isPrivate": true
       },
       {
         "name": "sbts",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "seal",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "sealed",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "seals",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4922,12 +5382,37 @@
         "isPrivate": true
       },
       {
+        "name": "seraphs",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "shadow",
         "price": "0.005",
         "isPrivate": true
       },
       {
         "name": "shadows",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "sig",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "sigil",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "sigils",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "signal",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4952,7 +5437,17 @@
         "isPrivate": true
       },
       {
+        "name": "sovereigns",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "spirit",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "spirited",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4963,6 +5458,11 @@
       },
       {
         "name": "stargazer",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "stargazers",
         "price": "0.005",
         "isPrivate": true
       },
@@ -4982,12 +5482,22 @@
         "isPrivate": true
       },
       {
+        "name": "tempests",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "terminus",
         "price": "0.005",
         "isPrivate": true
       },
       {
         "name": "theholytrinity",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "thetrinities",
         "price": "0.005",
         "isPrivate": true
       },
@@ -5002,6 +5512,11 @@
         "isPrivate": true
       },
       {
+        "name": "throned",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "thrones",
         "price": "0.005",
         "isPrivate": true
@@ -5012,12 +5527,32 @@
         "isPrivate": true
       },
       {
+        "name": "triarchies",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "triarchy",
         "price": "0.005",
         "isPrivate": true
       },
       {
+        "name": "tries",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "triforce",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "trinities",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "tris",
         "price": "0.005",
         "isPrivate": true
       },
@@ -5037,12 +5572,32 @@
         "isPrivate": true
       },
       {
+        "name": "valkyries",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "veritas",
         "price": "0.005",
         "isPrivate": true
       },
       {
+        "name": "vice",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "viceroy",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "viceroys",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "vices",
         "price": "0.005",
         "isPrivate": true
       },
@@ -5053,6 +5608,36 @@
       },
       {
         "name": "voids",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "voidstars",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "war",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "warpath",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "warpaths",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "warring",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "wars",
         "price": "0.005",
         "isPrivate": true
       },
