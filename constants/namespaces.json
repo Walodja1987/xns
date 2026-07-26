@@ -4997,6 +4997,26 @@
         "isPrivate": true
       },
       {
+        "name": "halefall",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "halefalls",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "halesfall",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "halesfalls",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
         "name": "halos",
         "price": "0.005",
         "isPrivate": true
@@ -5213,6 +5233,31 @@
       },
       {
         "name": "malefics",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "moxie",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "moxiemute",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "moxiemutes",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "moxies",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "moxiesmute",
         "price": "0.005",
         "isPrivate": true
       },
@@ -5613,6 +5658,16 @@
       },
       {
         "name": "voidstars",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "wallstreetmoon",
+        "price": "0.005",
+        "isPrivate": true
+      },
+      {
+        "name": "wallstreetmoons",
         "price": "0.005",
         "isPrivate": true
       },
