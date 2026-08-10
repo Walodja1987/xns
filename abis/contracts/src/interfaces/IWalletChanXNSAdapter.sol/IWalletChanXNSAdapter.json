@@ -1,0 +1,7 @@
+[
+  "function XNS() view returns (address)",
+  "function getAddress(string,string) view returns (address)",
+  "function getAddress(string) view returns (address)",
+  "function getName(address) view returns (string)",
+  "function isBlockedNamespace(string) pure returns (bool)"
+]
